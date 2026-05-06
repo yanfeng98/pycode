@@ -331,8 +331,9 @@ def cmd_doctor(args: str, state, config) -> bool:
             ptype = prov.get("type", "openai")
 
             if ptype == "anthropic":
+                _ant_base = config.get("anthropic_endpoint", "https://api.anthropic.com").rstrip("/")
                 req = urllib.request.Request(
-                    "https://api.anthropic.com/v1/messages",
+                    f"{_ant_base}/v1/messages",
                     data=json.dumps({
                         "model": model,
                         "max_tokens": 1,
@@ -587,8 +588,9 @@ def run_setup_wizard(config: dict) -> None:
             urllib.request.urlopen(f"{base_url}/api/tags", timeout=5)
             ok("Ollama: connected!")
         elif chosen_pname == "anthropic" and existing_key:
+            _ant_base = config.get("anthropic_endpoint", "https://api.anthropic.com").rstrip("/")
             req = urllib.request.Request(
-                "https://api.anthropic.com/v1/messages",
+                f"{_ant_base}/v1/messages",
                 data=json.dumps({"model": config["model"], "max_tokens": 1,
                                  "messages": [{"role": "user", "content": "hi"}]}).encode(),
                 headers={"x-api-key": existing_key, "anthropic-version": "2023-06-01",
