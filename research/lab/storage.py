@@ -104,6 +104,37 @@ _SCHEMA = [
         PRIMARY KEY (run_id, attempt)
     )""",
     "CREATE INDEX IF NOT EXISTS idx_lab_experiments_run ON lab_experiments(run_id)",
+    # ── Phase A additions: meta-loop iterations + topic backlog ─────────
+    """CREATE TABLE IF NOT EXISTS lab_iterations (
+        run_id        TEXT NOT NULL,
+        iter_n        INTEGER NOT NULL,         -- 1-based; iter 1 = first /lab iterate call
+        target_score  REAL,                     -- score the iterate call was targeting
+        score_avg     REAL,                     -- self-review avg, populated after scoring
+        score_breakdown TEXT,                   -- JSON {dim → avg}
+        revise_stage  TEXT,                     -- stage we rolled back to
+        delta         REAL,                     -- score - prev_score
+        started_at    REAL NOT NULL,
+        ended_at      REAL,
+        status        TEXT NOT NULL,            -- pending|scoring|reverting|running|done|failed|skipped
+        notes         TEXT,
+        PRIMARY KEY (run_id, iter_n)
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_lab_iterations_run ON lab_iterations(run_id)",
+    """CREATE TABLE IF NOT EXISTS lab_backlog (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        topic          TEXT NOT NULL,
+        status         TEXT NOT NULL,           -- pending|running|done|failed|skipped
+        run_id         TEXT,                    -- linked once started
+        iterate        INTEGER NOT NULL DEFAULT 0,   -- 0 = single-shot, 1 = auto-iterate after finalize
+        target_score   REAL,                    -- only meaningful when iterate=1
+        max_iterations INTEGER NOT NULL DEFAULT 5,
+        added_at       REAL NOT NULL,
+        started_at     REAL,
+        ended_at       REAL,
+        priority       INTEGER NOT NULL DEFAULT 0,
+        notes          TEXT
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_lab_backlog_status ON lab_backlog(status, priority DESC, added_at)",
 ]
 
 
@@ -462,6 +493,185 @@ class LabStorage:
             row = cur.fetchone()
         return _row_to_experiment(row) if row else None
 
+    # ── Iterations (Phase A meta-loop) ────────────────────────────────
+
+    def add_iteration(self, *, run_id: str, iter_n: int,
+                      target_score: Optional[float] = None,
+                      revise_stage: Optional[str] = None,
+                      notes: Optional[str] = None) -> None:
+        now = time.time()
+        with self._txn() as cur:
+            cur.execute(
+                """INSERT OR REPLACE INTO lab_iterations
+                   (run_id, iter_n, target_score, revise_stage,
+                    started_at, status, notes)
+                   VALUES (?, ?, ?, ?, ?, 'pending', ?)""",
+                (run_id, iter_n, target_score, revise_stage, now, notes),
+            )
+
+    def update_iteration(self, *, run_id: str, iter_n: int,
+                         status: Optional[str] = None,
+                         score_avg: Optional[float] = None,
+                         score_breakdown: Optional[dict] = None,
+                         delta: Optional[float] = None,
+                         revise_stage: Optional[str] = None,
+                         notes: Optional[str] = None,
+                         mark_done: bool = False) -> None:
+        # Preserve existing fields when caller passes None for them.
+        sets: list[str] = []
+        vals: list = []
+        if status is not None:
+            sets.append("status = ?"); vals.append(status)
+        if score_avg is not None:
+            sets.append("score_avg = ?"); vals.append(score_avg)
+        if score_breakdown is not None:
+            sets.append("score_breakdown = ?")
+            vals.append(json.dumps(score_breakdown))
+        if delta is not None:
+            sets.append("delta = ?"); vals.append(delta)
+        if revise_stage is not None:
+            sets.append("revise_stage = ?"); vals.append(revise_stage)
+        if notes is not None:
+            sets.append("notes = ?"); vals.append(notes)
+        if mark_done:
+            sets.append("ended_at = ?"); vals.append(time.time())
+        if not sets:
+            return
+        vals.extend([run_id, iter_n])
+        with self._txn() as cur:
+            cur.execute(
+                f"UPDATE lab_iterations SET {', '.join(sets)} "
+                "WHERE run_id = ? AND iter_n = ?",
+                vals,
+            )
+
+    def list_iterations(self, run_id: str) -> list[dict]:
+        with self._txn() as cur:
+            cur.execute(
+                "SELECT * FROM lab_iterations WHERE run_id = ? "
+                "ORDER BY iter_n ASC",
+                (run_id,),
+            )
+            rows = cur.fetchall()
+        out = []
+        for r in rows:
+            out.append({
+                "run_id": r["run_id"],
+                "iter_n": int(r["iter_n"]),
+                "target_score": r["target_score"],
+                "score_avg": r["score_avg"],
+                "score_breakdown": json.loads(r["score_breakdown"])
+                                    if r["score_breakdown"] else None,
+                "revise_stage": r["revise_stage"],
+                "delta": r["delta"],
+                "started_at": r["started_at"],
+                "ended_at": r["ended_at"],
+                "status": r["status"],
+                "notes": r["notes"],
+            })
+        return out
+
+    def latest_iteration_n(self, run_id: str) -> int:
+        """Return the highest iter_n recorded for ``run_id`` (0 if none)."""
+        with self._txn() as cur:
+            cur.execute(
+                "SELECT MAX(iter_n) AS m FROM lab_iterations WHERE run_id = ?",
+                (run_id,),
+            )
+            row = cur.fetchone()
+        return int(row["m"] or 0)
+
+    # ── Backlog (Phase A topic queue) ─────────────────────────────────
+
+    def add_backlog(self, *, topic: str,
+                    iterate: bool = False,
+                    target_score: Optional[float] = None,
+                    max_iterations: int = 5,
+                    priority: int = 0,
+                    notes: Optional[str] = None) -> int:
+        now = time.time()
+        with self._txn() as cur:
+            cur.execute(
+                """INSERT INTO lab_backlog
+                   (topic, status, iterate, target_score, max_iterations,
+                    added_at, priority, notes)
+                   VALUES (?, 'pending', ?, ?, ?, ?, ?, ?)""",
+                (topic, 1 if iterate else 0, target_score, max_iterations,
+                 now, priority, notes),
+            )
+            return int(cur.lastrowid)
+
+    def list_backlog(self, *, status: Optional[str] = None,
+                     limit: int = 100) -> list[dict]:
+        q = "SELECT * FROM lab_backlog"
+        args: list = []
+        if status:
+            q += " WHERE status = ?"; args.append(status)
+        q += " ORDER BY priority DESC, added_at ASC LIMIT ?"; args.append(limit)
+        with self._txn() as cur:
+            cur.execute(q, args)
+            rows = cur.fetchall()
+        return [_row_to_backlog(r) for r in rows]
+
+    def claim_next_backlog(self) -> Optional[dict]:
+        """Atomically pull the highest-priority pending item and mark it
+        running. Returns None if the queue is empty."""
+        now = time.time()
+        with self._txn() as cur:
+            cur.execute(
+                "SELECT * FROM lab_backlog WHERE status = 'pending' "
+                "ORDER BY priority DESC, added_at ASC LIMIT 1",
+            )
+            row = cur.fetchone()
+            if row is None:
+                return None
+            cur.execute(
+                """UPDATE lab_backlog
+                   SET status = 'running', started_at = ?
+                   WHERE id = ?""",
+                (now, row["id"]),
+            )
+        return _row_to_backlog(row)
+
+    def update_backlog(self, *, item_id: int,
+                       status: Optional[str] = None,
+                       run_id: Optional[str] = None,
+                       notes: Optional[str] = None,
+                       mark_ended: bool = False) -> None:
+        sets: list[str] = []
+        vals: list = []
+        if status is not None:
+            sets.append("status = ?"); vals.append(status)
+        if run_id is not None:
+            sets.append("run_id = ?"); vals.append(run_id)
+        if notes is not None:
+            sets.append("notes = ?"); vals.append(notes)
+        if mark_ended:
+            sets.append("ended_at = ?"); vals.append(time.time())
+        if not sets:
+            return
+        vals.append(item_id)
+        with self._txn() as cur:
+            cur.execute(
+                f"UPDATE lab_backlog SET {', '.join(sets)} WHERE id = ?",
+                vals,
+            )
+
+    def remove_backlog(self, item_id: int) -> bool:
+        with self._txn() as cur:
+            cur.execute("DELETE FROM lab_backlog WHERE id = ?", (item_id,))
+            return cur.rowcount > 0
+
+    def reset_running_backlog(self) -> int:
+        """Return any stuck ``running`` items to ``pending`` (used at
+        daemon startup so a crashed daemon doesn't permanently lose work)."""
+        with self._txn() as cur:
+            cur.execute(
+                "UPDATE lab_backlog SET status = 'pending', started_at = NULL "
+                "WHERE status = 'running'"
+            )
+            return cur.rowcount
+
 
 # ── Row converters ────────────────────────────────────────────────────────
 
@@ -518,3 +728,20 @@ def _row_to_experiment(r) -> ExperimentRecord:
         code=r["code"], stdout=r["stdout"], stderr=r["stderr"],
         artifacts=arts, notes=r["notes"],
     )
+
+
+def _row_to_backlog(r) -> dict:
+    return {
+        "id": int(r["id"]),
+        "topic": r["topic"],
+        "status": r["status"],
+        "run_id": r["run_id"],
+        "iterate": bool(r["iterate"]),
+        "target_score": r["target_score"],
+        "max_iterations": int(r["max_iterations"]),
+        "added_at": r["added_at"],
+        "started_at": r["started_at"],
+        "ended_at": r["ended_at"],
+        "priority": int(r["priority"]),
+        "notes": r["notes"],
+    }

@@ -2,15 +2,22 @@
 
 Subcommands:
 
-  /lab start <topic>            Spawn a research run in a background thread.
-  /lab status                   List all runs and their stage / budget.
-  /lab status <run_id>          Detailed status for one run, with last messages.
-  /lab abort <run_id>           Request cancellation; current stage finishes.
-  /lab resume <run_id>          (placeholder — Phase 2; v0 doesn't resume)
-  /lab logs <run_id>            Print the last N agent messages.
+  /lab start <topic>             Spawn a research run in a background thread.
+  /lab status                    List all runs and their stage / budget.
+  /lab status <run_id>           Detailed status for one run, with last messages.
+  /lab abort <run_id>            Request cancellation; current stage finishes.
+  /lab resume <run_id> [<stage>] Resume a paused/aborted/done run, optionally
+                                 rewinding to a specific stage.
+  /lab iterate <run_id>          Score the final report and re-run the weakest
+                                 stage; loops until target / max / plateau.
+  /lab logs <run_id>             Print the last N agent messages.
+  /lab backlog add <topic> [--iterate] [--target=N] [--max=N] [--prio=N]
+  /lab backlog list / remove <id> / clear
+  /lab daemon start / stop / status
+                                 Run pending backlog items 24/7 in a worker.
 
-The actual orchestrator runs on a daemon thread per run. Cancellation
-is cooperative: the orchestrator polls a per-run cancel flag between
+The orchestrator runs on a daemon thread per run. Cancellation is
+cooperative: the orchestrator polls a per-run cancel flag between
 stages and rounds.
 """
 from __future__ import annotations
@@ -43,7 +50,15 @@ def cmd_lab(args: str, _state, config) -> bool:
     if sub == "logs":
         return _cmd_logs(rest)
     if sub == "resume":
-        return _cmd_resume(rest)
+        return _cmd_resume(rest, config)
+    if sub == "iterate":
+        return _cmd_iterate(rest, config)
+    if sub == "backlog":
+        return _cmd_backlog(rest, config)
+    if sub == "daemon":
+        return _cmd_daemon(rest, config)
+    if sub == "models":
+        return _cmd_models(rest, config)
     if sub in ("help", "?", "-h", "--help"):
         _print_usage()
         return True
@@ -55,11 +70,16 @@ def cmd_lab(args: str, _state, config) -> bool:
 def _print_usage() -> None:
     print(clr("/lab — autonomous research lab", "cyan", "bold"))
     print(
-        "  /lab start <topic>      Start a new research run\n"
-        "  /lab status [<run_id>]  Show run(s) status\n"
-        "  /lab abort <run_id>     Request cancellation\n"
-        "  /lab logs <run_id>      Print recent agent messages\n"
-        "  /lab resume <run_id>    (Phase 2 — placeholder for now)\n"
+        "  /lab start <topic>             Start a new research run\n"
+        "  /lab status [<run_id>]         Show run(s) status\n"
+        "  /lab abort <run_id>            Request cancellation\n"
+        "  /lab logs <run_id> [n]         Print last N agent messages\n"
+        "  /lab resume <run_id> [<stage>] Continue a run; optionally rewind\n"
+        "  /lab iterate <run_id>          Score + revise loop until target / max\n"
+        "  /lab backlog add <topic> ...   Queue a topic\n"
+        "  /lab backlog list|remove|clear Manage queue\n"
+        "  /lab daemon start|stop|status  24/7 worker pulling from backlog\n"
+        "  /lab models                    Show effective per-role model assignment\n"
     )
 
 
@@ -234,10 +254,373 @@ def _cmd_logs(arg: str) -> bool:
     return True
 
 
-# ── resume placeholder ───────────────────────────────────────────────────
+# ── resume ────────────────────────────────────────────────────────────────
 
 
-def _cmd_resume(arg: str) -> bool:
-    warn("/lab resume is a Phase 2 feature — not implemented in v0.")
-    info("v0 runs that crashed mid-stage need to be re-started with /lab start.")
+def _cmd_resume(arg: str, config: dict) -> bool:
+    """`/lab resume <run_id> [<stage>]` — continue or rewind a run."""
+    parts = arg.strip().split()
+    if not parts:
+        err("Usage: /lab resume <run_id> [<stage>]")
+        info("       stage ∈ {questioning, survey, outline, implementation, "
+             "experiment, analysis, drafting, verification, finalization}")
+        return True
+    run_id = parts[0]
+    stage_arg = parts[1].lower() if len(parts) > 1 else ""
+
+    from research.lab import resume as _resume
+    from research.lab.orchestrator import Stage
+    from research.lab.storage import LabStorage
+
+    storage = LabStorage()
+    rec = storage.get_run(run_id)
+    if rec is None:
+        err(f"No such run: {run_id}")
+        return True
+
+    target_stage = None
+    if stage_arg:
+        try:
+            target_stage = Stage(stage_arg)
+        except ValueError:
+            valid = ", ".join(s.value for s in Stage)
+            err(f"Invalid stage {stage_arg!r}. Valid: {valid}")
+            return True
+
+    cancel = threading.Event()
+    _cancel_flags[run_id] = cancel
+
+    def _on_finish(success: bool, msg: str) -> None:
+        if success:
+            ok(f"\n  ✓ /lab resume {run_id}: {msg}")
+        else:
+            err(f"\n  ✗ /lab resume {run_id} failed: {msg}")
+
+    t, _ = _resume.resume_run_in_thread(
+        run_id=run_id, config=config, start_stage=target_stage,
+        on_finish=_on_finish,
+    )
+    # Wire the same cancel event the user-facing /lab abort uses.  The
+    # resume thread we just spawned has its own cancel; replace it with
+    # ours so abort works against this resume too.
+    _run_threads[run_id] = t
+
+    label = f"from {target_stage.value}" if target_stage else "from saved stage"
+    ok(f"Resuming lab run {run_id} {label}")
+    info(f"  topic   : {rec.topic}")
+    info(f"  status  : /lab status {run_id}")
+    info(f"  abort   : /lab abort {run_id}")
+    return True
+
+
+# ── iterate ───────────────────────────────────────────────────────────────
+
+
+def _cmd_iterate(arg: str, config: dict) -> bool:
+    """`/lab iterate <run_id> [--target=N] [--max=N]` — meta-loop."""
+    parts = arg.strip().split()
+    if not parts:
+        err("Usage: /lab iterate <run_id> [--target=7.0] [--max=5]")
+        return True
+    run_id = parts[0]
+    target = None
+    max_iter = None
+    for tok in parts[1:]:
+        if tok.startswith("--target="):
+            try: target = float(tok.split("=", 1)[1])
+            except ValueError: pass
+        elif tok.startswith("--max="):
+            try: max_iter = int(tok.split("=", 1)[1])
+            except ValueError: pass
+
+    from research.lab import iterate as _it
+    from research.lab.storage import LabStorage
+
+    storage = LabStorage()
+    rec = storage.get_run(run_id)
+    if rec is None:
+        err(f"No such run: {run_id}")
+        return True
+    if storage.get_latest_artifact(run_id, "report") is None:
+        err(f"Run {run_id} has not produced a 'report' artifact yet — "
+            "iterate is only valid after the run finalised.")
+        info("If the run is still mid-flight: /lab status " + run_id)
+        return True
+
+    iter_cfg = _it.IterationConfig(
+        target_score=(target if target is not None
+                      else float(config.get("lab_iterate_target", 7.0))),
+        max_iterations=(max_iter if max_iter is not None
+                        else int(config.get("lab_iterate_max", 5))),
+        plateau_eps=float(config.get("lab_iterate_plateau_eps", 0.3)),
+        plateau_consec=int(config.get("lab_iterate_plateau_consec", 2)),
+        n_reviewers=int(config.get("lab_iterate_reviewers", 3)),
+    )
+
+    cancel = threading.Event()
+    _cancel_flags[run_id] = cancel
+
+    def _on_iter(result) -> None:
+        msg = (f"  ↳ iter {result.iter_n}: avg={result.score_avg:.2f} "
+               f"Δ={result.delta:+.2f}")
+        if result.revise_stage:
+            msg += f"  weakest→{result.revise_stage.value}"
+        else:
+            msg += "  ✓ converged"
+        info(msg)
+
+    def _on_finish(history) -> None:
+        if not history:
+            warn(f"\n  /lab iterate {run_id}: no iterations completed")
+            return
+        last = history[-1]
+        verdict = "converged" if last.revise_stage is None else "stopped"
+        ok(f"\n  ✓ /lab iterate {run_id}: {verdict} after {len(history)} iter(s); "
+           f"final avg={last.score_avg:.2f}")
+
+    t, _ = _it.iterate_in_thread(
+        run_id=run_id, config=config, iter_cfg=iter_cfg,
+        on_finish=_on_finish,
+    )
+    _run_threads[run_id] = t
+
+    ok(f"Iterating lab run {run_id}")
+    info(f"  target  : ≥ {iter_cfg.target_score:.1f}")
+    info(f"  max     : {iter_cfg.max_iterations} iteration(s)")
+    info(f"  abort   : /lab abort {run_id}")
+    return True
+
+
+# ── backlog ───────────────────────────────────────────────────────────────
+
+
+def _cmd_backlog(arg: str, config: dict) -> bool:
+    parts = arg.strip().split(None, 1)
+    sub = parts[0].lower() if parts else "list"
+    rest = parts[1] if len(parts) > 1 else ""
+
+    from research.lab.backlog import BacklogManager
+    from research.lab.storage import LabStorage
+    mgr = BacklogManager(LabStorage())
+
+    if sub == "add":
+        return _backlog_add(mgr, rest, config)
+    if sub == "list":
+        return _backlog_list(mgr)
+    if sub == "remove":
+        return _backlog_remove(mgr, rest)
+    if sub == "clear":
+        return _backlog_clear(mgr)
+    err(f"Unknown /lab backlog subcommand: {sub!r}")
+    info("Use: add, list, remove <id>, clear")
+    return True
+
+
+def _backlog_add(mgr, rest: str, config: dict) -> bool:
+    if not rest:
+        err("Usage: /lab backlog add <topic> [--iterate] [--target=N] "
+            "[--max=N] [--prio=N]")
+        return True
+    # Strip flags from the topic.
+    iterate_flag = False
+    target_score = None
+    max_iter = 5
+    priority = 0
+    tokens = rest.split()
+    topic_words = []
+    for tok in tokens:
+        if tok == "--iterate":
+            iterate_flag = True
+        elif tok.startswith("--target="):
+            try: target_score = float(tok.split("=", 1)[1])
+            except ValueError: pass
+        elif tok.startswith("--max="):
+            try: max_iter = max(1, int(tok.split("=", 1)[1]))
+            except ValueError: pass
+        elif tok.startswith("--prio="):
+            try: priority = int(tok.split("=", 1)[1])
+            except ValueError: pass
+        else:
+            topic_words.append(tok)
+    topic = " ".join(topic_words).strip()
+    if not topic:
+        err("Empty topic after stripping flags.")
+        return True
+    if iterate_flag and target_score is None:
+        target_score = float(config.get("lab_iterate_target", 7.0))
+    item_id = mgr.add(
+        topic=topic, iterate=iterate_flag,
+        target_score=target_score, max_iterations=max_iter,
+        priority=priority,
+    )
+    ok(f"Queued #{item_id}: {topic}"
+       + (f"  (iterate→{target_score:.1f}, max={max_iter})"
+          if iterate_flag else ""))
+    info("Use /lab daemon start to begin processing the queue.")
+    return True
+
+
+def _backlog_list(mgr) -> bool:
+    items = mgr.list()
+    if not items:
+        info("Backlog is empty.")
+        return True
+    print(clr(f"backlog ({len(items)} item(s)):", "cyan", "bold"))
+    print(f"  {'id':>4} {'status':<8} {'prio':>4} {'iter':<5} "
+          f"{'topic':<40} {'run_id':<18}")
+    for x in items:
+        topic = (x['topic'][:37] + "…") if len(x['topic']) > 38 else x['topic']
+        rid = x['run_id'] or "—"
+        it = "yes" if x['iterate'] else "no"
+        print(f"  #{x['id']:>3} {x['status']:<8} {x['priority']:>4} "
+              f"{it:<5} {topic:<40} {rid}")
+    return True
+
+
+def _backlog_remove(mgr, arg: str) -> bool:
+    arg = arg.strip()
+    if not arg.isdigit():
+        err("Usage: /lab backlog remove <id>")
+        return True
+    if mgr.remove(int(arg)):
+        ok(f"Removed backlog #{arg}")
+    else:
+        err(f"No backlog item with id={arg}")
+    return True
+
+
+def _backlog_clear(mgr) -> bool:
+    items = mgr.list()
+    if not items:
+        info("Backlog already empty.")
+        return True
+    n = 0
+    for it in items:
+        if it["status"] in ("pending", "skipped", "failed"):
+            mgr.remove(it["id"]); n += 1
+    ok(f"Cleared {n} pending/skipped/failed item(s); "
+       f"running/done items kept for audit.")
+    return True
+
+
+# ── daemon ────────────────────────────────────────────────────────────────
+
+
+def _cmd_daemon(arg: str, config: dict) -> bool:
+    sub = (arg.strip().split() or ["status"])[0].lower()
+    from research.lab import backlog as _bl
+
+    if sub == "start":
+        h = _bl.start_daemon(config=config)
+        if h.thread.is_alive():
+            ok("Lab daemon running. Pulls from /lab backlog continuously.")
+            info(f"  started_at : {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(h.started_at))}")
+            info("  stop with  : /lab daemon stop")
+        else:
+            err("Daemon failed to start.")
+        return True
+    if sub == "stop":
+        was_running = _bl.stop_daemon()
+        (ok if was_running else info)(
+            "Lab daemon stopped." if was_running else "No daemon was running."
+        )
+        return True
+    if sub in ("status", ""):
+        h = _bl.get_daemon()
+        if h is None or not h.running:
+            info("Lab daemon: not running.  Start with /lab daemon start")
+            return True
+        ago = time.time() - h.started_at
+        ok(f"Lab daemon: running (uptime {int(ago)//60}m{int(ago)%60}s)")
+        return True
+    err(f"Unknown /lab daemon subcommand: {sub!r}.  Use: start, stop, status")
+    return True
+
+
+# ── models (per-role model inspection) ────────────────────────────────────
+
+
+def _cmd_models(_arg: str, config: dict) -> bool:
+    """`/lab models` — show which model each of the 9 roles will use.
+
+    Resolution priority (per role): config['lab_role_override'][<role>]
+    if set, else family auto-pick driven by which API keys are in env,
+    else config['model'] fallback.  This view exists so the user can
+    confirm reviewers really span 3 different families before kicking
+    off a multi-day daemon (homogeneous review = same-source bias).
+    """
+    import os
+    from research.lab.roles import build_default_assignment
+
+    override = config.get("lab_role_override") or {}
+    assignment = build_default_assignment(config, override=override)
+
+    # Map model → likely env-var that selected it (best-effort label).
+    model_family: dict[str, str] = {}
+    for prefix, env in [
+        ("claude-",      "ANTHROPIC_API_KEY"),
+        ("gpt-",         "OPENAI_API_KEY"),
+        ("o1-",          "OPENAI_API_KEY"),
+        ("o3-",          "OPENAI_API_KEY"),
+        ("o4-",          "OPENAI_API_KEY"),
+        ("gemini",       "GEMINI_API_KEY"),
+        ("deepseek",     "DEEPSEEK_API_KEY"),
+        ("qwen",         "DASHSCOPE_API_KEY"),
+        ("zhipu",        "ZHIPU_API_KEY"),
+        ("glm-",         "ZHIPU_API_KEY"),
+        ("kimi",         "MOONSHOT_API_KEY"),
+        ("moonshot",     "MOONSHOT_API_KEY"),
+        ("ollama/",      ""),
+        ("lmstudio/",    ""),
+    ]:
+        model_family[prefix] = env
+
+    def _label(model: str) -> str:
+        for prefix, env in model_family.items():
+            if model.startswith(prefix):
+                if not env:
+                    return "local"
+                ok = "✓" if os.environ.get(env) else "✗"
+                return f"{env} {ok}"
+        return "?"
+
+    rows: list[tuple[str, str, str, str]] = []
+    rows.append(("pi",           assignment.pi.model,        _label(assignment.pi.model),         "ties + direction"))
+    rows.append(("questioner",   assignment.questioner.model, _label(assignment.questioner.model), "RQ generation"))
+    rows.append(("surveyor",     assignment.surveyor.model,   _label(assignment.surveyor.model),   "lit search + gap"))
+    rows.append(("designer",     assignment.designer.model,   _label(assignment.designer.model),   "methodology"))
+    rows.append(("engineer",     assignment.engineer.model,   _label(assignment.engineer.model),   "experiment code"))
+    rows.append(("analyst",      assignment.analyst.model,    _label(assignment.analyst.model),    "results section"))
+    rows.append(("writer",       assignment.writer.model,     _label(assignment.writer.model),     "paper body"))
+    for r in assignment.reviewers:
+        rows.append((r.name,     r.model,                      _label(r.model),                     "independent review"))
+    rows.append(("lay_reader",   assignment.lay_reader.model, _label(assignment.lay_reader.model), "clarity check"))
+
+    print(clr("/lab models — effective per-role assignment", "cyan", "bold"))
+    print(f"  {'role':<14} {'model':<30} {'env-key':<22} note")
+    for role, model, env_label, note in rows:
+        is_override = role in override
+        marker = clr("●", "yellow") if is_override else " "
+        print(f"  {marker} {role:<12} {model:<30} {env_label:<22} {clr(note, 'dim')}")
+    print()
+    if override:
+        info(f"  ● = manually overridden via lab_role_override "
+             f"({len(override)} role{'s' if len(override) != 1 else ''})")
+    else:
+        info("  All roles using auto-selected defaults. Override via:")
+        info("    /config lab_role_override={\"writer\": \"claude-opus-4-6\", "
+             "\"reviewer_1\": \"gpt-4o\"}")
+
+    # Reviewer diversity warning.
+    rev_models = [r.model for r in assignment.reviewers]
+    rev_families = set()
+    for m in rev_models:
+        for prefix in model_family:
+            if m.startswith(prefix):
+                rev_families.add(prefix); break
+    if len(rev_families) < len(rev_models):
+        warn(f"  Reviewers span only {len(rev_families)} model "
+             f"famil{'ies' if len(rev_families) != 1 else 'y'}; "
+             f"homogeneous review reduces meta-loop signal. Set more API "
+             f"keys (Anthropic / OpenAI / Gemini / DeepSeek / Qwen) for diversity.")
     return True

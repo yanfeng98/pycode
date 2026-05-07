@@ -239,6 +239,14 @@ Per-run knobs (config.json):
   "lab_experiment_timeout_s":    180,
   "lab_experiment_max_attempts": 3,
 
+  // Phase A meta-loop — used by /lab iterate and the daemon when an
+  // item was queued with --iterate.
+  "lab_iterate_target":          7.0,    // stop when reviewer avg ≥ this
+  "lab_iterate_max":             5,      // hard cap on iterations
+  "lab_iterate_plateau_eps":     0.3,    // |delta| under this counts as
+  "lab_iterate_plateau_consec":  2,      //   a "non-improvement"; N in a row → stop
+  "lab_iterate_reviewers":       3,      // reviewers used for self-review
+
   // Per-role model overrides (any subset OK; unspecified roles use defaults)
   "lab_role_override": {
     "pi":          "claude-opus-4-6",
@@ -253,6 +261,46 @@ Per-run knobs (config.json):
 
 Override at the call site too — `/lab start <topic>` reads from
 `config.json`; `POST /api/lab/runs` accepts the same keys in the body.
+
+### Inspecting the role assignment
+
+```
+/lab models
+```
+
+prints which model each of the 9 roles will actually use (after env-var
+auto-detect + `lab_role_override` is applied), plus a label showing
+which API key drove the choice. Reviewers spanning only 1-2 model
+families will trigger a warning — same-source review is the easiest
+way to lose meta-loop signal.
+
+### Frontier-model recipe
+
+To bias quality up at the cost of more $/run, point the high-stakes
+roles at flagship models and keep cheap models for low-stakes roles
+(questioner / surveyor / lay_reader use auxiliary defaults already).
+
+```jsonc
+"lab_role_override": {
+  "pi":         "claude-opus-4-6",
+  "designer":   "claude-opus-4-6",
+  "writer":     "claude-opus-4-6",
+  "reviewer_1": "claude-opus-4-6",
+  "reviewer_2": "gpt-4o",
+  "reviewer_3": "gemini/gemini-2.5-pro"
+}
+```
+
+Then bump the budget so the run isn't choked off mid-paper:
+
+```jsonc
+"lab_budget_tokens":     20000000,
+"lab_budget_cost_cents": 20000     // $200 hard cap
+```
+
+Set this once via `/config lab_role_override={...}` (the patched
+`/config` parser handles the JSON object) — it persists in
+`~/.cheetahclaws/config.json`.
 
 ---
 
@@ -280,24 +328,121 @@ build step — open it in a browser and it talks to the API above.
 
 ---
 
+## Continuous research (Phase A)
+
+The original v0 was single-shot — `/lab start <topic>` and you got one
+arXiv-grade preprint. Phase A adds the pieces needed for *unattended,
+multi-day research*:
+
+```
+/lab resume <run_id> [<stage>]   continue a paused/aborted/done run;
+                                  optionally rewind to <stage>
+/lab iterate <run_id>             score the final report and re-run the
+                                  weakest stage; loops until target / max
+                                  / plateau
+/lab backlog add <topic> [--iterate] [--target=N] [--max=N] [--prio=N]
+/lab backlog list / remove <id> / clear
+/lab daemon start / stop / status   24/7 worker that pulls from the
+                                     backlog one item at a time
+```
+
+### Resume
+
+State for every stage is persisted to SQLite (artifacts table for
+outputs, `lab_experiments` for sandbox runs, `runs.current_stage` for
+progress). `/lab resume <run_id>` rebuilds the in-memory `LabState` from
+those rows and continues from where it stopped. Pass an explicit stage
+to **rewind**:
+
+```
+/lab resume lab_abc123              # continue from saved stage
+/lab resume lab_abc123 drafting     # roll back to drafting and redo it
+                                    # (analysis output is kept;
+                                    # draft + verification are dropped
+                                    # and regenerated)
+```
+
+Intra-stage resume (mid-review, mid-experiment-debug) is not in v0; the
+in-flight stage restarts from the top, which is fine because every
+stage is idempotent at the artifact level (`put_artifact` bumps the
+version rather than overwriting).
+
+### Iterate (meta-loop)
+
+After finalisation, `/lab iterate <run_id>` runs a *self-review pass*:
+3 reviewers score the final report on **novelty / rigor / clarity /
+evidence** (1-10 each). The lowest-scoring dimension picks which stage
+to rewind to:
+
+| weakest | rewind to |
+|---|---|
+| novelty  | QUESTIONING (rethink the RQs) |
+| rigor    | IMPLEMENTATION (better methodology / code) |
+| clarity  | DRAFTING (rewrite the body) |
+| evidence | EXPERIMENT (more / stronger experiments) |
+
+The loop stops when:
+- `score_avg ≥ target_score` (default `7.0`, set via
+  `lab_iterate_target` in config or `--target=N` on the command),
+- `max_iterations` reached (default `5`, `lab_iterate_max` /
+  `--max=N`),
+- the score plateaus (`|delta| < 0.3` for 2 consecutive iterations,
+  `lab_iterate_plateau_eps` / `lab_iterate_plateau_consec`),
+- the run's budget is exhausted.
+
+Every iteration is recorded into the `lab_iterations` table (per-dim
+scores, delta vs previous, the stage it rewound to), so audit trail is
+complete.
+
+### Backlog + Daemon
+
+To run "give it 50 topics, walk away for 2 days":
+
+```
+/lab backlog add hierarchical RL on grid worlds --iterate --target=7.5
+/lab backlog add survey of in-context learning theory      # no iterate
+/lab backlog add neural architecture search for tabular --iterate --max=3
+/lab backlog add ...
+/lab daemon start
+```
+
+The daemon picks the highest-priority pending item, runs `/lab start`,
+optionally runs `/lab iterate` (if the item was queued with
+`--iterate`), then claims the next one. State survives a daemon crash:
+items left in `running` are reset to `pending` on next `daemon start`.
+A previous run's reports stay in `~/.cheetahclaws/research_papers/`.
+
+`/lab daemon stop` lets the in-flight run finish its current stage and
+then halts; it does **not** kill mid-stage. Use `/lab abort <run_id>`
+for that.
+
+### Realistic expectations
+
+Phase A makes the *workflow* autonomous: no human babysitting, results
+queue in overnight, low-quality drafts get re-attempted automatically.
+**It does not make the output better than the LLM substrate allows.**
+arXiv-grade is still the realistic target; iteration converges quickly
+(usually 2-3 rounds) on a ceiling that's set by the model, not by how
+many times we replay the loop.
+
+---
+
 ## What v0 explicitly does NOT do
 
 - ❌ **Multi-tenant isolation.** All runs are visible to anyone with
   REPL or web access. Phase 4 adds user_id scoping + per-user
   workspace.
 - ❌ **GPU pool / ML-training-scale experiments.** Sandbox runs a
-  single Python process with 4-min CPU. Big training is Phase 4.
+  single Python process with 4-min CPU. Big training is Phase C.
 - ❌ **Docker-isolated experiment execution.** Subprocess + rlimits
-  only. Phase 2.5.
+  only. Phase B/C.
+- ❌ **Network access from the experiment sandbox.** Engineer prompt
+  forbids network; HuggingFace/arXiv data fetching is Phase B.
 - ❌ **LaTeX / PDF rendering.** Markdown only. Phase 2.5 adds an
   arXiv-style LaTeX writer.
 - ❌ **Reference manager integration** (Zotero / Mendeley export
   beyond raw BibTeX). Phase 3+.
-- ❌ **Billing / payment.** Single-user, token-budget-only. Phase 4.
-- ❌ **Resumability after process restart.** State is in SQLite
-  but the orchestrator thread doesn't auto-resume after
-  `cheetahclaws` exits. `/lab resume <run_id>` is a placeholder.
-  Phase 2.5.
+- ❌ **Billing / payment.** Single-user, token-budget-only.
 - ❌ **Real-time streaming via SSE.** Frontend polls every 5 s.
 
 ---
