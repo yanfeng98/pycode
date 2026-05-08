@@ -491,8 +491,10 @@ To update after pulling new code:
 ```bash
 cd cheetahclaws
 git pull
-pip install .
+pip install --force-reinstall .
 ```
+
+> **Upgrading from a pre-2026-05-08 install?** If you see `ModuleNotFoundError: No module named 'prompts'` (or `modular.trading.discover`, etc.) at startup, your existing wheel is from before the issue #97 packaging fix and is missing several sub-packages. `pip install --force-reinstall .` rebuilds and ships them all — see [#97](https://github.com/SafeRL-Lab/cheetahclaws/issues/97) for the root-cause writeup.
 
 #### Optional extras
 

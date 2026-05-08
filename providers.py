@@ -327,6 +327,131 @@ def calc_cost(model: str, in_tok: int, out_tok: int) -> float:
     return (in_tok * ic + out_tok * oc) / 1_000_000
 
 
+# ── Native tool-call format interceptors ──────────────────────────────────
+#
+# Some models (Gemma 3/4, Mistral, …) emit their NATIVE tool-call format
+# even when the OpenAI-compatible API specifies tools via JSON schemas.
+# vLLM can parse some of these via `--tool-call-parser <name>`, but only
+# `hermes`, `mistral`, `llama3_json`, `granite`, `pythonic`, `phi4_mini_json`,
+# and `deepseek_v3` are supported. Gemma has no parser.
+#
+# When the parser doesn't recognise the format, raw markers like
+# `<|tool_call>call:Foo{"x":1}<tool_call|>` end up in `delta.content` and
+# stream straight to the user as garbage text — and the model's intended
+# tool call never fires.
+#
+# The interceptor below detects native tool-call markers in the streamed
+# text, switches into "buffer" mode (stops yielding TextChunks), and at
+# end-of-stream parses the buffered content into proper tool_calls. The
+# user sees a brief pause instead of malformed XML-ish gibberish.
+#
+# Add a new format: extend `_NATIVE_TOOL_OPENERS` and write a parser
+# branch in `_extract_native_tool_calls`.
+
+_NATIVE_TOOL_OPENERS = (
+    "<|tool_call|>",   # Gemma official
+    "<|tool_call>",    # Gemma 4 variant seen in the wild (asymmetric)
+    "<tool_call>",     # Hermes/Qwen (parsed by vLLM, but covered as fallback)
+    "[TOOL_CALLS]",    # Mistral
+)
+
+_GEMMA_QUOTE_TOKEN_FIXES = (
+    ("<|\"|>", '"'),
+    ("<|'|>", "'"),
+)
+
+import re as _re_native
+_NATIVE_FORMAT_V1 = _re_native.compile(
+    r"<\|?tool_call\|?>\s*(\{.*?\})\s*<\|?(?:end_)?(?:/)?tool_call\|?>",
+    _re_native.DOTALL,
+)
+# Format 2: <|tool_call>call:NAME{json}<tool_call|>
+_NATIVE_FORMAT_V2 = _re_native.compile(
+    r"<\|?tool_call\|?>\s*call:\s*(\w+)\s*(\{.*?\})\s*<\|?(?:end_)?(?:/)?tool_call\|?>",
+    _re_native.DOTALL,
+)
+_NATIVE_FORMAT_MISTRAL = _re_native.compile(
+    r"\[TOOL_CALLS\]\s*(\[.*?\])",
+    _re_native.DOTALL,
+)
+
+
+def _find_native_tool_marker(text: str) -> int | None:
+    """Return earliest index of a native tool-call opener, or None."""
+    earliest = None
+    for opener in _NATIVE_TOOL_OPENERS:
+        idx = text.find(opener)
+        if idx != -1 and (earliest is None or idx < earliest):
+            earliest = idx
+    return earliest
+
+
+def _extract_native_tool_calls(buf: str) -> list[dict]:
+    """Parse buffered text into a list of {id, name, input} tool-call dicts.
+
+    Tries multiple formats in order. Returns [] if none matched.
+    """
+    if not buf:
+        return []
+
+    # Normalise quote-escapes Gemma sometimes emits inside its native format
+    for tok, repl in _GEMMA_QUOTE_TOKEN_FIXES:
+        buf = buf.replace(tok, repl)
+
+    out: list[dict] = []
+
+    # Format 2 first (more specific — has explicit name)
+    for i, m in enumerate(_NATIVE_FORMAT_V2.finditer(buf)):
+        name, body = m.group(1), m.group(2)
+        try:
+            args = json.loads(body)
+            if not isinstance(args, dict):
+                args = {"_raw": body}
+        except json.JSONDecodeError:
+            args = {"_raw": body}
+        out.append({"id": f"native_call_{len(out)}", "name": name, "input": args})
+
+    # Format 1: JSON envelope with `name` + `arguments`
+    if not out:
+        for m in _NATIVE_FORMAT_V1.finditer(buf):
+            try:
+                parsed = json.loads(m.group(1))
+                if isinstance(parsed, dict):
+                    name = parsed.get("name") or parsed.get("function") or ""
+                    args = parsed.get("arguments") or parsed.get("args") or {}
+                    if name:
+                        if not isinstance(args, dict):
+                            args = {"_raw": str(args)}
+                        out.append({
+                            "id": f"native_call_{len(out)}",
+                            "name": name, "input": args,
+                        })
+            except json.JSONDecodeError:
+                continue
+
+    # Mistral [TOOL_CALLS] format
+    if not out:
+        for m in _NATIVE_FORMAT_MISTRAL.finditer(buf):
+            try:
+                arr = json.loads(m.group(1))
+                if isinstance(arr, list):
+                    for item in arr:
+                        if isinstance(item, dict):
+                            name = item.get("name") or ""
+                            args = item.get("arguments") or {}
+                            if name:
+                                if not isinstance(args, dict):
+                                    args = {"_raw": str(args)}
+                                out.append({
+                                    "id": f"native_call_{len(out)}",
+                                    "name": name, "input": args,
+                                })
+            except json.JSONDecodeError:
+                continue
+
+    return out
+
+
 # ── Tool schema conversion ─────────────────────────────────────────────────
 
 def tools_to_openai(tool_schemas: list) -> list:
@@ -658,6 +783,12 @@ def stream_openai_compat(
     in_tok = out_tok = 0
     cache_read_tok = cache_write_tok = 0
 
+    # Native tool-call interceptor state — see comments around
+    # `_extract_native_tool_calls`. Gemma 4 + vLLM hermes parser is the
+    # primary trigger but this catches Mistral [TOOL_CALLS] etc. too.
+    native_tool_buffering = False
+    native_tool_buffer    = ""
+
     stream = client.chat.completions.create(**kwargs)
     for chunk in stream:
         if not chunk.choices:
@@ -681,8 +812,24 @@ def stream_openai_compat(
             yield ThinkingChunk(reasoning_delta)
 
         if delta.content:
-            text += delta.content
-            yield TextChunk(delta.content)
+            new = delta.content
+            if not native_tool_buffering:
+                # Detect native tool-call markers split across chunks by
+                # checking the joined accumulated text.
+                joined = text + new
+                marker_idx = _find_native_tool_marker(joined)
+                if marker_idx is not None and marker_idx >= len(text):
+                    split = marker_idx - len(text)
+                    if split > 0:
+                        text += new[:split]
+                        yield TextChunk(new[:split])
+                    native_tool_buffering = True
+                    native_tool_buffer = new[split:]
+                else:
+                    text += new
+                    yield TextChunk(new)
+            else:
+                native_tool_buffer += new
 
         if delta.tool_calls:
             for tc in delta.tool_calls:
@@ -718,6 +865,19 @@ def stream_openai_compat(
         if v.get("extra_content"):
             tc_entry["extra_content"] = v["extra_content"]
         tool_calls.append(tc_entry)
+
+    # Native tool-call extraction (Gemma 4 etc.) — only kicks in when the
+    # vLLM parser failed to extract the call and we buffered the markers
+    # client-side. See `_extract_native_tool_calls` for format details.
+    if native_tool_buffering:
+        native_calls = _extract_native_tool_calls(native_tool_buffer)
+        if native_calls:
+            tool_calls.extend(native_calls)
+        else:
+            # Couldn't parse — fall back to yielding the buffer as text so the
+            # user sees *something* rather than a silent stall.
+            text += native_tool_buffer
+            yield TextChunk(native_tool_buffer)
 
     yield AssistantTurn(
         text, tool_calls, in_tok, out_tok, cache_read_tok, cache_write_tok,

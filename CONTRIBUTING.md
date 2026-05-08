@@ -157,8 +157,11 @@ Telegram, WeChat, and Slack bridges poll for messages and route them through `Ru
 
 - New tool implementations → add to `tools/` package (e.g., `tools/mytool.py`)
 - New command handlers → add to `commands/`
-- New top-level `.py` files → must be added to `pyproject.toml` `py-modules` list, otherwise `pip install` will miss them
-- New packages (directories) → must be added to `pyproject.toml` `packages` list
+- New top-level `.py` files → **must be added to `pyproject.toml` `py-modules` list**, otherwise `pip install .` will not ship them
+- New sub-packages (directories with `__init__.py`) under an existing tracked package → **picked up automatically** by `[tool.setuptools.packages.find]`. No `pyproject.toml` change needed.
+- New top-level package directory → add a wildcard entry like `"newpkg*"` to the `include` list under `[tool.setuptools.packages.find]`.
+
+> ⚠️ **Never use the same name in `py-modules` AND as a directory package** (e.g., a `memory.py` shim alongside a `memory/` package). On Windows + Python 3.13 + setuptools ≥ 75 this triggers a silent package-drop during wheel build and unrelated packages disappear (cause of issue #97). The `tests/test_packaging.py::test_pyproject_no_module_package_collision` regression test will catch this in CI; if you hit it, delete the shim and have callers `import name` against the package directory directly.
 
 ### Error Handling
 
@@ -178,11 +181,12 @@ Telegram, WeChat, and Slack bridges poll for messages and route them through `Ru
 
 Before submitting a PR:
 
-- [ ] `python -m pytest tests/ -x -q` passes (all 327+ tests)
+- [ ] `python -m pytest tests/ -x -q` passes (all 1000+ tests)
 - [ ] No new dependencies added to core without discussion
 - [ ] Runtime state uses `RuntimeContext`, not `config["_xxx"]`
 - [ ] Plugin tools export `TOOL_DEFS`, not direct `register_tool()` calls
-- [ ] New modules added to `pyproject.toml`
+- [ ] New top-level `.py` files added to `pyproject.toml` `py-modules`; new top-level packages added to `[tool.setuptools.packages.find]` `include` patterns (sub-packages auto-discover)
+- [ ] No `<name>.py` shim with the same name as a `<name>/` package — see issue #97
 - [ ] No secrets or API keys in committed code
 - [ ] Separate bug fixes from new features (one concern per PR)
 
