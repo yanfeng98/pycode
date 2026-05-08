@@ -136,6 +136,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
         config["log_level"] = "info"
     _bootstrap(config)
 
+    # F-2: ensure the daemon's SQLite tables exist before the listener
+    # starts publishing events / accepting jobs / writing monitor state.
+    # init_schema is idempotent so re-running on an existing DB is a no-op.
+    from . import schema as _schema
+    _schema.init_schema()
+
     # Pin the health.py module-level config so default-arg payload helpers
     # see the model name on every call.
     import health as _health

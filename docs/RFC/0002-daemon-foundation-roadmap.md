@@ -11,7 +11,7 @@ The "foundation PR" described at the end of [RFC 0001](./0001-daemon-design-note
 | ID  | Scope                                               | Depends on | Est LoC | Status |
 |-----|-----------------------------------------------------|------------|---------|--------|
 | F-1 | `daemon/` package skeleton; `serve` + `daemon` CLI  | —          | ~1500   | MERGED #80 |
-| F-2 | SQLite schema + originator-tracked permission flow  | F-1        | ~600    | TODO   |
+| F-2 | SQLite schema + events persistence + jobs migration | F-1        | ~700    | OPEN   |
 | F-3 | `monitor/scheduler` runs in daemon                  | F-2        | ~500    | TODO   |
 | F-4 | `agent_runner` becomes subprocess-per-agent         | F-2        | ~1000   | TODO   |
 | F-5 | `proactive` watcher runs in daemon                  | F-2        | ~200    | TODO   |
@@ -81,24 +81,56 @@ PR #74.  Layer the foundation glue on top:
 - pytest green on Linux, macOS, Windows (TCP-only on Windows; Unix
   socket tests skip on Windows).
 
-## F-2 — SQLite schema + originator-tracked permission flow
+## F-2 — SQLite schema + events persistence + jobs migration
 
-**Scope.** Seven additive tables in `~/.cheetahclaws/sessions.db`; `permission.answer` RPC with originator validation.
+**Scope.** Seven additive tables in `~/.cheetahclaws/sessions.db`; swap
+the F-1 in-memory event ring for a SQLite-backed channel; migrate
+`jobs.py` JSON storage to SQLite.  **Originator-tracked permission flow
+is already provided by spike's `cc_daemon/originator.py` +
+`cc_daemon/permission.py`** (see PR #80) — this PR doesn't re-do it.
 
-**Tables (additive — `sessions` schema untouched).** `agent_runs`, `agent_iterations`, `jobs`, `monitor_subscriptions`, `monitor_reports`, `bridges`, `daemon_events`.
+**Tables (additive — `sessions` from `session_store.py` untouched).**
+`schema_meta`, `daemon_events`, `agent_runs`, `agent_iterations`,
+`jobs`, `monitor_subscriptions`, `monitor_reports`, `bridges`.
 
 **Deliverables.**
-- `daemon/schema.py` — table DDL + version table; idempotent `init_schema()`.
-- `daemon/events.py` — replay backed by `daemon_events` (replaces F-1's in-memory ring).
-- `daemon/permissions.py` — originator record on every `PermissionRequest`; `permission.answer` checks caller's auth identity against originator; non-originators get `403 not_originator`.
-- `jobs.py` — one-shot migrate `~/.cheetahclaws/jobs.json` into the `jobs` table; JSON file kept readable for one release.
+- `cc_daemon/schema.py` — DDL + `init_schema(db_path)` (idempotent,
+  internally locked) + `get_conn()` (thread-local, mirrors
+  `session_store` pattern) + `get_schema_version()` accessor; future
+  migrations land in `_apply_migrations()`.
+- `cc_daemon/cli.py:cmd_serve` calls `init_schema()` right after
+  `bootstrap()` so tables exist before the first publish.
+- `cc_daemon/events.py` — rewritten: `EventBus.publish` does an INSERT
+  into `daemon_events` (id from `AUTOINCREMENT`, monotonic across
+  restarts and prunes), still fans out to in-process subscribers for
+  live tail; `replay_since(N)` reads from SQLite and emits a synthetic
+  `gap` event when `N` is older than the oldest surviving row.
+  Default retention: 24 h / 100 K rows; opportunistic prune every 100
+  publishes.
+- `jobs.py` — `_persist`/`_row_to_job` hit SQLite; `_ensure_migrated()`
+  imports legacy `~/.cheetahclaws/jobs.json` once (tracked via
+  `schema_meta.jobs_migrated_from_json`).  JSON file is **left readable
+  in place** for one release as fallback.  Public API unchanged.
 
 **Acceptance.**
-- Schema migrations run idempotently across daemon restarts.
-- `permission.answer` from the originator succeeds; from any other client returns `403 not_originator`.
-- Originator disconnect + reconnect within timeout window: pending request replays via SSE scoped to that originator.
-- `daemon_events` table caps at configured retention (default 1M rows / 7 days); oldest rows expired.
-- Existing `jobs.json` users see a one-time import message; subsequent runs read from SQLite.
+- `init_schema()` is idempotent across daemon restarts and concurrent
+  callers (verified by 12 unit tests in `tests/test_cc_daemon_schema.py`).
+- Spike's 13 contract tests in `tests/test_daemon_spike.py` keep
+  passing on the SQLite-backed bus (only the two ring-buffer tests
+  needed an in-place rewrite to test retention-based eviction instead
+  of the deleted in-memory cap).
+- New `tests/test_cc_daemon_events_sqlite.py` (15 tests) covers
+  persistence, retention by row count + age, gap-on-old-since,
+  cross-instance replay (simulated daemon restart), and the
+  `reset_bus_for_tests()` truncate path.
+- New `tests/test_jobs_sqlite.py` (14 tests) covers create / start /
+  add_step / lifecycle / list_recent / list_running / `_MAX_JOBS`
+  pruning + JSON-file migration (idempotency, corrupt-file tolerance,
+  legacy-file kept readable).
+- New e2e `tests/e2e_daemon_skeleton.py::test_events_persist_in_sqlite_across_daemon_restart`
+  publishes events on daemon A via `echo.ping`, stops A, starts B
+  against the same data dir, and verifies `GET /events?since=0`
+  replays the events from SQLite.
 
 ## F-3 — monitor in daemon
 

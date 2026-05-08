@@ -802,8 +802,42 @@ flow but aren't yet wired into `agent.run`).  Migrating
 `monitor/scheduler`, `agent_runner` (as subprocess-per-agent),
 `proactive`, the three messaging bridges, and replacing
 `cc_daemon/methods.py` and `cc_daemon/permission.py` with
-`agent.run`-driven equivalents is the F-2 through F-8 work in the
+`agent.run`-driven equivalents is the F-3 through F-8 work in the
 foundation roadmap.
+
+#### Persistence (F-2)
+
+`cheetahclaws serve` now initialises a daemon-owned schema in the
+existing ``~/.cheetahclaws/sessions.db`` (shared with `session_store`).
+Seven additive tables — the `sessions` table from `session_store` is
+left untouched:
+
+- `daemon_events` — append-only event log (replaces F-1's in-memory ring).
+  ID is `AUTOINCREMENT` so it stays monotonic across restarts and across
+  retention pruning.  Default retention is 24 h / 100 K rows; pruning
+  runs opportunistically every 100 publishes.  When `replay_since(N)`
+  finds the requested cursor older than `MIN(id)` it yields a synthetic
+  `gap` event so SSE clients (Web UI / future bridges) know to resync.
+- `agent_runs` / `agent_iterations` — placeholder tables awaiting F-4
+  (`agent_runner` subprocess-per-agent).
+- `jobs` — replaces `~/.cheetahclaws/jobs.json`.  `jobs.py` migrates
+  the legacy file once on first call (tracked via `schema_meta`); the
+  JSON file is **left readable** for one release as fallback.
+- `monitor_subscriptions` / `monitor_reports` — placeholder for F-3.
+- `bridges` — placeholder for F-6/7/8.
+- `schema_meta` — schema version + per-feature migration markers.
+
+`cc_daemon/schema.py:init_schema()` is idempotent (CREATE IF NOT
+EXISTS only) and serialised by an internal lock, so concurrent serve
+attempts can't trip on each other.  Schema version is recorded as
+`schema_meta.schema_version`; future bumps go through
+`_apply_migrations()` which is currently a no-op for v1.
+
+The headline F-2 user-visible win: an SSE client that disconnects,
+the daemon restarts, and the client reconnects with `?since=<id>` —
+events published while the client was away (and still inside the
+retention window) are replayed from SQLite, so observers don't lose
+their event timeline across daemon restarts.
 
 ### Research Lab (`research/lab/` + `commands/lab_cmd.py` + `web/lab_*`)
 
