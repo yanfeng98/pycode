@@ -1216,7 +1216,7 @@ def _handle_connection(sock: socket.socket, addr: tuple) -> None:
             ws_key = headers.get("sec-websocket-key", "")
             accept = base64.b64encode(
                 hashlib.sha1(
-                    (ws_key + "258EAFA5-E914-47DA-95CA-5AB9DC11B5AB").encode()
+                    (ws_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()
                 ).digest()
             ).decode()
             handshake = (
@@ -1462,7 +1462,7 @@ def _handle_connection(sock: socket.socket, addr: tuple) -> None:
             ws_key = headers.get("sec-websocket-key", "")
             accept = base64.b64encode(
                 hashlib.sha1(
-                    (ws_key + "258EAFA5-E914-47DA-95CA-5AB9DC11B5AB").encode()
+                    (ws_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()
                 ).digest()
             ).decode()
             handshake = (
