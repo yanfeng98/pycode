@@ -23,6 +23,7 @@ import pytest
 import commands.advanced as adv
 from commands.advanced import (
     _parse_lead_flag,
+    _parse_rounds_flag,
     _lead_opening,
     _lead_probe,
     _lead_synthesis,
@@ -54,6 +55,40 @@ def test_parse_lead_and_models_compose():
     models, rest2 = adv._parse_models_flag(rest1)
     assert models == ["gpt-5", "nim/deepseek-ai/deepseek-r1"]
     assert rest2 == "redesign auth"
+
+
+# ── --rounds flag parsing ────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("args,expected_rounds,expected_remaining", [
+    ("the topic",                                None, "the topic"),
+    ("",                                         None, ""),
+    ("--rounds 3 the topic",                     3,    "the topic"),
+    ("--rounds=4 the topic",                     4,    "the topic"),
+    ("the topic --rounds 2",                     2,    "the topic"),
+    # Bounds: clamp to [1, 6]
+    ("--rounds 0 topic",                         1,    "topic"),
+    ("--rounds 100 topic",                       6,    "topic"),
+    # Non-numeric is ignored (no flag detected)
+    ("--rounds abc topic",                       None, "--rounds abc topic"),
+])
+def test_parse_rounds_flag(args, expected_rounds, expected_remaining):
+    rounds, remaining = _parse_rounds_flag(args)
+    assert rounds == expected_rounds
+    assert remaining == expected_remaining
+
+
+def test_all_three_flags_compose():
+    """--lead, --models, --rounds can all stack on the same /brainstorm call."""
+    args = ("--rounds 3 --lead claude-opus-4-7 "
+            "--models gpt-5,nim/deepseek-ai/deepseek-r1 redesign auth")
+    rounds, rest1 = _parse_rounds_flag(args)
+    lead, rest2 = _parse_lead_flag(rest1)
+    models, rest3 = adv._parse_models_flag(rest2)
+    assert rounds == 3
+    assert lead == "claude-opus-4-7"
+    assert models == ["gpt-5", "nim/deepseek-ai/deepseek-r1"]
+    assert rest3 == "redesign auth"
 
 
 # ── Lead helpers (with mocked LLM) ───────────────────────────────────────

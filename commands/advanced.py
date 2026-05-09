@@ -20,6 +20,27 @@ from tools import _is_in_tg_turn, _is_in_web_turn
 # ── Brainstorm ─────────────────────────────────────────────────────────────
 
 
+def _parse_rounds_flag(args: str) -> tuple[int | None, str]:
+    """Pull `--rounds N` out of `args`, return (N_or_None, remaining).
+
+    A round = every persona speaks once. Rounds > 1 are critique/revise
+    rounds — personas see the full transcript and are explicitly asked
+    to engage with what others said, not repeat their initial position.
+    Default (no flag) is 2 rounds (initial positions + one critique
+    round) which is what makes the result feel like an actual debate
+    rather than three monologues stapled together.
+
+    Capped to [1, 6] — beyond 6 rounds the marginal value drops sharply
+    and token cost grows linearly.
+    """
+    import re as _re_rounds
+    m = _re_rounds.search(r"--rounds(?:=|\s+)(\d+)", args)
+    if not m:
+        return None, args
+    n = max(1, min(int(m.group(1)), 6))
+    return n, (args[:m.start()] + args[m.end():]).strip()
+
+
 def _parse_lead_flag(args: str) -> tuple[str | None, str]:
     """Pull `--lead <model>` out of `args`, return (lead_model_or_None, remaining).
 
@@ -278,10 +299,14 @@ def cmd_brainstorm(args: str, state, config) -> bool:
     # Pull optional flags before treating the remainder as topic.
     # `--models a,b,c` distributes models round-robin across personas.
     # `--lead <model>` picks who runs the moderator role (opening, probes,
-    # synthesis). Both default to config["model"] when omitted.
-    lead_model_override, args_remaining = _parse_lead_flag(args)
+    # synthesis). `--rounds N` controls how many times each persona speaks
+    # — round 1 is initial positions, round 2+ are critique/revise. All
+    # default sensibly when omitted.
+    rounds_override, args_remaining = _parse_rounds_flag(args)
+    lead_model_override, args_remaining = _parse_lead_flag(args_remaining)
     persona_models, args_remaining = _parse_models_flag(args_remaining)
     user_topic = args_remaining.strip() or "general project improvement and architectural evolution"
+    n_rounds = rounds_override if rounds_override is not None else 2
 
     if _is_in_tg_turn(config) or _is_in_web_turn(config):
         agent_count = 5
@@ -359,12 +384,51 @@ USER FOCUS: {user_topic}
         return curr_model
 
     def call_persona(persona_name, p_data, history, persona_model: str,
-                     anchor: str, follow_up: str = ""):
+                     anchor: str, round_num: int = 1, total_rounds: int = 1,
+                     follow_up: str = ""):
         letter, name = get_identity(persona_name[0].upper())
         anchor_block = (
             f"\nDEBATE ANCHOR (set by the lead moderator — adhere to this):\n{anchor}\n"
             if anchor else ""
         )
+
+        # Round-aware instructions. Round 1 is "stake your position";
+        # round 2+ is "engage with what others said, do NOT repeat".
+        # Without this distinction, multi-round just produces N copies
+        # of each persona's first take, which is not a brainstorm.
+        if round_num == 1:
+            instructions = (
+                "1. Provide 3-5 concrete, actionable insights or ideas from "
+                "your expert perspective on the topic. Adhere to the debate "
+                "anchor — concrete artifacts only, no filler.\n"
+                "2. If there are prior ideas from other agents in this round, "
+                "briefly acknowledge them and build upon or challenge them.\n"
+                "3. Be specific, well-reasoned, and professional. Stay in "
+                "character as your role.\n"
+                f"4. Prefix each of your points with: [Agent {letter} — {name}]\n"
+                "5. Output your response in clean Markdown."
+            )
+        else:
+            instructions = (
+                f"This is ROUND {round_num} of {total_rounds}. You have ALREADY "
+                "given your initial position in round 1. Your job in this round "
+                "is NOT to repeat yourself. You must:\n\n"
+                "1. Read the full prior debate (below) carefully.\n"
+                "2. Pick 1-2 specific claims from OTHER agents that you "
+                "disagree with, or that you can sharpen / extend, or that you "
+                "now realise change your own position. Quote the agent and "
+                "the exact claim.\n"
+                "3. For each picked claim, take a stand: agree-and-extend / "
+                "disagree-and-counter / synthesize-with-your-own. Give a "
+                "concrete reason grounded in the debate anchor.\n"
+                "4. If a prior agent's claim resolved a question you raised, "
+                "say so explicitly and update your view.\n"
+                f"5. Prefix each engagement with: [Agent {letter} — {name}, "
+                f"round {round_num}]\n"
+                "6. Keep total response to 6-12 lines. Do not re-list your "
+                "round-1 ideas. Do not summarize the debate. Engage."
+            )
+
         system_prompt = f"""You are {name}, the {p_data['role']}. Identity: Agent {letter}.
 {p_data['desc']}
 
@@ -374,11 +438,7 @@ PROJECT CONTEXT (if relevant to the topic):
 {snapshot}
 
 INSTRUCTIONS:
-1. Provide 3-5 concrete, actionable insights or ideas from your expert perspective on the topic. Adhere to the debate anchor — concrete artifacts only, no filler.
-2. If there are prior ideas from other agents, briefly acknowledge them and build upon or challenge them.
-3. Be specific, well-reasoned, and professional. Stay in character as your role.
-4. Prefix each of your points with: [Agent {letter} — {name}]
-5. Output your response in clean Markdown.
+{instructions}
 """
         if follow_up:
             user_msg = (
@@ -386,10 +446,15 @@ INSTRUCTIONS:
                 f"PRIOR DEBATE:\n{history}\n\n"
                 f"FOLLOW-UP FROM LEAD MODERATOR (you must answer this directly, in 4-8 lines, with the specifics it asks for):\n{follow_up}"
             )
-        else:
+        elif round_num == 1:
             user_msg = (
                 f"TOPIC: {user_topic}\n\n"
                 f"PRIOR IDEAS FROM DEBATE:\n{history or 'No previous ideas yet. You are the first to speak.'}"
+            )
+        else:
+            user_msg = (
+                f"TOPIC: {user_topic}\n\n"
+                f"FULL PRIOR DEBATE (rounds 1..{round_num - 1} — do NOT repeat any of this; engage with it):\n{history}"
             )
         full_response = []
         internal_config = config.copy()
@@ -411,50 +476,84 @@ INSTRUCTIONS:
         f"**Date:** {time.strftime('%Y-%m-%d %H:%M:%S')}",
         f"**Personas via:** {_model_summary}",
         f"**Lead moderator:** {lead_model}",
+        f"**Rounds:** {n_rounds}",
         "---",
     ]
     if lead_opening:
         full_log.append(f"## 🎯 Lead Opening\n{lead_opening}")
 
-    # ── Stage 2: Personas — round-robin, with optional lead probe. ───────
-    for i, (p_name, p_data) in enumerate(personas.items()):
-        icon = p_data.get("icon", "🤖")
-        p_model = _model_for_index(i)
-        letter = p_name[0].upper()
-        if persona_models:
-            info(f"{icon} {clr(p_data['role'], 'yellow')} ({clr(p_model, 'dim')}) is thinking...")
-        else:
-            info(f"{icon} {clr(p_data['role'], 'yellow')} is thinking...")
-        _start_tool_spinner()
-        hist_text = "\n\n".join(brainstorm_history) if brainstorm_history else ""
-        content = call_persona(p_name, p_data, hist_text, p_model, lead_opening)
-        _stop_tool_spinner()
-        if not content:
-            err(f"  └─ Failed to capture {p_name} perspective.")
-            continue
-        brainstorm_history.append(content)
-        full_log.append(f"## {icon} {p_data['role']} _(via {p_model})_\n{content}")
-        print(clr("  └─ Perspective captured.", "dim"))
+    # ── Stage 2: Personas — N rounds of debate. ──────────────────────────
+    # Round 1 = initial positions. Round 2+ = explicit critique/revise:
+    # personas see the full prior transcript and are required to engage
+    # with what others said (the round-aware prompt in call_persona
+    # enforces this). Lead probe may run after each persona in any round.
+    for round_num in range(1, n_rounds + 1):
+        if n_rounds > 1:
+            print(clr(
+                f"\n  ── Round {round_num}/{n_rounds} "
+                f"({'initial positions' if round_num == 1 else 'critique & revise'}) ──",
+                "cyan",
+            ))
+            full_log.append(f"\n---\n### Round {round_num}/{n_rounds}")
 
-        # Lead probe — gives the persona one more swing if the first was vague.
-        _start_tool_spinner()
-        probe = _lead_probe(user_topic, p_data["role"], letter, content, lead_model, config)
-        _stop_tool_spinner()
-        if probe:
-            info(clr(f"  └─ Lead probe: {probe[:120]}", "yellow"))
+        for i, (p_name, p_data) in enumerate(personas.items()):
+            icon = p_data.get("icon", "🤖")
+            p_model = _model_for_index(i)
+            letter = p_name[0].upper()
+            label = (
+                f"{icon} {clr(p_data['role'], 'yellow')}"
+                + (f" ({clr(p_model, 'dim')})" if persona_models else "")
+            )
+            info(f"{label} is thinking..." if round_num == 1
+                 else f"{label} is responding to round {round_num - 1}...")
             _start_tool_spinner()
-            follow = call_persona(p_name, p_data, hist_text, p_model, lead_opening,
-                                  follow_up=probe)
+            hist_text = "\n\n".join(brainstorm_history) if brainstorm_history else ""
+            content = call_persona(p_name, p_data, hist_text, p_model, lead_opening,
+                                    round_num=round_num, total_rounds=n_rounds)
             _stop_tool_spinner()
-            if follow:
-                brainstorm_history.append(f"_(follow-up to lead probe)_\n{follow}")
-                full_log.append(f"### 🔍 Lead probe + Agent {letter} reply\n{probe}\n\n{follow}")
-                print(clr("  └─ Follow-up captured.", "dim"))
+            if not content:
+                err(f"  └─ Failed to capture {p_name} perspective.")
+                continue
+            brainstorm_history.append(content)
+            heading_suffix = "" if round_num == 1 else f" — round {round_num}"
+            full_log.append(f"## {icon} {p_data['role']}{heading_suffix} _(via {p_model})_\n{content}")
+            print(clr(
+                "  └─ Perspective captured." if round_num == 1
+                else "  └─ Engagement captured.", "dim",
+            ))
+
+            # Lead probe — gives the persona one more swing if vague.
+            # Skipped on the very last round (no time for the persona
+            # to revise after the final round anyway).
+            if round_num < n_rounds:
+                _start_tool_spinner()
+                probe = _lead_probe(user_topic, p_data["role"], letter, content,
+                                     lead_model, config)
+                _stop_tool_spinner()
+                if probe:
+                    info(clr(f"  └─ Lead probe: {probe[:120]}", "yellow"))
+                    _start_tool_spinner()
+                    follow = call_persona(p_name, p_data, hist_text, p_model,
+                                           lead_opening, round_num=round_num,
+                                           total_rounds=n_rounds, follow_up=probe)
+                    _stop_tool_spinner()
+                    if follow:
+                        brainstorm_history.append(
+                            f"_(follow-up to lead probe, round {round_num})_\n{follow}"
+                        )
+                        full_log.append(
+                            f"### 🔍 Lead probe + Agent {letter} reply (round {round_num})\n"
+                            f"{probe}\n\n{follow}"
+                        )
+                        print(clr("  └─ Follow-up captured.", "dim"))
 
     # ── Stage 3: Lead synthesis — done HERE (not via main agent). ────────
     info(clr("Lead moderator producing final synthesis...", "dim"))
     _start_tool_spinner()
-    transcript_for_synth = "\n\n".join(full_log[5 if lead_opening else 4:])  # skip header/anchor
+    # Pass the raw debate history (every persona turn + follow-up) directly,
+    # rather than slicing full_log by index — the index drifts every time
+    # the header layout changes.
+    transcript_for_synth = "\n\n".join(brainstorm_history)
     lead_master_plan = _lead_synthesis(user_topic, transcript_for_synth, lead_model, config)
     _stop_tool_spinner()
     if lead_master_plan:

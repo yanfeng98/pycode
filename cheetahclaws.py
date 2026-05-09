@@ -1120,12 +1120,15 @@ def repl(config: dict, initial_prompt: str = None):
             _todo_path = str(Path(brain_out_file).parent / "todo_list.txt")
             run_query(
                 brain_payload + "\n\n"
-                f"Now generate a todo list file at {_todo_path}. "
-                "Format: one task per line, each starting with '- [ ] '. "
-                "Order by priority. Include every concrete action from the "
-                "master plan above. Use the Write tool to create the file. "
-                "Do NOT echo the master plan back, do NOT Read anything, "
-                "just call Write once."
+                f"Now write the todo list file at {_todo_path}.\n\n"
+                "STRICT RULES:\n"
+                "1. Call Write EXACTLY ONCE with the full todo content. "
+                "One task per line, each starting with '- [ ] '. Order "
+                "by priority. Keep names / numbers / paths intact.\n"
+                "2. Do NOT call Read — there is nothing to read.\n"
+                "3. Do NOT call Bash to verify the file was created.\n"
+                "4. Do NOT echo the file content back after Write.\n"
+                "5. After the single Write succeeds, your turn ENDS."
             )
         elif result[0] == "__worker__":
             _, worker_tasks = result
@@ -1469,14 +1472,22 @@ def repl(config: dict, initial_prompt: str = None):
                 try:
                     run_query(
                         brain_payload + "\n\n"
-                        f"Now generate a todo list file at {_todo_path}. "
+                        f"Now write the todo list file at {_todo_path}.\n\n"
+                        "STRICT RULES:\n"
+                        "1. Call Write EXACTLY ONCE with the full todo content. "
                         "Format: one task per line, each starting with '- [ ] '. "
                         "Order by priority. Include every concrete action from "
-                        "the master plan above (with names / numbers / paths "
-                        "intact — do NOT generalize). Use the Write tool to "
-                        "create the file with the FULL list as content. Do "
-                        "NOT echo the master plan back, do NOT Read anything, "
-                        "just call Write once."
+                        "the master plan above (keep names / numbers / paths "
+                        "intact — do NOT generalize).\n"
+                        "2. Do NOT call Read — there is nothing to read.\n"
+                        "3. Do NOT call Bash to verify the file was created. "
+                        "The Write tool's success message is sufficient.\n"
+                        "4. Do NOT echo the file content back as text after "
+                        "Write succeeds. The file is on disk; the user can "
+                        "open it themselves.\n"
+                        "5. After the single Write succeeds, your turn ENDS. "
+                        "Do not write any further text. Do not summarize. "
+                        "Do not ask follow-up questions."
                     )
                     info(f"TODO list saved to {_todo_path}. Edit it freely, then use /worker to start implementing.")
                 except KeyboardInterrupt:
