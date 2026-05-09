@@ -59,6 +59,17 @@ def _read_pdf(params: dict, config: dict) -> str:
 
         header = f"PDF: {p.name} ({total} pages, showing {len(text_parts)})\n\n"
         content = "\n\n".join(text_parts)
+        full_text = header + content
+
+        # Defense-in-depth: even if the model ignores the
+        # research_assistant template's "use SummarizeLargeFile"
+        # instruction and calls ReadPDF directly on a huge PDF, the
+        # ReadPDF response itself routes the model to the right tool
+        # before the raw 70KB+ of PDF text overflows the next API call.
+        # See _maybe_redirect_to_summarize for the threshold logic.
+        redirect = _maybe_redirect_to_summarize(full_text, str(p), config)
+        if redirect:
+            return redirect
 
         if len(content) > 50000:
             content = content[:50000] + f"\n\n[... truncated, {len(content)-50000} chars remaining ...]"
@@ -339,6 +350,89 @@ def _estimate_text_tokens(text: str) -> int:
     """Rough conservative token estimator for plain text. Matches the
     chars/2.8 ratio compaction.estimate_tokens uses."""
     return int(len(text) * _TOKENS_PER_CHAR)
+
+
+def _is_cjk_heavy(text: str, sample_chars: int = 2000) -> bool:
+    """Heuristic: does this text contain enough CJK that we should use
+    1-token-per-char estimation instead of chars/2.8?
+
+    CJK content tokenizes at roughly 1 token per character on most
+    tokenizers — vs ~2.8 chars/token for English. A 32K-char "English-
+    sized" tool result that's actually Chinese hits 32K tokens, not 11K.
+    """
+    if not text:
+        return False
+    sample = text[:sample_chars]
+    cjk = sum(
+        1 for ch in sample
+        if "一" <= ch <= "鿿"   # CJK Unified Ideographs
+        or "㐀" <= ch <= "䶿"   # CJK Extension A
+        or "぀" <= ch <= "ゟ"   # Hiragana
+        or "゠" <= ch <= "ヿ"   # Katakana
+        or "가" <= ch <= "힯"   # Hangul
+    )
+    return cjk / max(len(sample), 1) > 0.20   # ≥20% CJK → treat as CJK-heavy
+
+
+def _maybe_redirect_to_summarize(text: str, file_path: str,
+                                    config: dict) -> str | None:
+    """If `text` is too big to safely return as a tool result without
+    risking context overflow on the next API call, return a SHORT
+    redirect message that tells the model to call SummarizeLargeFile
+    instead. Otherwise return None (caller returns the original text).
+
+    This is the deterministic backstop: even if the model ignores the
+    template's "use SummarizeLargeFile" instruction and calls Read/
+    ReadPDF directly, Read's response itself routes the model to the
+    correct tool. The model never sees the overflow-causing raw content.
+    """
+    if not text:
+        return None
+    from compaction import get_context_limit
+
+    model = config.get("model", "")
+    declared_ctx = get_context_limit(model) or 32768
+    # ⚠️ Don't blindly trust declared context limits — the `custom/`
+    # provider defaults to 128000 in PROVIDERS but the user might be
+    # serving a 32K-context model behind it (qwen2.5-72b, llama 3 8B
+    # etc.). Cap the ceiling at 30000 so we redirect early enough to
+    # protect the smallest commonly-used model. For 200K-context models
+    # this is very conservative but harmless: SummarizeLargeFile is
+    # always cheap on small files (single-shot path).
+    safe_ctx = min(declared_ctx, 30000)
+
+    # Worst-case: assume CJK content tokenizes 1:1 with chars. For pure
+    # English content, this is ~3× too conservative — but that's safe
+    # (we'd only redirect on truly large files).
+    if _is_cjk_heavy(text):
+        estimated_tokens = len(text)
+    else:
+        estimated_tokens = _estimate_text_tokens(text)
+
+    # Reserve ~6K for system prompt + framing + tool schemas + room for
+    # the model's response. 70% of remaining is the safe ceiling for
+    # any single tool result — beyond that we're risking overflow.
+    safe_tool_result_tokens = int((safe_ctx - 6000) * 0.7)
+    if estimated_tokens <= safe_tool_result_tokens:
+        return None
+
+    # Generate a redirect with a small preview so the model has *some*
+    # context to decide on a focus.
+    preview_chars = min(1500, len(text) // 8)
+    preview = text[:preview_chars].rstrip()
+    return (
+        f"[ReadTooLarge: file `{file_path}` is too large to return "
+        f"directly — estimated {estimated_tokens:,} tokens vs model "
+        f"context {declared_ctx:,} (safe tool-result ceiling "
+        f"{safe_tool_result_tokens:,}).\n\n"
+        f"USE INSTEAD: Call **SummarizeLargeFile** with "
+        f"`file_path='{file_path}'` (and optional `focus=...`). It will "
+        f"chunk the file, summarize each chunk via parallel sub-LLM "
+        f"calls, then merge into a single summary that fits in your "
+        f"context — no further action needed.\n\n"
+        f"PREVIEW (first {preview_chars} chars, for context only — do "
+        f"NOT use this as the file's content):\n\n```\n{preview}\n```]"
+    )
 
 
 def _read_file_for_summary(file_path: str, config: dict) -> str:
