@@ -984,6 +984,74 @@ def remove_chat_session(sid: str, user_id: int) -> bool:
     return deleted
 
 
+def list_folders(user_id: int) -> list[dict]:
+    from web import db as _db
+    return _db.repo.list_folders(user_id)
+
+
+def create_folder(user_id: int, name: str) -> Optional[dict]:
+    from web import db as _db
+    return _db.repo.create_folder(user_id, name)
+
+
+def rename_folder(folder_id: int, user_id: int, name: str) -> bool:
+    from web import db as _db
+    return _db.repo.rename_folder(folder_id, user_id, name)
+
+
+def remove_folder(folder_id: int, user_id: int) -> bool:
+    from web import db as _db
+    return _db.repo.delete_folder(folder_id, user_id)
+
+
+def move_session_to_folder(sid: str, user_id: int,
+                            folder_id: Optional[int]) -> bool:
+    from web import db as _db
+    return _db.repo.move_session_to_folder(sid, user_id, folder_id)
+
+
+def batch_remove_chat_sessions(sids: list, user_id: int) -> dict:
+    """Delete multiple sessions for a user. Cross-user IDs are silently
+    skipped (delete_session enforces ownership). Returns counts."""
+    deleted = 0
+    failed: list[str] = []
+    for sid in sids:
+        try:
+            if remove_chat_session(sid, user_id):
+                deleted += 1
+            else:
+                failed.append(sid)
+        except Exception:  # noqa: BLE001
+            failed.append(sid)
+    return {"deleted": deleted, "failed": failed, "requested": len(sids)}
+
+
+def batch_export_chat_sessions_markdown(sids: list,
+                                         user_id: int) -> Optional[str]:
+    """Combine multiple sessions into a single markdown document. Returns
+    None when no requested session belongs to the user."""
+    parts: list[str] = []
+    rendered = 0
+    for sid in sids:
+        md = export_chat_session_markdown(sid, user_id)
+        if md is None:
+            continue
+        rendered += 1
+        if parts:
+            parts.append("\n\n---\n\n")
+        parts.append(md)
+    if rendered == 0:
+        return None
+    import datetime as _dt
+    header = (
+        f"# Chat Export — {rendered} session"
+        f"{'s' if rendered != 1 else ''}\n\n"
+        f"- Exported: {_dt.datetime.now():%Y-%m-%d %H:%M}\n"
+        f"- User ID: {user_id}\n\n---\n\n"
+    )
+    return header + "".join(parts)
+
+
 def rename_chat_session(sid: str, user_id: int, title: str) -> bool:
     try:
         from web import db as _db
