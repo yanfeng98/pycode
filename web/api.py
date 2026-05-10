@@ -296,13 +296,19 @@ class ChatSession:
 
     def handle_slash_sync(self, line: str) -> list[dict]:
         """Handle a slash command synchronously. Returns list of event dicts
-        to send back in the HTTP response (not just broadcast via WS)."""
+        to send back in the HTTP response.
+
+        Synchronous events are returned via HTTP only — re-broadcasting them
+        to WS subscribers would duplicate every reply in the chat UI, since
+        the same client also iterates the HTTP `events` payload. Background
+        threads spawned by the handler still broadcast normally, because
+        `_broadcast` is restored before they emit anything.
+        """
         events: list[dict] = []
         orig_broadcast = self._broadcast
 
         def capture_broadcast(event: ChatEvent):
             events.append({"type": event.type, "data": event.data})
-            orig_broadcast(event)  # also send to WS subscribers
 
         self._broadcast = capture_broadcast  # type: ignore
         try:
@@ -314,13 +320,17 @@ class ChatSession:
     def handle_slash_stream(self, line: str, event_callback):
         """Handle a slash command, calling event_callback(dict) for each event.
         Blocks until the command (including long-running ones) completes.
-        Used by the SSE streaming endpoint."""
+        Used by the SSE streaming endpoint.
+
+        Events are delivered via the SSE callback only — re-broadcasting them
+        to WS subscribers would duplicate every reply in the chat UI, since
+        the same client also calls _handleEvent on the SSE stream.
+        """
         done_event = threading.Event()
         orig_broadcast = self._broadcast
 
         def stream_broadcast(event: ChatEvent):
             event_callback({"type": event.type, "data": event.data})
-            orig_broadcast(event)
             if event.type == "status" and event.data.get("state") == "idle":
                 done_event.set()
 

@@ -21,7 +21,12 @@ cheetahclaws --web
 cheetahclaws --web --port 9000
 cheetahclaws --web --host 0.0.0.0             # open to the local network
 cheetahclaws --web --no-auth                  # localhost dev only — skips login
+
+# Pin a model at launch (persists to ~/.cheetahclaws/config.json):
+cheetahclaws --web --model custom/qwen2.5-72b
 ```
+
+`--model` in `--web` mode is persisted to disk before the server starts, because every request handler reloads config from `~/.cheetahclaws/config.json`. To switch models without restarting, use the Settings panel in the Chat UI or send `/model <name>` in the message box.
 
 Startup banner:
 
@@ -293,6 +298,7 @@ Key design choices:
 
 - **Pure stdlib HTTP server.** Raw sockets, manual header parsing, RFC 6455 WebSocket implementation. No Flask / FastAPI / aiohttp. The only new runtime deps are the three chat-UI extras (`sqlalchemy`, `bcrypt`, `PyJWT`).
 - **In-process agent.** The Chat UI runs `agent.run()` directly (no PTY subprocess). A `queue.Queue` fans events out to WS subscribers; a 500-event ring buffer lets late-joining subscribers replay missed events.
+- **Single-source slash-command events.** `handle_slash_sync` (HTTP POST `/api/prompt`) and `handle_slash_stream` (SSE) deliver synchronous slash-command events through their own response channel only — **not** also via the live WS broadcaster. Re-broadcasting would duplicate every reply in the same client (which iterates `data.events` AND fires `_handleEvent` from `ws.onmessage`). Background-thread events (sentinel flows, agent runs spawned from a slash command) still go through `_broadcast` normally because the helpers restore it in `finally` before the worker thread emits anything.
 - **Write-through persistence.** Messages live in memory (for fast replay) AND SQLite (for survival). Config changes PATCH both.
 - **Two cookies on the same origin.** Chat UI uses `ccjwt` (7-day JWT), PTY terminal uses `cctoken` (one-time password). The browser sends both; each route only reads the one it cares about.
 - **Thread-local request context** for access logs: `_req_ctx` holds method/path/start_ts/user_id/peer. `_send_http` reads it once per response and logs + increments counters.
@@ -334,6 +340,12 @@ Start with `--host 0.0.0.0`. Your firewall must also allow the port, and mobile 
 
 **"DB init failed" on startup**
 The log line is JSON with the full exception. Usually a file-permission issue on `~/.cheetahclaws/web.db` or a broken install of SQLAlchemy. Verify `pip install 'cheetahclaws[web]'` completed without errors.
+
+**Slash command output appears twice in the Chat UI but once in the terminal**
+Fixed (May 10, 2026). The chat client used to receive every synchronous slash-command event through both the HTTP `data.events` payload **and** the WS broadcast, so each reply rendered twice; the terminal has no parallel WS path so it always rendered once. If you see this on an older build, pull `web/api.py` from `main` — `handle_slash_sync` and `handle_slash_stream` no longer re-broadcast events to WS subscribers when a single-client response channel is already in use. See [Issue #111](https://github.com/SafeRL-Lab/cheetahclaws/issues/111).
+
+**`cheetahclaws --web --model X` runs but the agent calls a different model**
+Fixed (May 10, 2026). The CLI override branch only ran in the interactive-REPL path, so `--web` ignored `--model` and the per-request `load_config()` call kept using the previous saved value (typically the last model you ran in the REPL). Symptom: `404: model 'X' does not exist` against your `custom_base_url` even though the CLI argument names a different model. Pull from `main` so `args.model` is persisted to `~/.cheetahclaws/config.json` before `start_web_server` runs. Workaround on older builds: edit the config file directly, or use `/model custom/<name>` from the Chat UI.
 
 ---
 
