@@ -1,4 +1,4 @@
-"""litellm_provider.py - LiteLLM adapter (lazy import).
+"""litellm_provider.py - LiteLLM adapter.
 
 Routes to 100+ LLM providers (OpenAI, Anthropic, Google, Azure, Bedrock,
 Ollama, etc.) via the litellm SDK. No proxy server needed.
@@ -6,12 +6,16 @@ Ollama, etc.) via the litellm SDK. No proxy server needed.
 Model strings use the provider/model format, e.g.
 anthropic/claude-sonnet-4-20250514, azure/gpt-4o, openai/gpt-4o.
 
+Install: pip install cheetahclaws[litellm]
+
 See https://docs.litellm.ai/docs/providers for all supported models.
 """
 
 from __future__ import annotations
 
 from typing import Optional
+
+import litellm
 
 from .provider import (
     LlmRequest,
@@ -22,12 +26,7 @@ from .provider import (
 
 
 class LiteLLMProvider:
-    """Provider that routes to 100+ LLM providers via the litellm SDK.
-
-    Construction does NOT import the SDK. That happens on first
-    __call__. Tests can exercise import paths without needing the
-    SDK installed.
-    """
+    """Provider that routes to 100+ LLM providers via the litellm SDK."""
 
     def __init__(
         self,
@@ -37,24 +36,10 @@ class LiteLLMProvider:
     ) -> None:
         self._api_key = api_key
         self._timeout_s = float(timeout_s)
-        self._litellm = None  # lazy
-
-    def _ensure_sdk(self):
-        if self._litellm is not None:
-            return
-        try:
-            import litellm
-        except ImportError as e:
-            raise ProviderUnavailable(
-                "the 'litellm' SDK is required for LiteLLMProvider; "
-                "install with `pip install litellm`"
-            ) from e
-        self._litellm = litellm
 
     def __call__(self, request: LlmRequest) -> LlmResponse:
         if not isinstance(request, LlmRequest):
             raise ProviderInvalidRequest("request must be LlmRequest")
-        self._ensure_sdk()
 
         try:
             if request.messages:
@@ -83,7 +68,7 @@ class LiteLLMProvider:
             if request.tools:
                 params["tools"] = [dict(t) for t in request.tools]
 
-            resp = self._litellm.completion(**params)
+            resp = litellm.completion(**params)
 
         except Exception as e:
             raise ProviderUnavailable(
@@ -134,7 +119,6 @@ class LiteLLMProvider:
             raise ProviderInvalidRequest("request must be LlmRequest")
         if not callable(on_delta):
             raise ProviderInvalidRequest("on_delta must be callable")
-        self._ensure_sdk()
 
         try:
             if request.messages:
@@ -163,7 +147,7 @@ class LiteLLMProvider:
                 params["api_key"] = self._api_key
 
             text_parts = []
-            for chunk in self._litellm.completion(**params):
+            for chunk in litellm.completion(**params):
                 delta = chunk.choices[0].delta if chunk.choices else None
                 if delta and delta.content:
                     text_parts.append(delta.content)
