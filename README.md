@@ -12,7 +12,7 @@ English | [中文](docs/i18n/README.CN.MD) | [한국어](docs/i18n/README.KO.MD)
 <p align="center">
     <a href="https://cheetahclaws.github.io/">Website</a>
     ·
-    <a href="https://deepwiki.com/SafeRL-Lab/cheetahclaws">Brief Intro</a>
+    <a href="https://github.com/SafeRL-Lab/cheetahclaws/blob/main/docs/manuscipt/Beyond_Model_Scaling__Harness_Engineering_and_the_Systems_Turn_in_Agentic_AI.pdf">Brief Intro</a>
     ·
     <a href="https://github.com/SafeRL-Lab/cheetahclaws/issues">Issue</a>
     ·
