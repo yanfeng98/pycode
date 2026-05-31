@@ -8,11 +8,11 @@ English | [中文](docs/i18n/README.CN.MD) | [한국어](docs/i18n/README.KO.MD)
   </a>
 
   
-<h2 align="center" style="font-size: 30px;"><strong><em>CheetahClaws</em></strong>: A Fast and Easy-to-Use Agent Infrastructure for Long-Horizon, Multi-Model and Tool-Using AI Systems</h2>
+<h2 align="center" style="font-size: 30px;"><strong><em>CheetahClaws</em></strong>: A Fast and Easy-to-Use Agent Infrastructure for Long-Horizon, Multi-Model, Tool-Using AI Systems</h2>
 <p align="center">
     <a href="https://cheetahclaws.github.io/">Website</a>
     ·
-    <a href="https://arxiv.org/pdf/2605.26112">Brief Intro</a>
+    <a href="https://arxiv.org/pdf/2605.26112">Scaling the Harness</a>
     ·
     <a href="https://github.com/SafeRL-Lab/cheetahclaws/issues">Issue</a>
     ·
