@@ -6,4 +6,6 @@ dist/
 debug_payload.json
 brainstorm_outputs/
 reference/
+.venv/
+uv.lock
 botpy.log

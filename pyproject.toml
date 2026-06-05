@@ -110,3 +110,8 @@ exclude = [
 testpaths = ["tests"]
 python_files = ["test_*.py", "e2e_*.py"]
 asyncio_default_fixture_loop_scope = "function"
+
+[dependency-groups]
+# `uv sync` automatically includes the "dev" group.
+# Feature extras (voice, vision, browser, …) are opt-in: `uv sync --extra browser`
+dev = ["pytest>=7.0"]

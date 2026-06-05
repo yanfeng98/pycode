@@ -4,6 +4,52 @@ Thank you for your interest in contributing! This guide covers the architecture,
 
 ## Quick Start
 
+### Option 1: uv (recommended — isolated environment)
+
+```bash
+git clone git@github.com:SafeRL-Lab/cheetahclaws.git
+cd cheetahclaws
+
+# Install uv (if not already installed)
+pip install uv
+
+# Sync dependencies into an isolated .venv
+uv sync -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
+
+# Activate the virtual environment
+source .venv/bin/activate
+
+# Verify the package builds correctly
+uv build
+ls dist/
+
+# Override with editable install for development
+uv pip install -e .
+
+# Run tests
+python -m pytest tests/ -x -q    # all 327+ tests should pass
+
+# Run the REPL
+python cheetahclaws.py
+```
+
+> **What each step does:**
+> - `uv sync` — resolves core dependencies + dev tools (pytest) into `.venv`; also builds and installs the project itself (non-editable). Dev deps are declared in `[dependency-groups]` (PEP 735), included automatically.
+> - `uv build` — verifies `pyproject.toml` packaging is correct; catches missing modules / bad includes before they break users.
+> - `uv pip install -e .` — replaces the non-editable install with an **editable** one, so you edit source files and they take effect immediately.
+>
+> The Tsinghua mirror is optional — for users outside China, drop the `-i` flag:
+> ```bash
+> uv sync
+> ```
+>
+> Need optional features (voice, vision, browser, …) during development? Add extras:
+> ```bash
+> uv sync --extra vision --extra browser
+> ```
+
+### Option 2: pip (quick & simple)
+
 ```bash
 git clone git@github.com:SafeRL-Lab/cheetahclaws.git
 cd cheetahclaws
