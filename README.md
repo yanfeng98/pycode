@@ -1,4 +1,4 @@
-English | [中文](docs/i18n/README.CN.MD) | [한국어](docs/i18n/README.KO.MD) | [日本語](docs/i18n/README.JP.MD) | [Français](docs/i18n/README.FR.MD) | [Deutsch](docs/i18n/README.DE.MD) | [Español](docs/i18n/README.ES.MD) | [Português](docs/i18n/README.PT.MD)
+English | [中文](docs/i18n/README.CN.MD)
 
 <br> 
 
@@ -9,15 +9,6 @@ English | [中文](docs/i18n/README.CN.MD) | [한국어](docs/i18n/README.KO.MD)
 
   
 <h2 align="center" style="font-size: 30px;"><strong><em>CheetahClaws</em></strong>: A Fast and Easy-to-Use Agent Harness Infrastructure for Long-Horizon, Multi-Model, and Tool-Using AI Systems</h2>
-<p align="center">
-    <a href="https://cheetahclaws.github.io/">Website</a>
-    ·
-    <a href="https://arxiv.org/pdf/2605.26112">Scaling the Harness</a>
-    ·
-    <a href="https://github.com/SafeRL-Lab/cheetahclaws/issues">Issue</a>
-    
-  
-  </p>
 </div>
 
 
@@ -58,18 +49,35 @@ CheetahClaws: **A Fast** and **Easy-to-Use** Python native Agent Harness Infrast
 ---
 
 ## Content
-  * [Why CheetahClaws](#why-cheetahclaws)
-  * [CheetahClaws vs OpenClaw](#cheetahclaws-vs-openclaw)
-  * [Features](#features)
-  * [Supported Models](#supported-models)
-  * [Installation](#installation)
-  * [Usage: Closed-Source API Models](#usage-closed-source-api-models)
-  * [Usage: Open-Source Models (Local)](#usage-open-source-models-local)
-  * [Model Name Format](#model-name-format)
-  * [Trading Agent](#trading-agent)
-  * [Web UI](#web-ui)
-  * [Documentation](#documentation) (guides for all features)
-  * [Contributing](#contributing) · [FAQ](#faq) · [Citation](#citation)
+- [CheetahClaws](#cheetahclaws)
+  - [Content](#content)
+    - [Demos](#demos)
+  - [Why CheetahClaws](#why-cheetahclaws)
+  - [CheetahClaws vs OpenClaw](#cheetahclaws-vs-openclaw)
+  - [Features](#features)
+  - [Supported Models](#supported-models)
+    - [Closed-Source (API)](#closed-source-api)
+    - [Open-Source (Local via Ollama)](#open-source-local-via-ollama)
+  - [Installation](#installation)
+    - [Alternative: install with `pip`](#alternative-install-with-pip)
+      - [Optional extras](#optional-extras)
+    - [Alternative: install with `uv`](#alternative-install-with-uv)
+    - [Alternative: run directly from source (no install)](#alternative-run-directly-from-source-no-install)
+  - [Usage: Closed-Source API Models](#usage-closed-source-api-models)
+  - [Usage: Open-Source Models (Local)](#usage-open-source-models-local)
+    - [Ollama (recommended)](#ollama-recommended)
+    - [LM Studio](#lm-studio)
+    - [vLLM / self-hosted OpenAI-compatible server](#vllm--self-hosted-openai-compatible-server)
+    - [Atlas Cloud (hosted, OpenAI-compatible)](#atlas-cloud-hosted-openai-compatible)
+  - [Model Name Format](#model-name-format)
+  - [Trading Agent](#trading-agent)
+  - [Web UI](#web-ui)
+  - [Documentation](#documentation)
+  - [Quick Reference](#quick-reference)
+  - [Contributing](#contributing)
+  - [FAQ](#faq)
+  - [Citation](#citation)
+  - [Thanks to all contributors:](#thanks-to-all-contributors)
 
 
 ### Demos
