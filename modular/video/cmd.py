@@ -1,11 +1,11 @@
 """
-Video slash-command wizard for CheetahClaws.
+Video slash-command wizard for PyCode.
 
 This module is the REPL-facing layer of the video plugin.
 It contains the interactive wizard (cmd_video) and helpers,
 but no pipeline logic — those live in video/pipeline.py etc.
 
-COMMAND_DEFS is the plug-in interface: cheetahclaws.py discovers
+COMMAND_DEFS is the plug-in interface: pycode.py discovers
 commands from this dict so the module can be loaded optionally.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 import sys
 
-# ── Minimal ANSI helpers (self-contained, no import from cheetahclaws) ────────
+# ── Minimal ANSI helpers (self-contained, no import from pycode) ────────
 _C = {
     "cyan":    "\033[36m", "green":  "\033[32m", "yellow": "\033[33m",
     "red":     "\033[31m", "blue":   "\033[34m", "magenta":"\033[35m",
@@ -586,9 +586,9 @@ def cmd_video(args: str, _state, config) -> bool:
     from .pipeline import create_video_story
 
     # Locate optional sounds directory relative to the versions parent folder
-    _here        = os.path.dirname(os.path.abspath(__file__))   # .../cheetahclaws/video/
-    _pkg_dir     = os.path.dirname(_here)                        # .../cheetahclaws/
-    _versions_dir = os.path.dirname(_pkg_dir)                    # .../cheetahclaws_versions/
+    _here        = os.path.dirname(os.path.abspath(__file__))   # .../pycode/video/
+    _pkg_dir     = os.path.dirname(_here)                        # .../pycode/
+    _versions_dir = os.path.dirname(_pkg_dir)                    # .../pycode_versions/
     sounds_dir   = os.path.join(_versions_dir, "v-content-creator", "sounds")
     if not os.path.isdir(sounds_dir):
         sounds_dir = None
@@ -624,7 +624,7 @@ def cmd_video(args: str, _state, config) -> bool:
 
 
 # ── Plugin interface ───────────────────────────────────────────────────────────
-# cheetahclaws.py discovers slash commands via this dict.
+# pycode.py discovers slash commands via this dict.
 # Keys are the command names (without '/'), values carry the handler and help text.
 COMMAND_DEFS: dict[str, dict] = {
     "video": {

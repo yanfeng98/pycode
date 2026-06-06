@@ -16,15 +16,15 @@ _ENDPOINT = "https://efts.sec.gov/LATEST/search-index"
 
 def search(query: str, limit: int = 20, config: dict | None = None,
            time_range=None) -> list[Result]:
-    # SEC requires identification. We use the cheetahclaws-global UA with
+    # SEC requires identification. We use the pycode-global UA with
     # an optional contact email from config.
     contact = (
         (config or {}).get("research_email")
         or os.environ.get("SEC_CONTACT_EMAIL")
-        or "research@cheetahclaws.local"
+        or "research@pycode.local"
     )
     headers = {
-        "User-Agent": f"CheetahClaws-Research/1.0 ({contact})",
+        "User-Agent": f"PyCode-Research/1.0 ({contact})",
         "Accept": "application/json",
     }
 

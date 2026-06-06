@@ -14,7 +14,7 @@ Scope of this initial cut (F-4 skeleton, RFC 0002):
     framing. Windows fallback is out of scope; callers must check `enabled()`.
   * Iteration log written via stdout dump (the runner side emits one
     `iteration_done` IPC message per iteration; supervisor persists to
-    ``~/.cheetahclaws/agents/<name>/log.jsonl`` for parity with the in-thread
+    ``~/.pycode/agents/<name>/log.jsonl`` for parity with the in-thread
     path). SQLite persistence to the `agent_iterations` table is deferred.
   * Permission flow: when the runner sends ``permission_request``, the
     supervisor's reader thread auto-approves (matches today's
@@ -76,7 +76,7 @@ SIGTERM_GRACE_S = 3.0              # SIGTERM → SIGKILL after this
 # Total upper bound on stop(): HANDSHAKE_TIMEOUT_S irrelevant here;
 # 2 + 3 = 5 s matches the F-4 acceptance criterion.
 
-_LOG_DIR = Path.home() / ".cheetahclaws" / "agents"
+_LOG_DIR = Path.home() / ".pycode" / "agents"
 
 
 # ── Restart policy (RFC 0002 F-4 #3) ──────────────────────────────────────
@@ -177,14 +177,14 @@ def enabled() -> bool:
     """Return True iff F-4 subprocess-per-runner is active.
 
     Sources (any one truthy is enough):
-      * ``CHEETAHCLAWS_ENABLE_F4`` env var
+      * ``PYCODE_ENABLE_F4`` env var
       * config key ``agent_runner_subprocess`` (callers pass via start())
 
     Defaults to False. Windows is unsupported regardless.
     """
     if sys.platform.startswith("win"):
         return False
-    flag = os.environ.get("CHEETAHCLAWS_ENABLE_F4", "").strip().lower()
+    flag = os.environ.get("PYCODE_ENABLE_F4", "").strip().lower()
     return flag in {"1", "true", "yes", "on"}
 
 
@@ -356,7 +356,7 @@ def start(
         # New session so a SIGTERM to the supervisor doesn't take the
         # runner with it; we manage the runner's lifetime explicitly.
         start_new_session=True,
-        env={**os.environ, "CHEETAHCLAWS_F4_CHILD": "1"},
+        env={**os.environ, "PYCODE_F4_CHILD": "1"},
     )
 
     chan = JsonLineChannel(proc.stdout, proc.stdin)

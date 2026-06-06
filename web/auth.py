@@ -1,7 +1,7 @@
 """Auth primitives for the web UI: bcrypt password hashing + JWT cookies.
 
 We issue a stateless JWT signed with a server-side secret. The secret is
-persisted to ~/.cheetahclaws/web_secret so restarts don't invalidate sessions.
+persisted to ~/.pycode/web_secret so restarts don't invalidate sessions.
 
 Password hashing uses the `bcrypt` package directly. We previously routed
 through passlib, but passlib 1.7.4 is unmaintained and crashes on
@@ -41,7 +41,7 @@ _BCRYPT_MAX_BYTES = 72
 JWT_ALG = "HS256"
 JWT_TTL_SECONDS = 7 * 24 * 3600  # 7 days
 
-_SECRET_PATH = Path.home() / ".cheetahclaws" / "web_secret"
+_SECRET_PATH = Path.home() / ".pycode" / "web_secret"
 
 
 def _load_or_create_secret() -> str:
@@ -51,7 +51,7 @@ def _load_or_create_secret() -> str:
     enforce 0o600 we refuse to persist it — falling back to a per-run
     in-memory secret rather than writing a world-readable token file.
     """
-    env = os.environ.get("CHEETAHCLAWS_WEB_SECRET")
+    env = os.environ.get("PYCODE_WEB_SECRET")
     if env:
         return env
     try:
@@ -62,7 +62,7 @@ def _load_or_create_secret() -> str:
                 raise RuntimeError(
                     f"web_secret at {_SECRET_PATH} has insecure permissions "
                     f"{oct(mode)}. Run: chmod 600 '{_SECRET_PATH}' "
-                    f"or set CHEETAHCLAWS_WEB_SECRET in the environment."
+                    f"or set PYCODE_WEB_SECRET in the environment."
                 )
             return _SECRET_PATH.read_text().strip()
     except RuntimeError:

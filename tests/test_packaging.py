@@ -1,5 +1,5 @@
 """Regression test for issue #97 — `pip install .` produces a wheel that
-omits `prompts` (and other) packages, breaking `cheetahclaws` at startup.
+omits `prompts` (and other) packages, breaking `pycode` at startup.
 
 Root cause: `pyproject.toml` listed `memory` in BOTH `py-modules` and
 `packages`. setuptools ≥ 75 on Windows treats this as a hard error and
@@ -169,7 +169,7 @@ _REQUIRED_IMPORTS = [
     "modular.voice",
     "context",        # top-level py-module
     "providers",
-    "cheetahclaws",
+    "pycode",
 ]
 
 

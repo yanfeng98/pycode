@@ -5,7 +5,7 @@ Rationale (from the Gemini 3 prompting guide):
     "Once a system instruction becomes a 300-line constitution, you can
     no longer tell what's working and what's superstition."
 
-CheetahClaws splits the budget two ways:
+PyCode splits the budget two ways:
 
 * ``prompts/base/default.md`` — the **shared baseline** for every model.
   Cap: 150 lines.  Long-lived conditional content goes to

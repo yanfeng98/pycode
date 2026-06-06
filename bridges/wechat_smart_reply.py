@@ -3,7 +3,7 @@
 Flow:
   1. Inbound message from a whitelisted contact arrives.
   2. Generate 3 candidate replies via the auxiliary cheap model, conditioned on:
-       * the contact's relationship/notes from ~/.cheetahclaws/wx_contacts.json
+       * the contact's relationship/notes from ~/.pycode/wx_contacts.json
        * the user's recent confirmed replies (style mimicking)
   3. Send a panel to filehelper, tagged with a 2-letter ID:
         💬 [AA] 张三 → "周末有空吗"
@@ -28,8 +28,8 @@ Group rules:
     messages that contain @<wechat_self_nickname>.
 
 Storage:
-  * Panels + reply history persist in SQLite (~/.cheetahclaws/wx_smart_reply.db).
-  * Contacts persist in JSON (~/.cheetahclaws/wx_contacts.json).
+  * Panels + reply history persist in SQLite (~/.pycode/wx_smart_reply.db).
+  * Contacts persist in JSON (~/.pycode/wx_contacts.json).
   * SQLite init failure auto-falls-back to in-memory; nothing crashes.
 """
 from __future__ import annotations

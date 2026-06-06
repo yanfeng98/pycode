@@ -7,7 +7,7 @@
 <center style="color:#000000;text-decoration:underline">Trading Agent: SSJ → multi-agent analysis (Bull/Bear debate + Risk panel + PM decision) → backtest → indicators</center>
 </div>
 
-CheetahClaws includes a built-in AI-powered trading research module that combines multi-agent debate, technical/fundamental analysis, alternative-data signals (insider trades, LLM-scored news sentiment, Google Trends), persistent paper-trade tracking with calibration metrics, mean-variance portfolio optimization, walk-forward backtesting, an ML stacker that learns from the agent's own track record, and a broker abstraction layer that's paper-trading-ready out of the box and IBKR-ready when you decide to go live.
+PyCode includes a built-in AI-powered trading research module that combines multi-agent debate, technical/fundamental analysis, alternative-data signals (insider trades, LLM-scored news sentiment, Google Trends), persistent paper-trade tracking with calibration metrics, mean-variance portfolio optimization, walk-forward backtesting, an ML stacker that learns from the agent's own track record, and a broker abstraction layer that's paper-trading-ready out of the box and IBKR-ready when you decide to go live.
 
 > **Read this first**: this module is a research and discipline tool, not a money printer. Public-data + LLM analysis does not have predictive edge over quant funds in liquid US equities. What it gives you is faster information aggregation, programmatic risk discipline, and empirical accountability — `/trading calibration` will tell you whether the agent's confidence labels carry signal *before* you risk real money. Run paper for ≥ 3 months with green calibration + walk-forward before considering an IBKR live account.
 
@@ -17,8 +17,8 @@ CheetahClaws includes a built-in AI-powered trading research module that combine
 # 1. Install dependencies (lightgbm + scipy + sklearn come along)
 pip install "cheetahclaws[trading]"
 
-# 2. Start CheetahClaws
-cheetahclaws
+# 2. Start PyCode
+pycode
 
 # 3a. Single-name analysis (auto-records as a paper trade)
 [myproject] » /trading analyze NVDA
@@ -189,7 +189,7 @@ Each agent component maintains its own memory store:
 
 When analyzing a new situation, each agent retrieves the most similar past decisions using BM25 similarity matching. This allows the system to learn from successes and mistakes without retraining or fine-tuning.
 
-Memory is stored at `~/.cheetahclaws/trading/memory/` as JSON files.
+Memory is stored at `~/.pycode/trading/memory/` as JSON files.
 
 ---
 
@@ -249,7 +249,7 @@ Tickers flagged by ≥2 sources get a `+0.5` aggregate-score bonus — multi-sou
 
 - These factors are public knowledge; what the system gives you is **search-cost reduction**, not edge. Instead of manually scanning 100 tickers, you get a 15-name shortlist to deep-analyze with `/trading analyze`.
 - Insider direction is **not yet parsed from Form 4 XML** (we count filings, not buys vs sales). The output includes URLs so you can verify in 5 seconds; clusters of buys are bullish, clusters of sales are bearish, mixed is internal disagreement.
-- Scan time on S&P 100: ~1-2 minutes (yfinance rate-limited). Factor data is cached for 24h at `~/.cheetahclaws/trading/factors_cache.json`.
+- Scan time on S&P 100: ~1-2 minutes (yfinance rate-limited). Factor data is cached for 24h at `~/.pycode/trading/factors_cache.json`.
 
 ---
 
@@ -302,7 +302,7 @@ Output groups hits by anomaly type with severity scores. This is a **flag tool**
 1. Anomaly detection on watchlist + open positions
 2. Stop-loss / take-profit checks on managed-portfolio + paper holdings
 3. Earnings within 3 days for any open position
-4. **New** SEC Form 4 filings since last scan (delta detection — state persisted in `~/.cheetahclaws/trading/monitor_state.db`)
+4. **New** SEC Form 4 filings since last scan (delta detection — state persisted in `~/.pycode/trading/monitor_state.db`)
 
 Alerts have severity (`critical` / `warning` / `info`) and can be dispatched to the existing Telegram / Slack / WeChat bridges:
 
@@ -324,9 +324,9 @@ To run periodically, three options:
 /trading monitor scan --notify
 
 # Option 2: external cron (recommended for "fire and forget")
-echo '*/15 * * * * cd $HOME && cheetahclaws -c "/trading monitor scan --notify"' | crontab -
+echo '*/15 * * * * cd $HOME && pycode -c "/trading monitor scan --notify"' | crontab -
 
-# Option 3: cheetahclaws's /monitor system to run as a recurring task
+# Option 3: pycode's /monitor system to run as a recurring task
 /monitor add "trading_monitor" "/trading monitor scan --notify telegram" 15m
 ```
 
@@ -379,7 +379,7 @@ If after 30+ closed trades High doesn't outperform Low (or t-stat < 1.65), the a
 
 | Path | Contents |
 |---|---|
-| `~/.cheetahclaws/trading/paper_trades.db` | Trades + snapshots + watchlist (SQLite) |
+| `~/.pycode/trading/paper_trades.db` | Trades + snapshots + watchlist (SQLite) |
 
 ---
 
@@ -455,7 +455,7 @@ You can run several at once — each with its own name, cash balance, and equity
 
 | Path | Contents |
 |---|---|
-| `~/.cheetahclaws/trading/managed_portfolios.db` | Portfolios, positions, orders, equity curves |
+| `~/.pycode/trading/managed_portfolios.db` | Portfolios, positions, orders, equity curves |
 
 ### Honest limits
 
@@ -597,7 +597,7 @@ Features per trade:
 - position_size_pct: 0.121
 …
 
-Model saved to: `~/.cheetahclaws/trading/ml/stacker.pkl`
+Model saved to: `~/.pycode/trading/ml/stacker.pkl`
 ```
 
 If AUC < 0.55, the model has no edge — typically because there are too few samples (need 50+) or the agent's track record is genuinely noisy.
@@ -857,13 +857,13 @@ modular/trading/
 
 | Path | Contents |
 |---|---|
-| `~/.cheetahclaws/trading/paper_trades.db` | Paper trades + snapshots + watchlist |
-| `~/.cheetahclaws/trading/managed_portfolios.db` | Managed portfolios (cash, positions, orders, equity curve) |
-| `~/.cheetahclaws/trading/ml/stacker.pkl` | Trained ML stacker model |
-| `~/.cheetahclaws/trading/factors_cache.json` | 24h-TTL factor data cache |
-| `~/.cheetahclaws/trading/monitor_state.db` | Monitor seen-filings tracker + run history |
-| `~/.cheetahclaws/trading/memory/` | BM25 memory JSON files (per agent component) |
-| `~/.cheetahclaws/trading/history/` | Past trading decision records |
+| `~/.pycode/trading/paper_trades.db` | Paper trades + snapshots + watchlist |
+| `~/.pycode/trading/managed_portfolios.db` | Managed portfolios (cash, positions, orders, equity curve) |
+| `~/.pycode/trading/ml/stacker.pkl` | Trained ML stacker model |
+| `~/.pycode/trading/factors_cache.json` | 24h-TTL factor data cache |
+| `~/.pycode/trading/monitor_state.db` | Monitor seen-filings tracker + run history |
+| `~/.pycode/trading/memory/` | BM25 memory JSON files (per agent component) |
+| `~/.pycode/trading/history/` | Past trading decision records |
 
 No API keys required for basic usage. yfinance, CoinGecko, and SEC EDGAR are all free. For A-share data, optionally install `akshare`.
 

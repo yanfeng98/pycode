@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws Telegram Bridge.
+Generate animated GIF demo of pycode Telegram Bridge.
 Shows: setup → auto-start → incoming messages → tool calls → response → stop
 """
 from PIL import Image, ImageDraw, ImageFont
@@ -88,7 +88,7 @@ def draw_phone(img, chat_messages):
     d.text((av_x+5, av_y+3), "🤖", font=FONT_SM, fill=(30, 30, 46))
 
     # Bot name
-    d.text((px+52, py+10), "@cheetahclaws_bot", font=FONT_B, fill=(255, 255, 255))
+    d.text((px+52, py+10), "@pycode_bot", font=FONT_B, fill=(255, 255, 255))
     d.text((px+52, py+27), "online", font=FONT_SM, fill=(178, 223, 255))
 
     # Messages area
@@ -159,7 +159,7 @@ def draw_frame(lines_segments, chat_messages=None):
 
 
 BANNER_TG = [
-    [seg("╭─ CheetahClaws ─────────────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode ─────────────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-opus-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW, True),
      seg("  flags: [", SUBTEXT), seg("telegram", TEAL, True), seg("]", SUBTEXT)],
@@ -170,7 +170,7 @@ BANNER_TG = [
 
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
-    return [seg("[cheetahclaws] ", SUBTEXT), seg("» ", CYAN, True), seg(text + cur, TEXT)]
+    return [seg("[pycode] ", SUBTEXT), seg("» ", CYAN, True), seg(text + cur, TEXT)]
 
 def ok_line(t):
     return [seg("  ✓ ", GREEN, True), seg(t, TEXT)]
@@ -220,7 +220,7 @@ def build_scenes():
 
     # ── 0: Banner — telegram flag visible, auto-started ──────────────────
     add(BANNER_TG + [
-        ok_line("Telegram bridge started (auto). Bot: @cheetahclaws_bot"),
+        ok_line("Telegram bridge started (auto). Bot: @pycode_bot"),
         info_line("Send messages to your bot — they'll be processed here."),
         info_line("Stop with /telegram stop or send /stop in Telegram."),
         None,
@@ -229,7 +229,7 @@ def build_scenes():
 
     # ── 1: /telegram status ───────────────────────────────────────────────
     base = BANNER_TG + [
-        ok_line("Telegram bridge started (auto). Bot: @cheetahclaws_bot"),
+        ok_line("Telegram bridge started (auto). Bot: @pycode_bot"),
         info_line("Send messages to your bot — they'll be processed here."),
         info_line("Stop with /telegram stop or send /stop in Telegram."),
         None,
@@ -242,14 +242,14 @@ def build_scenes():
     add(base + [
         prompt_line(cmd_status),
         None,
-        ok_line("Telegram bridge is running.  Bot: @cheetahclaws_bot  Chat ID: 123456789"),
+        ok_line("Telegram bridge is running.  Bot: @pycode_bot  Chat ID: 123456789"),
         None,
         prompt_line(cursor=True),
     ], 1000, chat=[])
 
     # phone shows "online" with bot greeting
     phone_init = [
-        ("bot", "🟢 cheetahclaws is online. Send me a message and I'll process it.", TEAL),
+        ("bot", "🟢 pycode is online. Send me a message and I'll process it.", TEAL),
     ]
     add(base + [prompt_line(cursor=True)], 800, chat=phone_init)
 
@@ -295,7 +295,7 @@ def build_scenes():
     resp1_lines = [
         "Here are the files in this project:",
         "",
-        "  cheetahclaws.py   — Main REPL + slash commands",
+        "  pycode.py   — Main REPL + slash commands",
         "  agent.py         — Core agent loop",
         "  tools.py         — Built-in tools (Read/Write/Edit/Bash…)",
         "  providers.py     — API provider abstraction",
@@ -323,7 +323,7 @@ def build_scenes():
     add(tool_done + [text_line(l, 2) if l else None for l in resp1_lines] + [claude_sep()], 500, chat=phone_q1_typing)
 
     # ── 4: Response sent to Telegram ─────────────────────────────────────
-    phone_r1 = phone_q1_typing + [("bot", "Here are the files in this project: cheetahclaws.py, agent.py, tools.py, providers.py, config.py …", GREEN)]
+    phone_r1 = phone_q1_typing + [("bot", "Here are the files in this project: pycode.py, agent.py, tools.py, providers.py, config.py …", GREEN)]
 
     after_r1 = tg_base + [
         [seg("  ✓ ", GREEN), seg("typing indicator sent", SUBTEXT)],
@@ -387,9 +387,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
     ], 700, chat=phone_q3)
 
@@ -405,9 +405,9 @@ def build_scenes():
             None,
             claude_header(),
             tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-            tool_ok("Found in cheetahclaws.py:480"),
+            tool_ok("Found in pycode.py:480"),
             None,
-            tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+            tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
             tool_ok("71 lines read"),
             None,
             [seg("│ ", SUBTEXT)],
@@ -420,9 +420,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
         None,
         [seg("│ ", SUBTEXT)],
@@ -443,9 +443,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
         None,
         [seg("│ ", SUBTEXT)],

@@ -1,6 +1,6 @@
 # FAQ
 
-Frequently asked questions for CheetahClaws. A short subset of these lives in the
+Frequently asked questions for PyCode. A short subset of these lives in the
 [README](../../README.md#faq); the full list is here.
 
 ## MCP
@@ -73,7 +73,7 @@ Not all models support function calling. Use one of the recommended tool-calling
 
 ```bash
 ollama pull qwen2.5-coder
-cheetahclaws --model ollama/qwen2.5-coder
+pycode --model ollama/qwen2.5-coder
 ```
 
 **Q: How do I connect to a remote GPU server running vLLM?**
@@ -100,7 +100,7 @@ Yes. Set all the keys you need upfront (via env vars or `/config`). Then switch 
 
 **Q: How do I make a model available across all projects?**
 
-Add keys to `~/.bashrc` or `~/.zshrc`. Set the default model in `~/.cheetahclaws/config.json`:
+Add keys to `~/.bashrc` or `~/.zshrc`. Set the default model in `~/.pycode/config.json`:
 
 ```json
 { "model": "claude-sonnet-4-6" }
@@ -112,23 +112,23 @@ Ensure your `DASHSCOPE_API_KEY` / `ZHIPU_API_KEY` is correct and the account has
 
 ## CLI & scripting
 
-**Q: Can I pipe input to cheetahclaws?**
+**Q: Can I pipe input to pycode?**
 
 ```bash
-echo "Explain this file" | cheetahclaws --print --accept-all
-cat error.log | cheetahclaws -p "What is causing this error?"
+echo "Explain this file" | pycode --print --accept-all
+cat error.log | pycode -p "What is causing this error?"
 ```
 
 **Q: How do I run it as a CLI tool from anywhere?**
 
-Use `uv tool install` — it creates an isolated environment and puts `cheetahclaws` on your PATH:
+Use `uv tool install` — it creates an isolated environment and puts `pycode` on your PATH:
 
 ```bash
-cd cheetahclaws
+cd pycode
 uv tool install ".[all]"
 ```
 
-After that, just run `cheetahclaws` from any directory. To update after pulling changes, run `uv tool install ".[all]" --reinstall`. For a minimal install, use `uv tool install .` and add extras as needed.
+After that, just run `pycode` from any directory. To update after pulling changes, run `uv tool install ".[all]" --reinstall`. For a minimal install, use `uv tool install .` and add extras as needed.
 
 ## Voice
 
@@ -149,7 +149,7 @@ Use a larger model for better accuracy: `export NANO_CLAUDE_WHISPER_MODEL=small`
 **Q: Voice input transcribes my words wrong (misses coding terms).**
 
 The keyterm booster already injects coding vocabulary from your git branch and project files.
-For persistent domain terms, put them in a `.cheetahclaws/voice_keyterms.txt` file (one term per line) — this is checked automatically on each recording.
+For persistent domain terms, put them in a `.pycode/voice_keyterms.txt` file (one term per line) — this is checked automatically on each recording.
 
 **Q: Can I use voice input in Chinese / Japanese / other languages?**
 

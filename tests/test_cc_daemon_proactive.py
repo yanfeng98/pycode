@@ -347,9 +347,9 @@ class TestReplStepAside(unittest.TestCase):
         discovery.locate = lambda: None
         try:
             import importlib
-            import cheetahclaws
-            importlib.reload(cheetahclaws)
-            self.assertFalse(cheetahclaws._proactive_foreign_daemon_running())
+            import pycode
+            importlib.reload(pycode)
+            self.assertFalse(pycode._proactive_foreign_daemon_running())
         finally:
             discovery.locate = orig
 
@@ -358,8 +358,8 @@ class TestReplStepAside(unittest.TestCase):
         orig = discovery.locate
         discovery.locate = lambda: {"pid": 1, "address": "x:0"}
         try:
-            import cheetahclaws
-            self.assertTrue(cheetahclaws._proactive_foreign_daemon_running())
+            import pycode
+            self.assertTrue(pycode._proactive_foreign_daemon_running())
         finally:
             discovery.locate = orig
 
@@ -368,8 +368,8 @@ class TestReplStepAside(unittest.TestCase):
         orig = discovery.locate
         discovery.locate = lambda: {"pid": os.getpid(), "address": "x:0"}
         try:
-            import cheetahclaws
-            self.assertFalse(cheetahclaws._proactive_foreign_daemon_running())
+            import pycode
+            self.assertFalse(pycode._proactive_foreign_daemon_running())
         finally:
             discovery.locate = orig
 

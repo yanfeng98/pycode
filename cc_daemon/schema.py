@@ -1,4 +1,4 @@
-"""schema.py — daemon-owned SQLite tables in ~/.cheetahclaws/sessions.db.
+"""schema.py — daemon-owned SQLite tables in ~/.pycode/sessions.db.
 
 Roadmap reference: ``docs/RFC/0002-daemon-foundation-roadmap.md`` §F-2.
 
@@ -11,7 +11,7 @@ Tables:
   ``daemon_events``       — append-only event log (replaces F-1's in-memory ring)
   ``agent_runs``          — one row per ``/agent`` runner (populated in F-4)
   ``agent_iterations``    — per-iteration log for those runners
-  ``jobs``                — replaces the F-1 ``~/.cheetahclaws/jobs.json`` file
+  ``jobs``                — replaces the F-1 ``~/.pycode/jobs.json`` file
   ``monitor_subscriptions`` — durable ``/monitor subscribe ...`` state (F-3)
   ``monitor_reports``     — generated reports per subscription run
   ``bridges``             — bridge enabled/last-error state (F-6/7/8)
@@ -141,7 +141,7 @@ _init_lock = threading.Lock()
 
 
 def get_default_db_path() -> Path:
-    """Return ``~/.cheetahclaws/sessions.db`` (shared with session_store)."""
+    """Return ``~/.pycode/sessions.db`` (shared with session_store)."""
     from cc_config import CONFIG_DIR
     return CONFIG_DIR / "sessions.db"
 

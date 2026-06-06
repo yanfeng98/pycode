@@ -9,9 +9,9 @@ from typing import Any
 
 
 class PluginScope(str, Enum):
-    USER     = "user"      # ~/.cheetahclaws/plugins/
-    PROJECT  = "project"   # .cheetahclaws/plugins/ (cwd)
-    EXTERNAL = "external"  # scanned from $CHEETAHCLAWS_PLUGIN_PATH
+    USER     = "user"      # ~/.pycode/plugins/
+    PROJECT  = "project"   # .pycode/plugins/ (cwd)
+    EXTERNAL = "external"  # scanned from $PYCODE_PLUGIN_PATH
 
 
 @dataclass

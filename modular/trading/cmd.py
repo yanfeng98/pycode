@@ -1,5 +1,5 @@
 """
-/trading slash command for CheetahClaws.
+/trading slash command for PyCode.
 
 Subcommands:
   /trading analyze <SYMBOL>     — full multi-agent analysis
@@ -21,7 +21,7 @@ from ui.render import info, ok, warn, err, clr
 
 # ── History storage ────────────────────────────────────────────────────────
 
-_HISTORY_DIR = Path.home() / ".cheetahclaws" / "trading" / "history"
+_HISTORY_DIR = Path.home() / ".pycode" / "trading" / "history"
 
 
 def _save_decision(symbol: str, signal: str, details: str) -> None:
@@ -1011,7 +1011,7 @@ def _cmd_ml(args: str) -> bool:
 
     if sub == "status":
         from pathlib import Path
-        path = Path.home() / ".cheetahclaws" / "trading" / "ml" / "stacker.pkl"
+        path = Path.home() / ".pycode" / "trading" / "ml" / "stacker.pkl"
         if not path.exists():
             info("No trained stacker model.")
             info("Train with `/trading ml train` once you have ≥30 closed trades.")

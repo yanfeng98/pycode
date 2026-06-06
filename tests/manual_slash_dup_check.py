@@ -6,7 +6,7 @@ HTTP. Counts how many `command_result` events the client would render
 
 Usage:
     # In one terminal: start the server
-    cd cheetahclaws && python cheetahclaws.py --web --no-auth --port 8080
+    cd pycode && python pycode.py --web --no-auth --port 8080
 
     # In another terminal:
     python tests/manual_slash_dup_check.py http://127.0.0.1:8080

@@ -1,5 +1,5 @@
 """
-monitor/ — AI Monitor + Decision Assistant for CheetahClaws.
+monitor/ — AI Monitor + Decision Assistant for PyCode.
 
 Provides long-running subscription monitoring with AI summarization.
 

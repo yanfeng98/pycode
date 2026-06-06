@@ -56,9 +56,9 @@ def server_url() -> str:
     db_path = os.path.join(tmpdir, "test.db")
     secret_path = os.path.join(tmpdir, "secret")
     # Set env BEFORE importing server so init reads the right paths
-    os.environ["CHEETAHCLAWS_WEB_DB"] = db_path
-    os.environ["CHEETAHCLAWS_WEB_SECRET"] = "test-secret-do-not-use-in-prod"
-    os.environ["CHEETAHCLAWS_LOG_LEVEL"] = "WARNING"  # quiet during tests
+    os.environ["PYCODE_WEB_DB"] = db_path
+    os.environ["PYCODE_WEB_SECRET"] = "test-secret-do-not-use-in-prod"
+    os.environ["PYCODE_LOG_LEVEL"] = "WARNING"  # quiet during tests
 
     from web.server import start_web_server  # noqa: WPS433
 
@@ -140,9 +140,9 @@ def test_metrics_prometheus_format(server_url):
         r = c.get("/metrics")
         assert r.status_code == 200
         body = r.text
-        assert "cheetahclaws_uptime_seconds " in body
-        assert "cheetahclaws_requests_total " in body
-        assert "# TYPE cheetahclaws_requests_total counter" in body
+        assert "pycode_uptime_seconds " in body
+        assert "pycode_requests_total " in body
+        assert "# TYPE pycode_requests_total counter" in body
 
 
 def test_bootstrap_empty_then_after_register(server_url):
@@ -545,11 +545,11 @@ def test_metrics_counters_increment(server_url):
                     return int(line.split()[1])
             return -1
 
-        assert _counter(after, "cheetahclaws_requests_total") > _counter(
-            before, "cheetahclaws_requests_total")
-        assert _counter(after, "cheetahclaws_requests_4xx") >= _counter(
-            before, "cheetahclaws_requests_4xx") + 1
-        assert _counter(after, "cheetahclaws_auth_registrations_total") >= 1
+        assert _counter(after, "pycode_requests_total") > _counter(
+            before, "pycode_requests_total")
+        assert _counter(after, "pycode_requests_4xx") >= _counter(
+            before, "pycode_requests_4xx") + 1
+        assert _counter(after, "pycode_auth_registrations_total") >= 1
 
 
 def test_cors_preflight_for_unknown_origin(server_url):

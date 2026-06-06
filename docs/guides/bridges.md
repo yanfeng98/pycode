@@ -2,7 +2,7 @@
 
 ## Telegram Bridge
 
-`/telegram` turns cheetahclaws into a Telegram bot — receive messages from your phone, run the model with full tool access, and reply automatically.
+`/telegram` turns pycode into a Telegram bot — receive messages from your phone, run the model with full tool access, and reply automatically.
 
 <div align=center>
 <img src="../media/demos/telegram_demo.gif" width="850"/>
@@ -40,19 +40,19 @@ The response is JSON. Find `"chat"` → `"id"` — that number is your chat ID:
 
 > **Tip:** if `result` is empty, go back to Telegram, send another message to your bot, then refresh the URL.
 
-3. Configure cheetahclaws. **Recommended** — token from environment variable:
+3. Configure pycode. **Recommended** — token from environment variable:
 
 ```bash
 export TELEGRAM_BOT_TOKEN=7812345678:AAFxyz123abcDEF456ghiJKL789
-cheetahclaws
+pycode
 [myproject] ❯ /telegram 987654321
   ✓ Connected to @your_bot_name. Starting bridge...
   ✓ Telegram bridge active. Chat ID: 987654321
 ```
 
-This keeps the token out of `readline` history and `~/.cheetahclaws/config.json`.
+This keeps the token out of `readline` history and `~/.pycode/config.json`.
 
-The legacy two-arg form still works but is deprecated — it lands the token in your shell-history file, so cheetahclaws prints a warning and auto-scrubs it from the in-memory history:
+The legacy two-arg form still works but is deprecated — it lands the token in your shell-history file, so pycode prints a warning and auto-scrubs it from the in-memory history:
 
 ```
 [myproject] ❯ /telegram 7812345678:AAFxyz... 987654321
@@ -60,12 +60,12 @@ The legacy two-arg form still works but is deprecated — it lands the token in 
     readline history. Set $TELEGRAM_BOT_TOKEN and run `/telegram <chat_id>` instead.
 ```
 
-`telegram_chat_id` is saved to `~/.cheetahclaws/config.json`; the token is **only** saved if it came in via the deprecated REPL arg path. Env-supplied tokens never touch disk. On next launch the bridge **auto-starts** if the env var (or saved config) is present — the startup banner shows `flags: [telegram]`.
+`telegram_chat_id` is saved to `~/.pycode/config.json`; the token is **only** saved if it came in via the deprecated REPL arg path. Env-supplied tokens never touch disk. On next launch the bridge **auto-starts** if the env var (or saved config) is present — the startup banner shows `flags: [telegram]`.
 
 ### How it works
 
 ```
-Phone (Telegram)                  cheetahclaws terminal
+Phone (Telegram)                  pycode terminal
 ──────────────────                ──────────────────────────
 "List Python files"      →        📩 Telegram: List Python files
                                   [typing indicator sent...]
@@ -76,7 +76,7 @@ Phone (Telegram)                  cheetahclaws terminal
 
 - **Typing indicator** is sent every 4 seconds while the model processes, so the chat feels responsive.
 - **Unauthorized senders** receive `⛔ Unauthorized.` and their messages are dropped.
-- **Slash command passthrough**: send `/cost`, `/model gpt-4o`, `/clear`, `/monitor`, `/agent`, etc. from Telegram and they execute in cheetahclaws.
+- **Slash command passthrough**: send `/cost`, `/model gpt-4o`, `/clear`, `/monitor`, `/agent`, etc. from Telegram and they execute in pycode.
 - **Interactive menus over Telegram**: commands with interactive prompts (e.g. `/monitor` wizard, `/agent` wizard, `/permission`, `/checkpoint`) run in a background thread. The menu is sent as a Telegram message; your next reply is used as the selection.
 - **Job queue & remote control**: `!jobs` / `!job <id>` / `!retry <id>` / `!cancel` — see [Remote Control](#remote-control-phone--computer).
 - **`/stop` or `/off`** sent from Telegram stops the bridge gracefully.
@@ -87,13 +87,13 @@ You can send photos and voice messages directly to the bot — no extra commands
 
 **Photos**
 
-Send any photo (with or without a caption). CheetahClaws downloads the highest-resolution version, encodes it as Base64, and passes it to the active vision model alongside the caption text. If no caption is provided, the default prompt is `"What do you see in this image? Describe it in detail."`.
+Send any photo (with or without a caption). PyCode downloads the highest-resolution version, encodes it as Base64, and passes it to the active vision model alongside the caption text. If no caption is provided, the default prompt is `"What do you see in this image? Describe it in detail."`.
 
 > **Requirement:** the active model must support vision (e.g. `claude-opus-4-6`, `gpt-4o`, `gemini-2.0-flash`, or any Ollama vision model such as `llava`). Use `/model` to switch if needed.
 
 **Voice messages & audio files**
 
-Send a voice note (OGG) or audio file (MP3). CheetahClaws transcribes it automatically and submits the transcript as your next query. The transcription is echoed back to the chat before the model responds.
+Send a voice note (OGG) or audio file (MP3). PyCode transcribes it automatically and submits the transcript as your next query. The transcription is echoed back to the chat before the model responds.
 
 > **Requirements:**
 > - **`ffmpeg`** must be installed for audio conversion (`sudo apt install ffmpeg` / `brew install ffmpeg`).
@@ -106,7 +106,7 @@ Send a voice note (OGG) or audio file (MP3). CheetahClaws transcribes it automat
 
 ### Permission prompts (clickable buttons & numbered menus) (#84)
 
-When the model wants to run a write/edit/Bash tool and `permission_mode` isn't `accept-all`, cheetahclaws asks for approval. The prompt is now rendered with an interactive picker on **every** channel — pick the form that fits the medium:
+When the model wants to run a write/edit/Bash tool and `permission_mode` isn't `accept-all`, pycode asks for approval. The prompt is now rendered with an interactive picker on **every** channel — pick the form that fits the medium:
 
 | Channel | UX |
 |---|---|
@@ -139,7 +139,7 @@ The bridge can both **receive** files from the user and **send** files back. Tel
 
 **Receiving a file from your phone**
 
-Drop any document into the chat (with or without a caption). CheetahClaws downloads it, sanitizes the filename, saves it to `/workspace` (when running in Docker) or the system temp directory (otherwise), echoes the saved path back to the chat, and submits a path-aware prompt to the model:
+Drop any document into the chat (with or without a caption). PyCode downloads it, sanitizes the filename, saves it to `/workspace` (when running in Docker) or the system temp directory (otherwise), echoes the saved path back to the chat, and submits a path-aware prompt to the model:
 
 ```
 You: [📎 report.pdf]
@@ -150,7 +150,7 @@ Bot: ⏳ Job #a1f0 running…
 
 If you add a caption, the caption replaces the default prompt. Filenames are sanitized to `[A-Za-z0-9._-]_` to keep the save path safe.
 
-**Sending a file from cheetahclaws**
+**Sending a file from pycode**
 
 Files arrive in chat as Telegram **documents** (not just chat text):
 
@@ -173,19 +173,19 @@ Bot: [📎 report.pdf]
 | Command | Description |
 |---|---|
 | `/telegram <chat_id>` | Recommended — start with `$TELEGRAM_BOT_TOKEN` from the environment |
-| `/telegram <token> <chat_id>` | Deprecated — token leaks into readline history; cheetahclaws auto-scrubs but prints a warning |
+| `/telegram <token> <chat_id>` | Deprecated — token leaks into readline history; pycode auto-scrubs but prints a warning |
 | `/telegram` | Start the bridge using saved config |
 | `/telegram status` | Show running state and chat_id |
 | `/telegram stop` | Stop the bridge |
 
-> **Token precedence:** `$TELEGRAM_BOT_TOKEN` > REPL arg > `~/.cheetahclaws/config.json`. Env-supplied tokens never get persisted to disk.
+> **Token precedence:** `$TELEGRAM_BOT_TOKEN` > REPL arg > `~/.pycode/config.json`. Env-supplied tokens never get persisted to disk.
 
 ### Auto-start
 
-If both `telegram_token` and `telegram_chat_id` are set in `~/.cheetahclaws/config.json`, the bridge starts automatically on every cheetahclaws launch:
+If both `telegram_token` and `telegram_chat_id` are set in `~/.pycode/config.json`, the bridge starts automatically on every pycode launch:
 
 ```
-╭─ CheetahClaws ────────────────────────────────╮
+╭─ PyCode ────────────────────────────────╮
 │  Model:       claude-opus-4-6
 │  Permissions: auto   flags: [telegram]
 │  Type /help for commands, Ctrl+C to cancel        │
@@ -193,7 +193,7 @@ If both `telegram_token` and `telegram_chat_id` are set in `~/.cheetahclaws/conf
 ✓ Telegram bridge started (auto). Bot: @your_bot_name
 ```
 
-The bridge also auto-starts in **web-server mode** (`cheetahclaws --web`) — handy for headless / Docker deployments where you want the browser UI and the phone bridge in a single process. See [docs/guides/docker.md](docker.md).
+The bridge also auto-starts in **web-server mode** (`pycode --web`) — handy for headless / Docker deployments where you want the browser UI and the phone bridge in a single process. See [docs/guides/docker.md](docker.md).
 
 ---
 
@@ -203,10 +203,10 @@ The bridge also auto-starts in **web-server mode** (`cheetahclaws --web`) — ha
 <img src="../media/demos/wechat_demo.gif" width="850"/>
 </div>
 <div align=center>
-<center style="color:#000000;text-decoration:underline">WeChat Bridge: Control cheetahclaws from WeChat (微信)</center>
+<center style="color:#000000;text-decoration:underline">WeChat Bridge: Control pycode from WeChat (微信)</center>
 </div>
 
-`/wechat` connects cheetahclaws to WeChat via **Tencent's iLink Bot API** — the same underlying protocol used by the official [WeixinClawBot](https://www.npmjs.com/package/@tencent-weixin/openclaw-weixin) plugin. Authenticate by scanning a QR code with your WeChat app; no manual token setup required.
+`/wechat` connects pycode to WeChat via **Tencent's iLink Bot API** — the same underlying protocol used by the official [WeixinClawBot](https://www.npmjs.com/package/@tencent-weixin/openclaw-weixin) plugin. Authenticate by scanning a QR code with your WeChat app; no manual token setup required.
 
 ### Prerequisites
 
@@ -217,7 +217,7 @@ WeChat → Me → Settings → Plugins → find and enable **ClawBot** (WeixinCl
 
 ### Setup (one-time, ~30 seconds)
 
-Run `/wechat login` in cheetahclaws. A QR code URL appears in the terminal — open it in a browser or scan it directly if you installed the `qrcode` package:
+Run `/wechat login` in pycode. A QR code URL appears in the terminal — open it in a browser or scan it directly if you installed the `qrcode` package:
 
 ```
 [myproject] ❯ /wechat login
@@ -235,14 +235,14 @@ Run `/wechat login` in cheetahclaws. A QR code URL appears in the terminal — o
   ℹ Stop with /wechat stop or send /stop from WeChat.
 ```
 
-Scan the QR code URL with WeChat. Once confirmed, the bridge starts immediately. Credentials (`token` + `base_url`) are saved to `~/.cheetahclaws/config.json` and reused on every subsequent launch — you only need to scan once.
+Scan the QR code URL with WeChat. Once confirmed, the bridge starts immediately. Credentials (`token` + `base_url`) are saved to `~/.pycode/config.json` and reused on every subsequent launch — you only need to scan once.
 
 > **Tip:** `pip install qrcode` renders the QR code directly in the terminal as ASCII art, so you can scan without opening a browser.
 
 ### How it works
 
 ```
-Phone (WeChat)          cheetahclaws terminal
+Phone (WeChat)          pycode terminal
 ──────────────          ──────────────────────────────────
 "你好"          →       📩 WeChat [o9cq80_Q]: 你好
                         [typing indicator...]
@@ -257,7 +257,7 @@ The bridge long-polls `POST /ilink/bot/getupdates` (35-second window) in a daemo
 - **QR code authentication** — scan once; credentials are saved for future launches. Expired sessions (`errcode -14`) clear saved credentials and the next `/wechat` re-triggers the QR flow automatically.
 - **Typing indicator** — sent every 4 seconds while the model processes, so the chat feels responsive.
 - **context_token echo** — per-peer `context_token` is cached in memory and echoed on every reply (iLink protocol requirement).
-- **Slash command passthrough** — send `/cost`, `/model gpt-4o`, `/clear`, `/monitor`, `/agent`, etc. from WeChat and they execute in cheetahclaws. The result is sent back to the same WeChat conversation.
+- **Slash command passthrough** — send `/cost`, `/model gpt-4o`, `/clear`, `/monitor`, `/agent`, etc. from WeChat and they execute in pycode. The result is sent back to the same WeChat conversation.
 - **Interactive menu routing** — commands with interactive prompts (e.g. `/monitor` wizard, `/agent` wizard, `/permission`, `/checkpoint`) run in a background thread and route the prompt to WeChat; your next WeChat reply is used as the selection input.
 - **Per-user job queue** — each WeChat user has an independent job queue; `!任务` / `!job <id>` / `!retry <id>` / `!cancel` for remote control. See [Remote Control](#remote-control-phone--computer).
 - **`/stop` or `/off`** sent from WeChat stops the bridge gracefully.
@@ -276,10 +276,10 @@ The bridge long-polls `POST /ilink/bot/getupdates` (35-second window) in a daemo
 
 ### Auto-start
 
-If `wechat_token` is set in `~/.cheetahclaws/config.json`, the bridge starts automatically on every cheetahclaws launch:
+If `wechat_token` is set in `~/.pycode/config.json`, the bridge starts automatically on every pycode launch:
 
 ```
-╭─ CheetahClaws ────────────────────────────────╮
+╭─ PyCode ────────────────────────────────╮
 │  Model:       claude-opus-4-6
 │  Permissions: auto   flags: [wechat]
 │  Type /help for commands, Ctrl+C to cancel        │
@@ -287,7 +287,7 @@ If `wechat_token` is set in `~/.cheetahclaws/config.json`, the bridge starts aut
 ✓ WeChat bridge started.
 ```
 
-Also auto-starts in `cheetahclaws --web` (Docker / headless deployments).
+Also auto-starts in `pycode --web` (Docker / headless deployments).
 
 ### Smart-reply panel (v3.05.78+)
 
@@ -297,7 +297,7 @@ cheap model drafts 3 candidate replies and pushes a panel to your
 bot sends the chosen text back to the original contact.
 
 ```jsonc
-// ~/.cheetahclaws/config.json
+// ~/.pycode/config.json
 {
   "wechat_smart_reply":            true,
   "wechat_smart_reply_whitelist":  ["wxid_alice...", "wxid_bob..."],
@@ -332,9 +332,9 @@ mimicking on subsequent panels — over time the candidates get closer
 to your real voice.
 
 **Storage:**
-- `~/.cheetahclaws/wx_smart_reply.db` — pending panels + reply history
+- `~/.pycode/wx_smart_reply.db` — pending panels + reply history
   (auto-fallback to in-memory if SQLite init fails)
-- `~/.cheetahclaws/wx_contacts.json` — relationship/notes per uid,
+- `~/.pycode/wx_contacts.json` — relationship/notes per uid,
   hot-reloaded on mtime change. Schema:
 
   ```json
@@ -402,7 +402,7 @@ ClawBot       → You:       这周末出差，下周可以吗
                            ↑ you copy this and paste to Alice manually
 ```
 
-Also works inside the cheetahclaws terminal — the candidates print to
+Also works inside the pycode terminal — the candidates print to
 stdout, you copy/paste into your IM client of choice.
 
 ---
@@ -413,10 +413,10 @@ stdout, you copy/paste into your IM client of choice.
 <img src="../media/demos/slack_demo.gif" width="850"/>
 </div>
 <div align=center>
-<center style="color:#000000;text-decoration:underline">Slack Bridge: Control cheetahclaws from Slack</center>
+<center style="color:#000000;text-decoration:underline">Slack Bridge: Control pycode from Slack</center>
 </div>
 
-`/slack` connects cheetahclaws to a Slack channel via the **Slack Web API** — no external packages required, just a Bot User OAuth Token and a channel ID. Messages are polled every 2 seconds using `conversations.history`; replies update an in-place "⏳ Thinking…" placeholder so the conversation feels responsive.
+`/slack` connects pycode to a Slack channel via the **Slack Web API** — no external packages required, just a Bot User OAuth Token and a channel ID. Messages are polled every 2 seconds using `conversations.history`; replies update an in-place "⏳ Thinking…" placeholder so the conversation feels responsive.
 
 ### Prerequisites
 
@@ -433,20 +433,20 @@ stdout, you copy/paste into your IM client of choice.
 
 ```bash
 export SLACK_BOT_TOKEN=xoxb-12345-...
-cheetahclaws
+pycode
 [myproject] ❯ /slack C0123456789
-  ℹ Slack authenticated as @cheetahclaws_bot
+  ℹ Slack authenticated as @pycode_bot
   ✓ Slack bridge started.
 ```
 
-The legacy `/slack <xoxb-token> <channel_id>` form still works but is deprecated — it leaks the token into your readline history. cheetahclaws prints a warning and auto-scrubs it from the in-memory history.
+The legacy `/slack <xoxb-token> <channel_id>` form still works but is deprecated — it leaks the token into your readline history. pycode prints a warning and auto-scrubs it from the in-memory history.
 
-`slack_channel` is saved to `~/.cheetahclaws/config.json`; the token is **only** persisted when it came from the deprecated REPL arg path. Env-supplied tokens never touch disk. The bridge auto-starts on every subsequent launch — you only need to configure once.
+`slack_channel` is saved to `~/.pycode/config.json`; the token is **only** persisted when it came from the deprecated REPL arg path. Env-supplied tokens never touch disk. The bridge auto-starts on every subsequent launch — you only need to configure once.
 
 ### How it works
 
 ```
-Slack channel                    cheetahclaws terminal
+Slack channel                    pycode terminal
 ─────────────                    ──────────────────────────────────
 "List files here"      →         📩 Slack [U04ABZ]: List files here
                                  [⏳ Thinking… posted to Slack]
@@ -454,13 +454,13 @@ Slack channel                    cheetahclaws terminal
                        ←         "Here are the files: …"  (placeholder updated)
 ```
 
-Every 2 seconds, cheetahclaws polls `GET conversations.history?oldest=<last_ts>`. When a message arrives, a `⏳ Thinking…` placeholder is posted immediately via `chat.postMessage`, then updated in-place with the real reply via `chat.update` once the model finishes.
+Every 2 seconds, pycode polls `GET conversations.history?oldest=<last_ts>`. When a message arrives, a `⏳ Thinking…` placeholder is posted immediately via `chat.postMessage`, then updated in-place with the real reply via `chat.update` once the model finishes.
 
 ### Features
 
 - **No external packages** — uses only Python's stdlib `urllib`; no `slack_sdk` or `requests` needed.
 - **In-place reply update** — "⏳ Thinking…" placeholder is replaced with the actual response, keeping the channel tidy.
-- **Slash command passthrough** — send `/cost`, `/model gpt-4o`, `/clear`, `/monitor`, `/agent`, etc. from Slack and they execute in cheetahclaws; results are sent back to the same channel.
+- **Slash command passthrough** — send `/cost`, `/model gpt-4o`, `/clear`, `/monitor`, `/agent`, etc. from Slack and they execute in pycode; results are sent back to the same channel.
 - **Interactive menu routing** — `/monitor` wizard, `/agent` wizard, permission prompts, and other interactive menus route to Slack; your next message is used as the selection input.
 - **Job queue & remote control**: `!jobs` / `!job <id>` / `!retry <id>` / `!cancel` — see [Remote Control](#remote-control-phone--computer).
 - **Auth validation on start** — `auth.test` is called before the poll loop; invalid tokens surface a clear error immediately.
@@ -479,14 +479,14 @@ Every 2 seconds, cheetahclaws polls `GET conversations.history?oldest=<last_ts>`
 | `/slack stop` | Stop the bridge |
 | `/slack logout` | Clear saved credentials and stop the bridge |
 
-> **Token precedence:** `$SLACK_BOT_TOKEN` > REPL arg > `~/.cheetahclaws/config.json`. Env-supplied tokens never get persisted to disk.
+> **Token precedence:** `$SLACK_BOT_TOKEN` > REPL arg > `~/.pycode/config.json`. Env-supplied tokens never get persisted to disk.
 
 ### Auto-start
 
-If `slack_token` and `slack_channel` are set in `~/.cheetahclaws/config.json`, the bridge starts automatically on every cheetahclaws launch:
+If `slack_token` and `slack_channel` are set in `~/.pycode/config.json`, the bridge starts automatically on every pycode launch:
 
 ```
-╭─ CheetahClaws ────────────────────────────────╮
+╭─ PyCode ────────────────────────────────╮
 │  Model:       claude-opus-4-6
 │  Permissions: auto   flags: [slack]
 │  Type /help for commands, Ctrl+C to cancel    │
@@ -494,13 +494,13 @@ If `slack_token` and `slack_channel` are set in `~/.cheetahclaws/config.json`, t
 ✓ Slack bridge started.
 ```
 
-Also auto-starts in `cheetahclaws --web` (Docker / headless deployments).
+Also auto-starts in `pycode --web` (Docker / headless deployments).
 
 ---
 
 ## QQ Bridge
 
-`/qq` connects cheetahclaws to **QQ** through the official [qq-botpy](https://github.com/tencent-connect/botpy) SDK — a WebSocket gateway plus HTTP send API. It serves both **group** chats (the bot replies when @-mentioned) and **C2C** (one-to-one private) chats. Unlike the long-poll bridges, botpy's async client runs on a dedicated asyncio event loop inside a daemon thread, bridged to cheetahclaws's main thread via thread-safe queues.
+`/qq` connects pycode to **QQ** through the official [qq-botpy](https://github.com/tencent-connect/botpy) SDK — a WebSocket gateway plus HTTP send API. It serves both **group** chats (the bot replies when @-mentioned) and **C2C** (one-to-one private) chats. Unlike the long-poll bridges, botpy's async client runs on a dedicated asyncio event loop inside a daemon thread, bridged to pycode's main thread via thread-safe queues.
 
 ### Prerequisites
 
@@ -519,20 +519,20 @@ Also auto-starts in `cheetahclaws --web` (Docker / headless deployments).
 
 ```bash
 export QQ_SECRET=your-app-secret
-cheetahclaws
+pycode
 [myproject] ❯ /qq 102000000          # only the AppID on the command line
   ✓ QQ bridge started.
   ℹ Send a message in QQ — @mention in groups or direct message in C2C.
 ```
 
-The legacy `/qq <appid> <secret>` form still works but is deprecated — it leaks the secret into your readline history. cheetahclaws prints a warning and auto-scrubs it from the in-memory history.
+The legacy `/qq <appid> <secret>` form still works but is deprecated — it leaks the secret into your readline history. pycode prints a warning and auto-scrubs it from the in-memory history.
 
-`qq_appid` (a public identifier) is saved to `~/.cheetahclaws/config.json`; the **secret** is **only** persisted when it came from the deprecated REPL arg path. Env-supplied secrets (`$QQ_SECRET`) never touch disk. The bridge auto-starts on every subsequent launch — you only need to configure once.
+`qq_appid` (a public identifier) is saved to `~/.pycode/config.json`; the **secret** is **only** persisted when it came from the deprecated REPL arg path. Env-supplied secrets (`$QQ_SECRET`) never touch disk. The bridge auto-starts on every subsequent launch — you only need to configure once.
 
 ### How it works
 
 ```
-QQ group / C2C                   cheetahclaws terminal
+QQ group / C2C                   pycode terminal
 ─────────────                    ──────────────────────────────────
 @bot "List files here"   →       📩 QQ: List files here
                                  ⚙ model processes query
@@ -547,7 +547,7 @@ QQ does **not** support editing a sent message, so replies are **streamed as new
 - **Group + C2C** — `on_group_at_message_create` (group @-mentions, mention prefix stripped) and `on_c2c_message_create` (private chats) are both handled.
 - **Per-target job queue** — each group/user gets its own FIFO queue so concurrent chats don't block each other; `!jobs` / `!job <id>` / `!retry <id>` / `!cancel` work as on the other bridges — see [Remote Control](#remote-control-phone--computer).
 - **Streaming output** — text chunks and `⚙ tool` step labels stream back live via the `on_text_chunk` / `on_tool_start` / `on_tool_end` hooks.
-- **Slash command passthrough** — send `/cost`, `/model …`, `/clear`, `/monitor`, `/agent`, etc. from QQ and they execute in cheetahclaws; results return to the same chat.
+- **Slash command passthrough** — send `/cost`, `/model …`, `/clear`, `/monitor`, `/agent`, etc. from QQ and they execute in pycode; results return to the same chat.
 - **Interactive menu & permission routing** — permission prompts and interactive menus route to QQ, **scoped to the originating target** so an approval can't be answered from a different group/user.
 - **Image input** — image attachments are downloaded (off the event loop, in a worker thread) and forwarded to the vision model for the turn.
 - **Message deduplication** — `id`/`event_id` dedup prevents double-processing.
@@ -564,11 +564,11 @@ QQ does **not** support editing a sent message, so replies are **streamed as new
 | `/qq stop` | Stop the bridge |
 | `/qq logout` | Clear saved credentials and stop the bridge |
 
-> **Secret precedence:** `$QQ_SECRET` > REPL arg > `~/.cheetahclaws/config.json`. Env-supplied secrets never get persisted to disk.
+> **Secret precedence:** `$QQ_SECRET` > REPL arg > `~/.pycode/config.json`. Env-supplied secrets never get persisted to disk.
 
 ### Auto-start
 
-If `qq_appid` and `qq_secret` are set in `~/.cheetahclaws/config.json`, the bridge starts automatically on every cheetahclaws launch, including under `cheetahclaws --web` (Docker / headless deployments). Note that headless auto-start reads credentials from `config.json`; the `$QQ_SECRET` env var is consulted by the interactive `/qq` command, not by the auto-start path.
+If `qq_appid` and `qq_secret` are set in `~/.pycode/config.json`, the bridge starts automatically on every pycode launch, including under `pycode --web` (Docker / headless deployments). Note that headless auto-start reads credentials from `config.json`; the `$QQ_SECRET` env var is consulted by the interactive `/qq` command, not by the auto-start path.
 
 ---
 
@@ -582,12 +582,12 @@ When the AI is processing a query and a new message arrives, it is queued automa
 
 ```
 Phone: "Run all tests"
-cheetahclaws: ⏳ Queued as job #a3f2 (position 1)
+pycode: ⏳ Queued as job #a3f2 (position 1)
               "Run all tests"
               Use !jobs to check status.
 
 Phone: !jobs
-cheetahclaws: 📊 Job Dashboard
+pycode: 📊 Job Dashboard
               ────────────────────────────────────
               🔄 #b7c1  [just now]  "Run all tests" — Bash: pytest…
               ✅ #a3f2  [2m ago]    "Explain auth flow" (3 steps 18s)
@@ -615,7 +615,7 @@ Each job records:
 - **Result preview** — last 600 chars of the AI's response
 - **Duration** — wall-clock seconds from start to finish
 
-Jobs are persisted to `~/.cheetahclaws/jobs.json` (last 100 kept).
+Jobs are persisted to `~/.pycode/jobs.json` (last 100 kept).
 
 ### WeChat specifics
 
@@ -631,7 +631,7 @@ The bridge already enforces an owner-only `chat_id` whitelist (a message from a 
 
 - A hard denylist refuses obviously host-destroying commands (`rm -rf /`, fork bomb, `mkfs`, `dd of=/dev/sd…`, `chmod -R 777 /`, …) — see [`docs/guides/security.md`](security.md#bash-tool--hard-denylist).
 - NUL bytes / control characters / commands longer than 4 KB are rejected.
-- Set `CHEETAHCLAWS_BRIDGE_TERMINAL=0` to hard-disable the feature entirely — useful when a bot token is shared or stored somewhere a third party could read it.
+- Set `PYCODE_BRIDGE_TERMINAL=0` to hard-disable the feature entirely — useful when a bot token is shared or stored somewhere a third party could read it.
 
 For programs that need a TTY (`!python`, `!claude`, `!bash`, `!sqlite3`, `!psql`, `!redis-cli`, …) the bridge transparently switches to a PTY-backed interactive session. The same denylist + length checks apply at session start.
 

@@ -3,7 +3,7 @@
 Cache key = (source_name, normalized_query, limit). Cache value = JSON blob
 of the serialized Result list. Missing or expired entries return None.
 
-Lives at ~/.cheetahclaws/research_cache.db. No-op if the directory is
+Lives at ~/.pycode/research_cache.db. No-op if the directory is
 read-only (e.g. sandboxed CI). Every lookup is wrapped in try/except so a
 corrupt DB never breaks research runs — the worst that happens is a
 full re-fetch.
@@ -23,7 +23,7 @@ DEFAULT_TTL_SECONDS = 24 * 3600
 
 
 def _db_path() -> Path:
-    return Path.home() / ".cheetahclaws" / "research_cache.db"
+    return Path.home() / ".pycode" / "research_cache.db"
 
 
 def _connect() -> sqlite3.Connection | None:

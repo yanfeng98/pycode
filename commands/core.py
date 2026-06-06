@@ -1,5 +1,5 @@
 """
-commands/core.py — Core utility commands for CheetahClaws.
+commands/core.py — Core utility commands for PyCode.
 
 Commands: /help, /clear, /context, /cost, /compact, /init, /export,
           /copy, /status, /doctor, /proactive, /image, /circuit
@@ -16,7 +16,7 @@ from typing import Union
 
 from ui.render import clr, info, ok, warn, err
 
-# VERSION is imported lazily from cheetahclaws to avoid circular imports
+# VERSION is imported lazily from pycode to avoid circular imports
 _VERSION_STR = ""
 
 def _get_version() -> str:
@@ -24,7 +24,7 @@ def _get_version() -> str:
     if not _VERSION_STR:
         try:
             import importlib
-            cc = importlib.import_module("cheetahclaws")
+            cc = importlib.import_module("pycode")
             _VERSION_STR = getattr(cc, "VERSION", "?")
         except Exception:
             _VERSION_STR = "?"
@@ -33,20 +33,20 @@ def _get_version() -> str:
 
 def cmd_help(_args: str, _state, config) -> bool:
     try:
-        import cheetahclaws
+        import pycode
     except Exception:
-        info("CheetahClaws — type /model, /save, /load, /history, /context, /exit for commands.")
+        info("PyCode — type /model, /save, /load, /history, /context, /exit for commands.")
         return True
 
-    doc = cheetahclaws.__doc__ or ""
+    doc = pycode.__doc__ or ""
     print(doc)
 
     # Safety net: surface any registered command that the curated docstring
     # forgot to mention (e.g. modular/plugin additions, or newly added commands
     # whose author didn't update the docstring). Walks COMMANDS, groups by
     # handler so aliases share a row, skips anything already referenced.
-    commands = getattr(cheetahclaws, "COMMANDS", {})
-    meta     = getattr(cheetahclaws, "_CMD_META", {})
+    commands = getattr(pycode, "COMMANDS", {})
+    meta     = getattr(pycode, "_CMD_META", {})
 
     aliases_by_func: dict[object, list[str]] = {}
     for name, func in commands.items():
@@ -672,7 +672,7 @@ def run_setup_wizard(config: dict) -> None:
     from providers import PROVIDERS, detect_provider, get_api_key
 
     print()
-    info("Welcome to CheetahClaws! Let's get you set up.\n")
+    info("Welcome to PyCode! Let's get you set up.\n")
 
     # ── Step 1: Pick provider ──
     providers_list = [
@@ -868,7 +868,7 @@ def _proactive_rpc(method: str, params: dict | None = None) -> dict | None:
             return None
         host, port_s = address.rsplit(":", 1)
         token_path = os.path.join(
-            os.path.expanduser("~"), ".cheetahclaws", "daemon_token"
+            os.path.expanduser("~"), ".pycode", "daemon_token"
         )
         try:
             with open(token_path, "r", encoding="utf-8") as f:
@@ -908,7 +908,7 @@ def cmd_proactive(args: str, state, config) -> bool:
     /proactive 30s / 1h   — enable with custom interval
     /proactive off        — disable
 
-    F-5: when ``cheetahclaws serve`` is running, the watcher lives in
+    F-5: when ``pycode serve`` is running, the watcher lives in
     the daemon and survives REPL exit. This command routes through the
     ``proactive.set`` / ``proactive.get`` RPCs in that case; otherwise
     it mutates the local RuntimeContext as before.
@@ -1062,7 +1062,7 @@ def cmd_web(args: str, state, config) -> bool:
         info("Web server already running in this session. Use /web status to check.")
         return True
 
-    if os.environ.get("CHEETAHCLAWS_WEB_SERVER") == "1":
+    if os.environ.get("PYCODE_WEB_SERVER") == "1":
         warn("You're already inside a web-terminal session. Nested web launch refused.")
         return True
 

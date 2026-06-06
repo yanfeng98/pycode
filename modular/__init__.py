@@ -1,5 +1,5 @@
 """
-modular/ — CheetahClaws feature-module ecosystem
+modular/ — PyCode feature-module ecosystem
 ================================================
 
 Each subdirectory is a self-contained feature module that can be

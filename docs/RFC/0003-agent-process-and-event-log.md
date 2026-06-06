@@ -8,7 +8,7 @@
 - **Builds on:** [`0001-daemon-design-note.md`](./0001-daemon-design-note.md) (transport, auth, originator)
 
 This RFC defines two of the three Phase-1 invariants needed before
-cheetahclaws can be called an agent OS:
+pycode can be called an agent OS:
 
 1. **AgentProcess** — every running agent is a first-class kernel object
    with a stable PID, an explicit state machine, and durable identity.
@@ -21,7 +21,7 @@ companion RFC (0008). This note's scope is **identity, lifecycle, and
 durability** — nothing about isolation, scheduling, capabilities, or
 quotas, all of which compose on top of the contracts defined here.
 
-The RFC ships behind a single opt-in flag (`cheetahclaws serve
+The RFC ships behind a single opt-in flag (`pycode serve
 --enable-kernel`). With the flag absent, daemon behaviour is byte-for-byte
 unchanged; existing users see nothing new.
 
@@ -299,7 +299,7 @@ kernel.info
   result:  { schema_version, next_pid, next_event_id, agent_count, event_count }
 ```
 
-For `cheetahclaws daemon status` and operator inspection.
+For `pycode daemon status` and operator inspection.
 
 ### 3.4 Concurrency contract
 
@@ -325,7 +325,7 @@ RFC 0001 application codes (-32001 not_originator, -32002 unknown_request).
 ## 4. Storage layout
 
 ```
-~/.cheetahclaws/
+~/.pycode/
   kernel.db                  # this RFC; PRAGMA journal_mode=WAL
   kernel.db-wal              # WAL sidecar, managed by SQLite
   kernel.db-shm              # shared-memory file, managed by SQLite
@@ -336,7 +336,7 @@ Why a separate database from `sessions.db` (RFC 0002 F-2):
 1. **Lifecycles diverge.** F-2's tables are session-scoped; the kernel
    namespace is daemon-scoped. Mixing them in one file forces every
    migration to consider both.
-2. **Reset blast radius.** `rm ~/.cheetahclaws/kernel.db` wipes the
+2. **Reset blast radius.** `rm ~/.pycode/kernel.db` wipes the
    kernel without touching session history.
 3. **F-2 independence.** This RFC must be reviewable and shippable
    without F-2; a shared file would couple the two PRs.
@@ -402,7 +402,7 @@ initial value `'1'`). Migrations bump it; mismatch is a hard refuse.
 A single new flag, additive:
 
 ```
-cheetahclaws serve --enable-kernel
+pycode serve --enable-kernel
 ```
 
 When absent (default), no kernel code is imported, no kernel.db is

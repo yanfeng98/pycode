@@ -1,6 +1,6 @@
-"""Lightweight web terminal server for CheetahClaws.
+"""Lightweight web terminal server for PyCode.
 
-Spawns a CheetahClaws REPL in a PTY and bridges it to the browser.
+Spawns a PyCode REPL in a PTY and bridges it to the browser.
 Supports two transport modes on the same port:
 
   1. WebSocket (direct TCP connections)
@@ -130,7 +130,7 @@ class _PtySession:
         env["TERM"] = "xterm-256color"
         env["COLUMNS"] = "120"
         env["LINES"] = "30"
-        env["CHEETAHCLAWS_WEB_TERMINAL"] = "1"
+        env["PYCODE_WEB_TERMINAL"] = "1"
         self.proc = subprocess.Popen(
             _server_cmd, stdin=slave_fd, stdout=slave_fd, stderr=slave_fd,
             env=env, preexec_fn=os.setsid,
@@ -204,7 +204,7 @@ def _build_html(no_auth: bool = False) -> str:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CheetahClaws Web Terminal</title>
+<title>PyCode Web Terminal</title>
 <link rel="icon" type="image/png" sizes="256x256" href="/static/favicon.png">
 <link rel="icon" type="image/x-icon" sizes="any" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/static/favicon.png">
@@ -249,14 +249,14 @@ def _build_html(no_auth: bool = False) -> str:
 <body>
 <div id="login" class="{'hidden' if no_auth else ''}">
   <form onsubmit="doLogin(event)">
-    <h2>CheetahClaws</h2>
+    <h2>PyCode</h2>
     <input type="password" id="pwd" placeholder="Enter password" autofocus>
     <button type="submit">Connect</button>
     <div class="error" id="login-err"></div>
   </form>
 </div>
 <div id="topbar">
-  <span class="logo">CheetahClaws Web Terminal</span>
+  <span class="logo">PyCode Web Terminal</span>
   <span class="status">
     <span class="dot" id="status-dot"></span>
     <span id="status-text">connecting...</span>
@@ -784,7 +784,7 @@ def _handle_websocket(sock: socket.socket, extra: bytes,
     env["TERM"] = "xterm-256color"
     env["COLUMNS"] = "120"
     env["LINES"] = "30"
-    env["CHEETAHCLAWS_WEB_TERMINAL"] = "1"
+    env["PYCODE_WEB_TERMINAL"] = "1"
     proc = subprocess.Popen(
         _server_cmd, stdin=slave_fd, stdout=slave_fd, stderr=slave_fd,
         env=env, preexec_fn=os.setsid,
@@ -1153,14 +1153,14 @@ def _handle_connection(sock: socket.socket, addr: tuple) -> None:
             except Exception:  # noqa: BLE001
                 pass
             lines: list[str] = []
-            lines.append("# HELP cheetahclaws_uptime_seconds Server uptime")
-            lines.append("# TYPE cheetahclaws_uptime_seconds gauge")
-            lines.append(f"cheetahclaws_uptime_seconds "
+            lines.append("# HELP pycode_uptime_seconds Server uptime")
+            lines.append("# TYPE pycode_uptime_seconds gauge")
+            lines.append(f"pycode_uptime_seconds "
                          f"{round(uptime_seconds(), 3)}")
             for k, v in {**counters, **extras}.items():
-                lines.append(f"# HELP cheetahclaws_{k} {k}")
-                lines.append(f"# TYPE cheetahclaws_{k} counter")
-                lines.append(f"cheetahclaws_{k} {v}")
+                lines.append(f"# HELP pycode_{k} {k}")
+                lines.append(f"# TYPE pycode_{k} counter")
+                lines.append(f"pycode_{k} {v}")
             body = ("\n".join(lines) + "\n").encode()
             _send_http(sock, "200 OK", "text/plain; version=0.0.4",
                        body, request_origin=origin)
@@ -1990,7 +1990,7 @@ def _reap_stale_sessions() -> None:
 def _bind_port(host: str, preferred: Optional[int]) -> tuple[socket.socket, int]:
     """Bind a listening socket. When `preferred` is None we try the default
     port first and fall back to an OS-chosen free port if it's taken — so
-    `cheetahclaws --web` Just Works even when 8080 is in use. When the user
+    `pycode --web` Just Works even when 8080 is in use. When the user
     passes an explicit port we bind it (or fail loudly) to respect intent."""
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -2018,12 +2018,12 @@ def start_web_server(
     global _server_password, _server_no_auth, _server_cmd
 
     # Guard against recursive startup (e.g. shell alias maps
-    # cheetahclaws → cheetahclaws --web)
-    if os.environ.get("CHEETAHCLAWS_WEB_SERVER") == "1":
+    # pycode → pycode --web)
+    if os.environ.get("PYCODE_WEB_SERVER") == "1":
         print("\033[31mError: recursive --web launch detected. "
               "Check shell aliases.\033[0m", file=sys.stderr)
         sys.exit(1)
-    os.environ["CHEETAHCLAWS_WEB_SERVER"] = "1"
+    os.environ["PYCODE_WEB_SERVER"] = "1"
 
     _server_password = None if no_auth else _generate_password()
     _server_no_auth = no_auth
@@ -2060,11 +2060,11 @@ def start_web_server(
             print(f"\033[33m[web] DB init failed: {exc}\033[0m", file=sys.stderr)
         _chat_user_count = 0
 
-    cc_bin = shutil.which("cheetahclaws")
+    cc_bin = shutil.which("pycode")
     if cc_bin:
         _server_cmd = [cc_bin]
     else:
-        cc_script = Path(__file__).resolve().parent.parent / "cheetahclaws.py"
+        cc_script = Path(__file__).resolve().parent.parent / "pycode.py"
         _server_cmd = [sys.executable, str(cc_script)]
 
     # Start background reaper for orphaned SSE sessions
@@ -2073,7 +2073,7 @@ def start_web_server(
     srv, port = _bind_port(host, port)
     srv.listen(5)
 
-    print(f"\n  \033[36mCheetahClaws Web Terminal\033[0m", flush=True)
+    print(f"\n  \033[36mPyCode Web Terminal\033[0m", flush=True)
     print(f"  \033[2m{'─' * 40}\033[0m", flush=True)
     print(f"  Terminal: \033[1mhttp://localhost:{port}\033[0m", flush=True)
     print(f"  Chat UI:  \033[1mhttp://localhost:{port}/chat\033[0m", flush=True)

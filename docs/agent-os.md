@@ -1,6 +1,6 @@
 # Agent OS — `cc_kernel/`
 
-CheetahClaws ships a **single-node agent operating system** under
+PyCode ships a **single-node agent operating system** under
 `cc_kernel/`. It's the substrate that turns the legacy REPL/bridge
 into a long-running, multi-agent kernel: process table, capability
 model, quota ledger, scheduler, mailbox/registry, virtual filesystem,
@@ -14,7 +14,7 @@ and CLI users see no difference.
 
 ## Why this exists
 
-Before `cc_kernel/`, cheetahclaws was an *agent runtime/middleware*:
+Before `cc_kernel/`, pycode was an *agent runtime/middleware*:
 single-user REPL → tool dispatch → LLM. There was no place to:
 
 - Run multiple agents concurrently with isolation between them.
@@ -43,7 +43,7 @@ cc_kernel/
   agent_fs.py        # VFS unifying memory/checkpoint/skill/task
   sandbox.py         # RLIMIT + bubblewrap + wall-clock killer
   contract.py        # Frozen v1.0 method registry, drift CI guard
-  cli.py             # `cheetahclaws kernel <action>` subcommand
+  cli.py             # `pycode kernel <action>` subcommand
   tools/             # Built-in tools (Echo, Read, Write, Glob, List,
                      # Diff, AST) and opt-in (Exec, Fetch, Git)
   runner/
@@ -58,21 +58,21 @@ cc_kernel/
 Operators turn the kernel on via:
 
 ```bash
-cheetahclaws serve --enable-kernel
+pycode serve --enable-kernel
 ```
 
 …then introspect it via the kernel CLI:
 
 ```bash
-cheetahclaws kernel summary             # uptime, agents, queue rollup
-cheetahclaws kernel info                # version, schema, API surface
-cheetahclaws kernel agents [--state S]
-cheetahclaws kernel proc <pid>          # combined per-agent view
-cheetahclaws kernel events [--pid P]
-cheetahclaws kernel queue [--state S]
-cheetahclaws kernel registry [--prefix P] [--tag T]
-cheetahclaws kernel methods [--tier T]  # documented kernel.* RPCs
-cheetahclaws kernel prometheus          # Prometheus exposition text
+pycode kernel summary             # uptime, agents, queue rollup
+pycode kernel info                # version, schema, API surface
+pycode kernel agents [--state S]
+pycode kernel proc <pid>          # combined per-agent view
+pycode kernel events [--pid P]
+pycode kernel queue [--state S]
+pycode kernel registry [--prefix P] [--tag T]
+pycode kernel methods [--tier T]  # documented kernel.* RPCs
+pycode kernel prometheus          # Prometheus exposition text
 ```
 
 Without `--enable-kernel`, the daemon serves the same surface as
@@ -173,7 +173,7 @@ sequence post-exit.
 ## Backwards compatibility
 
 - All kernel code is gated behind `--enable-kernel`. Default
-  CheetahClaws CLI / REPL / bridges / web UI unchanged.
+  PyCode CLI / REPL / bridges / web UI unchanged.
 - Kernel SQLite schema is forward-only (versioned migrations
   `v1 → v7`). Old kernel.db files upgrade in place.
 - The v1.0 RPC contract (58 stable methods) has CI drift guard
@@ -186,7 +186,7 @@ sequence post-exit.
 The kernel is at v1.0 production-grade for **single-node** use.
 Two RFCs remain explicitly parked:
 
-- **RFC 0014 multi-tenant** — only worth doing if cheetahclaws is
+- **RFC 0014 multi-tenant** — only worth doing if pycode is
   deployed as team SaaS / shared infrastructure.
 - **RFC 0015 cluster** — only worth doing once a single host
   saturates real workload (distributed scheduler + cross-host

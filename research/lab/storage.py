@@ -1,6 +1,6 @@
 """research/lab/storage.py — SQLite persistence for lab runs.
 
-Five additive tables in ``~/.cheetahclaws/research_lab.db`` (separate
+Five additive tables in ``~/.pycode/research_lab.db`` (separate
 file from the daemon's sessions.db so the F-2 daemon work won't
 collide):
 
@@ -32,8 +32,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
 
-DEFAULT_DB_PATH = Path.home() / ".cheetahclaws" / "research_lab.db"
-DEFAULT_OUTPUT_DIR = Path.home() / ".cheetahclaws" / "research_papers"
+DEFAULT_DB_PATH = Path.home() / ".pycode" / "research_lab.db"
+DEFAULT_OUTPUT_DIR = Path.home() / ".pycode" / "research_papers"
 
 
 def _slugify(topic: str, *, max_len: int = 60) -> str:

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-CheetahClaws — A Fast, Easy-to-Use, Python-Native Personal AI Assistant for Any Model, Built to Work for You Autonomously 24/7.
+PyCode — A Fast, Easy-to-Use, Python-Native Personal AI Assistant for Any Model, Built to Work for You Autonomously 24/7.
 
 Usage:
-  python cheetahclaws.py [options] [prompt]
+  python pycode.py [options] [prompt]
 
 Options:
   -p, --print          Non-interactive: run prompt and exit (also --print-output)
@@ -92,7 +92,7 @@ Slash commands in REPL:
   /cloudsave        Upload current session to GitHub Gist
   /cloudsave push [desc]     Upload with optional description
   /cloudsave auto on|off     Toggle auto-upload on exit
-  /cloudsave list   List your cheetahclaws Gists
+  /cloudsave list   List your pycode Gists
   /cloudsave load <gist_id>  Download and load a session from Gist
   /subscribe <topic> [schedule] [--telegram] [--slack]
                     Subscribe to AI-monitored topic (ai_research, stock_TSLA, crypto_BTC, world_news, custom:<query>)
@@ -290,7 +290,7 @@ def _read_version() -> str:
         pass
     try:
         from importlib.metadata import version as _pkg_version
-        return _pkg_version("cheetahclaws")
+        return _pkg_version("pycode")
     except Exception:
         return "0.0.0"
 
@@ -558,8 +558,8 @@ def __getattr__(name: str):
     """Module-level __getattr__ for backward-compatible access to modular attributes.
 
     Exposes cmd_voice and _voice_language from modular/voice/cmd.py so that
-    external code and tests can access cheetahclaws.cmd_voice and
-    cheetahclaws._voice_language without the voice module being hard-coded here.
+    external code and tests can access pycode.cmd_voice and
+    pycode._voice_language without the voice module being hard-coded here.
     """
     if name == "cmd_voice":
         if "voice" in COMMANDS:
@@ -571,7 +571,7 @@ def __getattr__(name: str):
             return _vc._voice_language
         except Exception:
             return "auto"
-    raise AttributeError(f"module 'cheetahclaws' has no attribute {name!r}")
+    raise AttributeError(f"module 'pycode' has no attribute {name!r}")
 
 
 def handle_slash(line: str, state, config) -> Union[bool, tuple]:
@@ -667,7 +667,7 @@ _CMD_META: dict[str, tuple[str, list[str]]] = {
                      "backlog", "daemon", "models", "migrate-paths"]),
     "setup":       ("Run interactive setup wizard",         []),
     "theme":       ("List or set the console color theme",  []),
-    "exit":        ("Exit cheetahclaws",              []),
+    "exit":        ("Exit pycode",              []),
     "quit":        ("Exit (alias for /exit)",             []),
     "resume":      ("Resume last session",                []),
 }
@@ -909,7 +909,7 @@ def repl(config: dict, initial_prompt: str = None):
 
     # prompt_toolkit's FileHistory uses an incompatible format to readline's
     # history file, so give it a sibling path. Both persist across sessions;
-    # toggling CHEETAH_PT_INPUT only switches which file is active.
+    # toggling PYCODE_PT_INPUT only switches which file is active.
     PT_HISTORY_FILE = HISTORY_FILE.with_name("input_history_pt.txt")
 
     state = AgentState()
@@ -934,8 +934,8 @@ def repl(config: dict, initial_prompt: str = None):
     if not initial_prompt:
         from providers import detect_provider
 
-        # ── Cheetah startup animation ──
-        _CHEETAH_FRAMES = [
+        # ── PyCode startup animation ──
+        _PYCODE_FRAMES = [
             "     ✦",
             "    ✦ ·",
             "   ✦ · ·",
@@ -943,25 +943,16 @@ def repl(config: dict, initial_prompt: str = None):
             " ✦ · · · ·",
             "✦ · · · · ·",
         ]
-        _CHEETAH_LOGO = [
-            # CHEETAH (ansi_shadow)
-            " ██████╗██╗  ██╗███████╗███████╗████████╗ █████╗ ██╗  ██╗",
-            "██╔════╝██║  ██║██╔════╝██╔════╝╚══██╔══╝██╔══██╗██║  ██║",
-            "██║     ███████║█████╗  █████╗     ██║   ███████║███████║",
-            "██║     ██╔══██║██╔══╝  ██╔══╝     ██║   ██╔══██║██╔══██║",
-            "╚██████╗██║  ██║███████╗███████╗   ██║   ██║  ██║██║  ██║",
-            " ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝",
-            # CLAWS, centered under CHEETAH
-            "         ██████╗██╗      █████╗ ██╗    ██╗███████╗",
-            "        ██╔════╝██║     ██╔══██╗██║    ██║██╔════╝",
-            "        ██║     ██║     ███████║██║ █╗ ██║███████╗",
-            "        ██║     ██║     ██╔══██║██║███╗██║╚════██║",
-            "        ╚██████╗███████╗██║  ██║╚███╔███╔╝███████║",
-            "         ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝",
+        _PYCODE_LOGO = [
+            "██████╗ ██╗   ██╗ ██████╗ ██████╗ ██████╗ ███████╗",
+            "██╔══██╗╚██╗ ██╔╝██╔════╝██╔═══██╗██╔══██╗██╔════╝",
+            "██████╔╝ ╚████╔╝ ██║     ██║   ██║██║  ██║█████╗",
+            "██╔═══╝   ╚██╔╝  ██║     ██║   ██║██║  ██║██╔══╝",
+            "██║        ██║   ╚██████╗╚██████╔╝██████╔╝███████╗",
+            "╚═╝        ╚═╝    ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝",
         ]
-        _CHEETAH_GRADIENT = [  # warm cheetah-gold vertical gradient (top -> bottom)
-            "#FFE082", "#FFD54F", "#FFCA28", "#FFB300", "#FFA000", "#FF8F00",
-            "#FB8C00", "#F57C00", "#EF6C00", "#E65100", "#DD4B0E", "#D84315",
+        _PYCODE_GRADIENT = [  # blue gradient (top -> bottom)
+            "#64B5F6", "#42A5F5", "#2196F3", "#1E88E5", "#1976D2", "#1565C0",
         ]
 
         # Spinning galaxy animation
@@ -969,7 +960,7 @@ def repl(config: dict, initial_prompt: str = None):
         try:
             for i in range(8):
                 frame = _GALAXY_FRAMES[i % 4]
-                sys.stdout.write(f"\r  {clr(frame, 'cyan', 'bold')} Initializing Cheetah...")
+                sys.stdout.write(f"\r  {clr(frame, 'cyan', 'bold')} Initializing PyCode...")
                 sys.stdout.flush()
                 time.sleep(0.12)
             sys.stdout.write(f"\r{' ' * 40}\r")
@@ -982,10 +973,10 @@ def repl(config: dict, initial_prompt: str = None):
 
         # Print logo - warm cheetah-gold vertical gradient, plain if color is off.
         if C["reset"]:
-            for _ln, _hex in zip(_CHEETAH_LOGO, _CHEETAH_GRADIENT):
+            for _ln, _hex in zip(_PYCODE_LOGO, _PYCODE_GRADIENT):
                 print(C["bold"] + _rgb(_hex) + _ln + C["reset"])
         else:
-            for _ln in _CHEETAH_LOGO:
+            for _ln in _PYCODE_LOGO:
                 print(_ln)
         print()
 
@@ -1000,7 +991,7 @@ def repl(config: dict, initial_prompt: str = None):
 
         # ── Banner: aligned box ─────────────────────────────────────────
         # Compute widths from plain text (strip ANSI escapes from coloring).
-        title_plain = f"CheetahClaws v{VERSION}"
+        title_plain = f"PyCode v{VERSION}"
         line_plains = [
             f"  Model: {model} ({pname})",
             f"  Permissions: {config.get('permission_mode', 'auto')}",
@@ -1012,13 +1003,13 @@ def repl(config: dict, initial_prompt: str = None):
         # Don't shrink below the previous visual width.
         inner_w = max(inner_w, 56)
 
-        # Top: ╭─ CheetahClaws vX ─...─╮
+        # Top: ╭─ PyCode vX ─...─╮
         title_decoration_width = 3 + len(title_plain)  # "─ TITLE "
         top_trailing = "─" * (inner_w - title_decoration_width)
         print(
             clr("  ╭", "dim")
             + clr("─ ", "dim")
-            + clr("CheetahClaws ", "cyan", "bold")
+            + clr("PyCode ", "cyan", "bold")
             + ver_clr
             + clr(" ", "dim")
             + clr(top_trailing + "╮", "dim")
@@ -1117,7 +1108,7 @@ def repl(config: dict, initial_prompt: str = None):
             session_ctx.in_qq_turn = session_ctx.qq_incoming
             session_ctx.qq_incoming = False
 
-            print(clr("\n╭─ CheetahClaws ", "dim") + clr("●", "green") + clr(" ─────────────────────────", "dim"))
+            print(clr("\n╭─ PyCode ", "dim") + clr("●", "green") + clr(" ─────────────────────────", "dim"))
 
             thinking_started = False
             spinner_shown = True
@@ -1449,7 +1440,7 @@ def repl(config: dict, initial_prompt: str = None):
         if (
             HAS_PROMPT_TOOLKIT
             and sys.stdin.isatty()
-            and os.environ.get("CHEETAH_PT_INPUT", "1") != "0"
+            and os.environ.get("PYCODE_PT_INPUT", "1") != "0"
         ):
             try:
                 result = _pt_read_line(prompt, PT_HISTORY_FILE)
@@ -1913,7 +1904,7 @@ def repl(config: dict, initial_prompt: str = None):
 
 def main():
     # Subcommand short-circuit: avoid colliding with the positional `prompt`
-    # parser.  `cheetahclaws serve` runs the daemon; `cheetahclaws daemon
+    # parser.  `pycode serve` runs the daemon; `pycode daemon
     # <action>` is the daemon-control verb (status / stop / logs /
     # rotate-token).  See docs/RFC/0001-daemon-design-note.md and
     # docs/RFC/0002-daemon-foundation-roadmap.md.
@@ -1924,13 +1915,13 @@ def main():
         from commands.daemon_cmd import dispatch as _daemon_dispatch
         sys.exit(_daemon_dispatch(sys.argv[2:]))
     # Read-only kernel inspection (RFC 0003+ surface). Talks to a
-    # running `cheetahclaws serve --enable-kernel` daemon over the
+    # running `pycode serve --enable-kernel` daemon over the
     # existing daemon RPC channel; gracefully reports "not running"
     # when the daemon is absent.
     if len(sys.argv) >= 2 and sys.argv[1] == "kernel":
         from cc_kernel.cli import dispatch as _kernel_dispatch
         sys.exit(_kernel_dispatch(sys.argv[2:]))
-    # Backward-compat alias for the spike's `cheetahclaws spike-daemon ...`
+    # Backward-compat alias for the spike's `pycode spike-daemon ...`
     # surface (referenced in docs/RFC/0001-spike-notes.md).  Routes through
     # the same paths as `serve` / `daemon <action>` so spike-notes commands
     # keep working unchanged.
@@ -1939,8 +1930,8 @@ def main():
         sys.exit(_legacy_main(sys.argv[2:]))
 
     parser = argparse.ArgumentParser(
-        prog="cheetahclaws",
-        description="CheetahClaws — minimal Python Claude Code implementation",
+        prog="pycode",
+        description="PyCode — minimal Python Claude Code implementation",
         add_help=False,
     )
     parser.add_argument("prompt", nargs="*", help="Initial prompt (non-interactive)")
@@ -1977,7 +1968,7 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        print(f"cheetahclaws v{VERSION}")
+        print(f"pycode v{VERSION}")
         sys.exit(0)
 
     if args.help:
@@ -2068,7 +2059,7 @@ def main():
         if env:   # local providers like ollama have no env key requirement
             warn(f"No API key found for provider '{pname}'. "
                  f"Set {env} or run: /config {pname}_api_key=YOUR_KEY"
-                 f"\n  Or run: cheetahclaws --setup")
+                 f"\n  Or run: pycode --setup")
 
     initial = " ".join(args.prompt) if args.prompt else None
     if args.print_mode and not initial:

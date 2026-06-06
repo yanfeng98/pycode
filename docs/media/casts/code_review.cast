@@ -1,4 +1,4 @@
-{"version": 2, "width": 100, "height": 28, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "CheetahClaws \u2014 find a perf bug, switch to local Ollama, apply the fix", "idle_time_limit": 1.2}
+{"version": 2, "width": 100, "height": 28, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "PyCode \u2014 find a perf bug, switch to local Ollama, apply the fix", "idle_time_limit": 1.2}
 [0.0, "o", "[32m~/projects/parser[0m [36m\u276f[0m "]
 [0.7, "o", ""]
 [0.749, "o", "c"]
@@ -14,7 +14,7 @@
 [1.254, "o", "w"]
 [1.3, "o", "s"]
 [1.7, "o", "\r\n"]
-[2.0, "o", "[2m[CheetahClaws v3.05.79 \u00b7 claude-sonnet-4-6 \u00b7 auto mode][0m\r\n"]
+[2.0, "o", "[2m[PyCode v3.05.79 \u00b7 claude-sonnet-4-6 \u00b7 auto mode][0m\r\n"]
 [2.2, "o", "[2mType /help for commands, /model to switch, !cmd for shell, Ctrl+C to quit[0m\r\n\r\n"]
 [2.4, "o", "[1m[36m[project] \u00bb[0m "]
 [3.0, "o", ""]

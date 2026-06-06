@@ -12,7 +12,7 @@ import quota
 @pytest.fixture(autouse=True)
 def _clean_session(tmp_path, monkeypatch):
     # Isolate the on-disk daily counter so tests never read or pollute the real
-    # ~/.cheetahclaws/quota/ file (matches test_quota.py's approach).
+    # ~/.pycode/quota/ file (matches test_quota.py's approach).
     monkeypatch.setattr(quota, "_quota_dir", lambda: tmp_path)
     quota.reset_session("t")
     yield

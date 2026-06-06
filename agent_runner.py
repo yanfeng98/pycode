@@ -10,7 +10,7 @@ Design
 * The loop calls agent.run() for each iteration, draining the generator.
   PermissionRequests are auto-granted (autonomous mode) with a notification.
 * After each iteration a ≤500-char summary is sent via send_fn (bridge / terminal).
-* Iteration history is persisted to ~/.cheetahclaws/agents/<name>/log.jsonl.
+* Iteration history is persisted to ~/.pycode/agents/<name>/log.jsonl.
 * call stop() or send_fn receives "!agent-stop" to terminate the loop.
 """
 from __future__ import annotations
@@ -29,7 +29,7 @@ import logging_utils as _log
 # ── Template resolution ────────────────────────────────────────────────────
 
 _TEMPLATES_DIR = Path(__file__).parent / "agent_templates"
-_USER_TEMPLATES_DIR = Path.home() / ".cheetahclaws" / "agent_templates"
+_USER_TEMPLATES_DIR = Path.home() / ".pycode" / "agent_templates"
 
 
 def list_templates() -> list[dict]:
@@ -89,13 +89,13 @@ def list_runners() -> list["AgentRunner"]:
 def _should_use_subprocess(config: dict) -> bool:
     """Pick between the in-thread (legacy) and subprocess (F-4) execution
     path. The subprocess path is POSIX-only and gated by either:
-        * ``CHEETAHCLAWS_ENABLE_F4`` env var (any truthy value), OR
+        * ``PYCODE_ENABLE_F4`` env var (any truthy value), OR
         * ``agent_runner_subprocess: true`` in config.
     Default is False — REPL users see no behaviour change.
     """
     if sys.platform.startswith("win"):
         return False
-    env_flag = os.environ.get("CHEETAHCLAWS_ENABLE_F4", "").strip().lower()
+    env_flag = os.environ.get("PYCODE_ENABLE_F4", "").strip().lower()
     if env_flag in {"1", "true", "yes", "on"}:
         return True
     return bool(config.get("agent_runner_subprocess", False))
@@ -184,7 +184,7 @@ def stop_all() -> int:
 
 # ── AgentRunner ────────────────────────────────────────────────────────────
 
-_LOG_DIR = Path.home() / ".cheetahclaws" / "agents"
+_LOG_DIR = Path.home() / ".pycode" / "agents"
 
 
 def _normalize_summary(text: str) -> str:
@@ -243,8 +243,8 @@ class AgentRunner:
         self._log_dir.mkdir(parents=True, exist_ok=True)
         # Public output dir: where templates that produce user-facing files
         # (research notes, paper drafts, generated code) should land. Lives
-        # under ~/.cheetahclaws/agents/<name>/output/ so all agent artifacts
-        # stay in one place — no more files dropped in the cheetahclaws
+        # under ~/.pycode/agents/<name>/output/ so all agent artifacts
+        # stay in one place — no more files dropped in the pycode
         # source directory.
         self.output_dir = self._log_dir / "output"
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -690,7 +690,7 @@ def _pipe_main(name_arg: Optional[str] = None) -> int:
     chan.send({"op": "ready"})
 
     # ── 1.5) Optional e2e stub for ``agent.run`` ──────────────────────────
-    # When ``CHEETAHCLAWS_E2E_FAKE_AGENT=1`` is set in the subprocess env,
+    # When ``PYCODE_E2E_FAKE_AGENT=1`` is set in the subprocess env,
     # replace ``agent.run`` with a scripted generator. This keeps the F-4
     # end-to-end test (tests/e2e_f4_runner.py) hermetic — it exercises the
     # real `python -m agent_runner --pipe` entry point, the real
@@ -699,14 +699,14 @@ def _pipe_main(name_arg: Optional[str] = None) -> int:
     # configured or reachable. The stub is gated by env var so production
     # paths can never reach it. The test caller drives termination via
     # ``rs.stop()`` once it sees the iteration counter rise.
-    if os.environ.get("CHEETAHCLAWS_E2E_FAKE_AGENT") == "1":
+    if os.environ.get("PYCODE_E2E_FAKE_AGENT") == "1":
         import agent as _agent_mod
         from agent import (
             TextChunk as _StubTextChunk,
             TurnDone as _StubTurnDone,
             PermissionRequest as _StubPermissionRequest,
         )
-        _stub_emit_perm = os.environ.get("CHEETAHCLAWS_E2E_FAKE_PERMISSION") == "1"
+        _stub_emit_perm = os.environ.get("PYCODE_E2E_FAKE_PERMISSION") == "1"
         _stub_state = {"perm_emitted": False}
 
         def _fake_run(prompt, state, config, system_prompt,

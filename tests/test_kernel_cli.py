@@ -1,4 +1,4 @@
-"""Tests for cc_kernel.cli — `cheetahclaws kernel ...` subcommands."""
+"""Tests for cc_kernel.cli — `pycode kernel ...` subcommands."""
 from __future__ import annotations
 
 import io
@@ -34,7 +34,7 @@ def running_kernel(tmp_path, monkeypatch):
     CLI can find it, and clean up on teardown.
 
     The CLI uses _discovery.locate() which reads
-    ~/.cheetahclaws/daemon.json; we monkey-patch DEFAULT_TOKEN_PATH
+    ~/.pycode/daemon.json; we monkey-patch DEFAULT_TOKEN_PATH
     and the discovery module's path to point inside tmp_path so the
     test doesn't collide with any real running daemon."""
     _events.reset_bus_for_tests()
@@ -105,7 +105,7 @@ def test_cli_no_daemon_returns_1(monkeypatch, tmp_path):
                          lambda: tmp_path / "no-such-daemon.json")
     rc, out, err = _run_cli("summary")
     assert rc == 1
-    assert "not running" in err.lower() or "is `cheetahclaws serve" in err
+    assert "not running" in err.lower() or "is `pycode serve" in err
 
 
 # ── help / unknown ──────────────────────────────────────────────────────
@@ -278,5 +278,5 @@ def test_cli_methods_invalid_tier(running_kernel):
 def test_cli_prometheus(running_kernel):
     rc, out, err = _run_cli("prometheus")
     assert rc == 0, err
-    assert "# HELP cheetahclaws_kernel_schema_version" in out
-    assert "cheetahclaws_kernel_schema_version 5" in out
+    assert "# HELP pycode_kernel_schema_version" in out
+    assert "pycode_kernel_schema_version 5" in out

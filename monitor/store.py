@@ -1,7 +1,7 @@
 """monitor/store.py — Persistent subscription storage.
 
 F-3 swapped JSON-file storage for the SQLite ``monitor_subscriptions``
-table (in the shared ``~/.cheetahclaws/sessions.db``).  Reports get a
+table (in the shared ``~/.pycode/sessions.db``).  Reports get a
 companion ``monitor_reports`` row.  REPL and daemon both read/write the
 same tables — there is no in-memory cache, so a subscription added in
 REPL is visible to the daemon scheduler on its next poll.
@@ -10,7 +10,7 @@ Public API (unchanged from the legacy JSON store): ``list_subscriptions``,
 ``get_subscription``, ``add_subscription``, ``remove_subscription``,
 ``update_last_run``.  New: ``save_report`` and ``list_reports``.
 
-Migration: ``~/.cheetahclaws/monitor_subscriptions.json`` is imported
+Migration: ``~/.pycode/monitor_subscriptions.json`` is imported
 once on first access (tracked via ``schema_meta.monitor_migrated_from_json``);
 the JSON file is kept readable for one release as fallback.
 """
@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-STORE_PATH = Path.home() / ".cheetahclaws" / "monitor_subscriptions.json"
+STORE_PATH = Path.home() / ".pycode" / "monitor_subscriptions.json"
 
 _MIGRATION_KEY = "monitor_migrated_from_json"
 _migration_done_in_process = False
@@ -45,7 +45,7 @@ def _ensure_migrated() -> None:
 
     Note: this migration is **one-way**.  After the marker is set the
     JSON file is never read again; subsequent edits to
-    ``~/.cheetahclaws/monitor_subscriptions.json`` are ignored.  The
+    ``~/.pycode/monitor_subscriptions.json`` are ignored.  The
     file is left on disk so prior-release users can still read it, but
     SQLite is now the source of truth.  To redo the migration, delete
     the ``monitor_migrated_from_json`` row from ``schema_meta`` AND the

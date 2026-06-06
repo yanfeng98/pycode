@@ -1,6 +1,6 @@
-{"version": 2, "width": 110, "height": 34, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "CheetahClaws /lab \u2014 9 agents drive a paper from question to PDF", "idle_time_limit": 1.3}
-[0.0, "o", "[32m~[0m [36m\u276f[0m cheetahclaws\r\n"]
-[0.3, "o", "[2m[CheetahClaws v3.05.79 \u00b7 claude-sonnet-4-6][/lab engine v0][0m\r\n\r\n"]
+{"version": 2, "width": 110, "height": 34, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "PyCode /lab \u2014 9 agents drive a paper from question to PDF", "idle_time_limit": 1.3}
+[0.0, "o", "[32m~[0m [36m\u276f[0m pycode\r\n"]
+[0.3, "o", "[2m[PyCode v3.05.79 \u00b7 claude-sonnet-4-6][/lab engine v0][0m\r\n\r\n"]
 [0.5, "o", "[1m[36m[~] \u00bb[0m "]
 [1.0, "o", ""]
 [1.058, "o", "/"]
@@ -114,7 +114,7 @@
 [15.498, "o", "    [32m\u25cf Citation Checker[0m: 12/12 references verified against arXiv / Semantic Scholar / CrossRef.\r\n"]
 [15.598, "o", "\r\n"]
 [15.998, "o", "  [32m[FINALISE][0m  Bundle ready.\r\n\r\n"]
-[16.398, "o", "[32m\u2713[0m  Output at [36m~/.cheetahclaws/research_papers/lab_a3b1c8e9f012/[0m\r\n\r\n"]
+[16.398, "o", "[32m\u2713[0m  Output at [36m~/.pycode/research_papers/lab_a3b1c8e9f012/[0m\r\n\r\n"]
 [16.698, "o", "    \u251c\u2500\u2500 [1mreport.md[0m              [2m(2,940 words, 12 refs)[0m\r\n"]
 [16.848, "o", "    \u251c\u2500\u2500 references.bib       [2m(verified BibTeX)[0m\r\n"]
 [16.998, "o", "    \u251c\u2500\u2500 citations_verified.json\r\n"]

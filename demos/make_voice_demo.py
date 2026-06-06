@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws /voice command using PIL.
+Generate animated GIF demo of pycode /voice command using PIL.
 Simulates the full voice pipeline: /voice status → record → waveform
 → STT transcription → auto-submit → AI response.
 """
@@ -90,7 +90,7 @@ def draw_frame(lines_segments, waveform_data=None):
 # ── Reusable line builders ────────────────────────────────────────────────
 
 BANNER = [
-    [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW)],
     [seg("│  Type /help for commands, Ctrl+C to cancel                  │", SUBTEXT)],
@@ -102,7 +102,7 @@ BANNER = [
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg(text + cur, TEXT),
     ]
@@ -128,7 +128,7 @@ def status_row(icon, label, status, detail=""):
 
 def claude_header():
     return [
-        seg("╭─ CheetahClaws ", SUBTEXT),
+        seg("╭─ PyCode ", SUBTEXT),
         seg("●", GREEN),
         seg(" ─────────────────────────────────────────────", SUBTEXT),
     ]
@@ -296,7 +296,7 @@ def build_scenes():
 
     # ── 8: Auto-submit — show as user query ───────────────────────────────
     base2 = BANNER + [
-        [seg("[cheetahclaws] ", SUBTEXT), seg("» ", CYAN, True),
+        [seg("[pycode] ", SUBTEXT), seg("» ", CYAN, True),
          seg(TRANSCRIBED, TEXT)],
     ]
     add(base2, 600)

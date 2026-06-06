@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# ── CheetahClaws Installer ──────────────────────────────────────────────
-# curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+# ── PyCode Installer ──────────────────────────────────────────────
+# curl -fsSL https://raw.githubusercontent.com/yanfeng98/pycode/main/scripts/install.sh | bash
 #
 # Works on: Linux, macOS, WSL2, Android (Termux)
 # Requires: Python 3.10+, pip, git
 # ─────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-REPO="https://github.com/SafeRL-Lab/cheetahclaws.git"
-INSTALL_DIR="$HOME/.cheetahclaws-src"
+REPO="https://github.com/yanfeng98/pycode.git"
+INSTALL_DIR="$HOME/.pycode-src"
 MIN_PYTHON="3.10"
 
 # ── Colors ───────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ center() {
 BOX_W=42
 
 # ── Banner ───────────────────────────────────────────────────────────────
-B1=$(center "CheetahClaws Installer" $BOX_W)
+B1=$(center "PyCode Installer" $BOX_W)
 B2=$(center "Fast AI Coding Assistant" $BOX_W)
 echo ""
 echo -e "${CYAN}  ╭──────────────────────────────────────────╮${RESET}"
@@ -115,7 +115,7 @@ if [ -d "$INSTALL_DIR/.git" ]; then
     git pull --quiet origin main
     ok "Updated to latest"
 else
-    info "Cloning CheetahClaws..."
+    info "Cloning PyCode..."
     git clone --depth 1 "$REPO" "$INSTALL_DIR"
     ok "Cloned to $INSTALL_DIR"
 fi
@@ -123,9 +123,9 @@ fi
 cd "$INSTALL_DIR"
 
 # ── Install with pip ───────────────────────────────────────────────────
-info "Installing CheetahClaws..."
+info "Installing PyCode..."
 
-VENV_DIR="$HOME/.cheetahclaws-venv"
+VENV_DIR="$HOME/.pycode-venv"
 USE_VENV=false
 
 # Detect PEP 668 externally-managed Python (Homebrew Python 3.12+, Debian 12+, etc.)
@@ -176,7 +176,7 @@ else
     PIP_BIN="$($PYTHON -m site --user-base 2>/dev/null)/bin"
 fi
 
-ok "CheetahClaws installed"
+ok "PyCode installed"
 
 # ── Verify installation & add to PATH ─────────────────────────────────
 # Determine where the binary lives
@@ -186,9 +186,9 @@ else
     BIN_DIR="$PIP_BIN"
 fi
 
-if command -v cheetahclaws &>/dev/null; then
-    ok "cheetahclaws is on PATH"
-elif [ -f "$BIN_DIR/cheetahclaws" ]; then
+if command -v pycode &>/dev/null; then
+    ok "pycode is on PATH"
+elif [ -f "$BIN_DIR/pycode" ]; then
     SHELL_RC=""
     CURRENT_SH="$(basename "${SHELL:-bash}")"
     if [ "$CURRENT_SH" = "zsh" ]; then
@@ -205,18 +205,18 @@ elif [ -f "$BIN_DIR/cheetahclaws" ]; then
     if [ -n "$SHELL_RC" ]; then
         if ! grep -q "$BIN_DIR" "$SHELL_RC" 2>/dev/null; then
             echo "" >> "$SHELL_RC"
-            echo "# CheetahClaws" >> "$SHELL_RC"
+            echo "# PyCode" >> "$SHELL_RC"
             echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$SHELL_RC"
             ok "Added $BIN_DIR to PATH in $SHELL_RC"
         fi
     fi
     export PATH="$BIN_DIR:$PATH"
 else
-    warn "cheetahclaws not found on PATH — you may need to add pip's bin directory manually."
+    warn "pycode not found on PATH — you may need to add pip's bin directory manually."
 fi
 
 # ── Print version ──────────────────────────────────────────────────────
-VERSION=$(cheetahclaws --version 2>/dev/null || echo "installed")
+VERSION=$(pycode --version 2>/dev/null || echo "installed")
 L1=$(center "Installation complete!" $BOX_W)
 L2=$(center "$VERSION" $BOX_W)
 echo ""
@@ -238,8 +238,8 @@ fi
 echo -e "  ${DIM}Reload your shell, then start:${RESET}"
 echo ""
 echo -e "    ${RELOAD_CMD}"
-echo -e "    cheetahclaws        ${DIM}# start the REPL${RESET}"
+echo -e "    pycode        ${DIM}# start the REPL${RESET}"
 echo ""
 echo -e "  ${DIM}First run will guide you through setup (API key, model).${RESET}"
-echo -e "  ${DIM}Or run: cheetahclaws --setup${RESET}"
+echo -e "  ${DIM}Or run: pycode --setup${RESET}"
 echo ""

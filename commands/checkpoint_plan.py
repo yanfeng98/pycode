@@ -1,5 +1,5 @@
 """
-commands/checkpoint_plan.py — Checkpoint and plan mode commands for CheetahClaws.
+commands/checkpoint_plan.py — Checkpoint and plan mode commands for PyCode.
 
 Commands: /checkpoint, /rewind (alias), /plan
 """

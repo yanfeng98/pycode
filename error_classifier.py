@@ -153,7 +153,7 @@ def classify(exc: Exception) -> ClassifiedError:
     elif cat == ErrorCategory.INVALID_REQUEST and \
             "invalid message content type" in err_str.lower():
         hint = ("Ollama rejected an assistant turn with null content. "
-                "Update CheetahClaws (issue #71) or run /clear to drop the bad turn.")
+                "Update PyCode (issue #71) or run /clear to drop the bad turn.")
 
     return ClassifiedError(
         category=cat,

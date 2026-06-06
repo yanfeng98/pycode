@@ -2,7 +2,7 @@
 name: video
 version: 1.0.0
 description: AI-powered viral video content factory — story → voice → images → MP4
-author: cheetahclaws
+author: pycode
 tags: [video, tts, ai, content-creation]
 commands:
   - video.cmd

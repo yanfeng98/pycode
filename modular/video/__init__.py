@@ -1,5 +1,5 @@
 """
-Video content factory for CheetahClaws.
+Video content factory for PyCode.
 Idea → AI Story → AI Voice → AI Images → Subtitles → Final Video
 
 Zero-cost path: Edge TTS (free) + Gemini Web images (Playwright, free).

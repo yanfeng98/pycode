@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws /plan command using PIL.
+Generate animated GIF demo of pycode /plan command using PIL.
 Simulates: /plan → read-only analysis → write plan file → /plan done
 → implementation begins → files edited.
 """
@@ -75,7 +75,7 @@ def draw_frame(lines_segments):
 # ── Reusable line builders ────────────────────────────────────────────────
 
 BANNER = [
-    [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW)],
     [seg("│  Type /help for commands, Ctrl+C to cancel                  │", SUBTEXT)],
@@ -84,7 +84,7 @@ BANNER = [
 ]
 
 BANNER_PLAN = [
-    [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("plan", MAUVE, True),
      seg("  [PLAN MODE — read only]", MAUVE)],
@@ -96,7 +96,7 @@ BANNER_PLAN = [
 
 def prompt_line(text="", cursor=False, plan=False):
     cur = "█" if cursor else ""
-    label = "[plan-mode]  " if plan else "[cheetahclaws] "
+    label = "[plan-mode]  " if plan else "[pycode] "
     label_col = MAUVE if plan else SUBTEXT
     return [
         seg(label, label_col),
@@ -120,7 +120,7 @@ def warn_line(msg):
 def claude_header(plan=False):
     mode = seg(" [PLAN MODE]", MAUVE, True) if plan else seg("", SUBTEXT)
     return [
-        seg("╭─ CheetahClaws ", SUBTEXT),
+        seg("╭─ PyCode ", SUBTEXT),
         seg("●", MAUVE if plan else GREEN),
         seg(" ─────────────────────────────────────────────", SUBTEXT),
         mode,

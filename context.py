@@ -226,8 +226,8 @@ def _tmux_available() -> bool:
 def _render_commands_block() -> str:
     """Render a markdown list of every registered slash command.
 
-    Pulls live from ``cheetahclaws._CMD_META`` (lazy import to avoid the
-    cheetahclaws -> context -> cheetahclaws circular at module load), so
+    Pulls live from ``pycode._CMD_META`` (lazy import to avoid the
+    pycode -> context -> pycode circular at module load), so
     the prompt always reflects the current command surface — including
     plugins merged in via ``_load_external_commands_into``.
 
@@ -236,7 +236,7 @@ def _render_commands_block() -> str:
     when the user asks "what can you do?" — see context.py docstring.
     """
     try:
-        import cheetahclaws as _cc
+        import pycode as _cc
     except ImportError:
         return ""
     meta = getattr(_cc, "_CMD_META", None)
@@ -244,7 +244,7 @@ def _render_commands_block() -> str:
         return ""
 
     lines = [
-        "# Available Slash Commands (User-invokable in this CheetahClaws session)",
+        "# Available Slash Commands (User-invokable in this PyCode session)",
         "",
         "These commands the **user** can invoke at the REPL prompt — they are"
         " NOT tools you call. When the user asks 'what can you do?' / '你能做什么?'"

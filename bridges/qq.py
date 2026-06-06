@@ -1,9 +1,9 @@
 """
-bridges/qq.py — QQ Bot bridge for CheetahClaws.
+bridges/qq.py — QQ Bot bridge for PyCode.
 
 Uses the official qq-botpy SDK (WebSocket + HTTP) to connect to QQ groups
 and C2C private chats.  Runs botpy's async Client on a dedicated asyncio
-event loop inside a daemon thread, bridging to CheetahClaws's synchronous
+event loop inside a daemon thread, bridging to PyCode's synchronous
 main thread via threading.Queue and threading.Event.
 
 Setup: /qq start  — connect with configured appid/secret
@@ -1183,7 +1183,7 @@ def cmd_qq(args: str, _state, config) -> bool:
         return True
 
     # Persist the appid (a public identifier) and only a REPL-supplied secret —
-    # an env-sourced secret is never written to ~/.cheetahclaws/config.json.
+    # an env-sourced secret is never written to ~/.pycode/config.json.
     config["qq_appid"] = appid
     if secret_source == "repl":
         config["qq_secret"] = secret

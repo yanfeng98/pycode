@@ -8,7 +8,7 @@ a bare KeyError that bubbles up as `Error executing Write: KeyError:
 'file_path'`.
 
 The regression these tests guard:
-    [cheetahclaws] /ssj brainstorm → main agent fires Write({}) → wrapper
+    [pycode] /ssj brainstorm → main agent fires Write({}) → wrapper
     in tools/__init__.py used inputs['file_path'] for the permission
     description → KeyError before the registered ToolDef's friendly
     lambda ever ran.

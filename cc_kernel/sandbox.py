@@ -1,7 +1,7 @@
 """sandbox.py — RLIMIT + optional bubblewrap subprocess sandbox (RFC 0008).
 
 This module is the third Phase-1 invariant ("blast radius = 1 agent")
-for the cheetahclaws agent OS. It is a primitive: it provides building
+for the pycode agent OS. It is a primitive: it provides building
 blocks (preexec_fn, argv wrapper, one-shot run helper) but does not
 spawn or supervise long-running agents. F-4 (subprocess agent runner)
 will adopt the API.

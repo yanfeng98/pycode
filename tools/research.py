@@ -25,7 +25,7 @@ def _research(
     any topic — academic papers, tech discussion, finance signals, news.
     Supports time-range filtering (`time_range="30d"`, or absolute
     `since`/`until` ISO dates), notable-citer analysis for academic
-    topics, and auto-saving to `~/.cheetahclaws/research_reports/`.
+    topics, and auto-saving to `~/.pycode/research_reports/`.
 
     Returns a ready-to-consume markdown brief with TL;DR, cross-platform
     attention table, publication trend, per-domain findings, notable

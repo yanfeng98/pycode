@@ -1,8 +1,8 @@
 # Spike notes — daemon foundation reference scaffolding
 
 - **Status:** Spike (working code, draft PR)
-- **Tracking issue:** [#68](https://github.com/SafeRL-Lab/cheetahclaws/issues/68)
-- **Tracks RFC:** [`0001-daemon-design-note.md`](./0001-daemon-design-note.md) (PR [#74](https://github.com/SafeRL-Lab/cheetahclaws/pull/74))
+- **Tracking issue:** [#68](https://github.com/yanfeng98/pycode/issues/68)
+- **Tracks RFC:** [`0001-daemon-design-note.md`](./0001-daemon-design-note.md) (PR [#74](https://github.com/yanfeng98/pycode/pull/74))
 - **Branch:** `feature/daemon-spike`
 - **Last updated:** 2026-04-30
 
@@ -22,11 +22,11 @@ modules); none of the spike code is load-bearing for production.
 | `cc_daemon/originator.py` | 70 | client_id mint / persist / resume |
 | `cc_daemon/permission.py` | 130 | Pending-request store, originator-only answer, timeout janitor |
 | `cc_daemon/methods.py` | 75 | `echo.ping` / `permission.demo` / `permission.answer` / `permission.refresh_timeout` / `permission.list` |
-| `cc_daemon/cli.py` | 165 | `cheetahclaws spike-daemon {serve, status, stop, rotate-token}` |
+| `cc_daemon/cli.py` | 165 | `pycode spike-daemon {serve, status, stop, rotate-token}` |
 | `cc_daemon/spike_client.py` | 175 | Stdlib-only smoke client (`ping`, `watch`, `request`, `answer`, `list`) |
 | `tests/test_daemon_spike.py` | 290 | 13 cases (8 covering RFC must-fix matrix + 5 unit) |
 
-`cheetahclaws.py` gets a single 4-line shim that intercepts `spike-daemon` before the main argparse runs. Nothing else in the main code is touched.
+`pycode.py` gets a single 4-line shim that intercepts `spike-daemon` before the main argparse runs. Nothing else in the main code is touched.
 
 ## RFC review-comment coverage
 
@@ -77,26 +77,26 @@ Not covered (deferred to foundation PR):
 
 ```bash
 # TCP — easiest for testing; token printed to stdout
-cheetahclaws spike-daemon serve --listen tcp://127.0.0.1:8765 --print-token
+pycode spike-daemon serve --listen tcp://127.0.0.1:8765 --print-token
 
 # Unix socket — default; peer-cred enforced (Linux only)
-cheetahclaws spike-daemon serve
+pycode spike-daemon serve
 
 # Lifecycle
-cheetahclaws spike-daemon status        # running? prints pid
-cheetahclaws spike-daemon stop          # SIGTERM, falls back to SIGKILL after 5s
-cheetahclaws spike-daemon rotate-token --print-token
+pycode spike-daemon status        # running? prints pid
+pycode spike-daemon stop          # SIGTERM, falls back to SIGKILL after 5s
+pycode spike-daemon rotate-token --print-token
 ```
 
 ### Talk to it
 
 The smoke client lives at `cc_daemon/spike_client.py`. It reads a token from
-`$CHEETAHCLAWS_TOKEN` so you don't have to pass `--token` on every call —
+`$PYCODE_TOKEN` so you don't have to pass `--token` on every call —
 which also sidesteps argparse's "value starts with `-`" trap on
 URL-safe-base64 tokens.
 
 ```bash
-export CHEETAHCLAWS_TOKEN="<the token printed by serve>"
+export PYCODE_TOKEN="<the token printed by serve>"
 
 # Sync RPC: returns immediately, also fires a ping_received event.
 python -m cc_daemon.spike_client --target tcp://127.0.0.1:8765 \
@@ -119,7 +119,7 @@ structurally impossible.
 
 ```bash
 # Two distinct clients (alice / bob) get distinct client_ids on first touch.
-rm -f ~/.cheetahclaws/clients/alice.id ~/.cheetahclaws/clients/bob.id
+rm -f ~/.pycode/clients/alice.id ~/.pycode/clients/bob.id
 python -m cc_daemon.spike_client --target tcp://127.0.0.1:8765 --kind alice ping
 python -m cc_daemon.spike_client --target tcp://127.0.0.1:8765 --kind bob   ping
 
@@ -141,7 +141,7 @@ python -m cc_daemon.spike_client --target tcp://127.0.0.1:8765 --kind alice \
 # → status 200, result.answer = {"approve": false}
 ```
 
-Because `client_id` is persisted at `~/.cheetahclaws/clients/<kind>.id` and
+Because `client_id` is persisted at `~/.pycode/clients/<kind>.id` and
 the daemon writes it back on every connect, you can also `kill` the daemon,
 restart it, and the same `--kind alice` invocation will resume against a
 fresh process — that exercises the RFC §2.5 reconnect path.
@@ -155,7 +155,7 @@ cat /tmp/spike-play/originators.json    # client_id → kind map
 cat /tmp/spike-play/run/daemon.pid
 
 # Client-side
-ls -la ~/.cheetahclaws/clients/         # mode-0600 id files per client kind
+ls -la ~/.pycode/clients/         # mode-0600 id files per client kind
 ```
 
 ### Tests

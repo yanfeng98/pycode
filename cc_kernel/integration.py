@@ -1,6 +1,6 @@
 """integration.py — Glue that activates the kernel inside cc_daemon.
 
-Called from ``cc_daemon/cli.py`` only when ``cheetahclaws serve
+Called from ``cc_daemon/cli.py`` only when ``pycode serve
 --enable-kernel`` is passed. The function is small by design: open the
 DB, run recovery, register methods. Anything more lives in the modules
 this glue calls into.

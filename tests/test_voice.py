@@ -202,44 +202,44 @@ class TestVoiceInit:
 
 class TestReplVoiceIntegration:
     def test_voice_in_commands(self):
-        import cheetahclaws
-        assert "voice" in cheetahclaws.COMMANDS
+        import pycode
+        assert "voice" in pycode.COMMANDS
 
     def test_voice_command_callable(self):
-        import cheetahclaws
-        assert callable(cheetahclaws.COMMANDS["voice"])
+        import pycode
+        assert callable(pycode.COMMANDS["voice"])
 
     def test_handle_slash_voice_sentinel(self):
         """handle_slash('/voice ...') propagates __voice__ sentinel from cmd_voice."""
-        import cheetahclaws
+        import pycode
 
         # Patch cmd_voice to return a sentinel directly
         sentinel = ("__voice__", "hello world")
-        original_voice = cheetahclaws.COMMANDS.get("voice")
+        original_voice = pycode.COMMANDS.get("voice")
         try:
-            with patch.object(cheetahclaws, "cmd_voice", return_value=sentinel):
+            with patch.object(pycode, "cmd_voice", return_value=sentinel):
                 # Re-bind in COMMANDS so the patch is seen
-                cheetahclaws.COMMANDS["voice"] = cheetahclaws.cmd_voice
-                result = cheetahclaws.handle_slash("/voice", object(), {})
+                pycode.COMMANDS["voice"] = pycode.cmd_voice
+                result = pycode.handle_slash("/voice", object(), {})
                 assert result == sentinel
         finally:
             if original_voice is not None:
-                cheetahclaws.COMMANDS["voice"] = original_voice
+                pycode.COMMANDS["voice"] = original_voice
 
     def test_voice_status_no_crash(self, capsys):
         """'/voice status' should not raise even without audio hardware."""
-        import cheetahclaws
+        import pycode
         # Should not raise
         try:
-            cheetahclaws.cmd_voice("status", object(), {})
+            pycode.cmd_voice("status", object(), {})
         except SystemExit:
             pass
         # Output captured — just ensure no uncaught exception
 
     def test_voice_lang_set(self, capsys):
-        import cheetahclaws
-        cheetahclaws.cmd_voice("lang zh", object(), {})
-        assert cheetahclaws._voice_language == "zh"
+        import pycode
+        pycode.cmd_voice("lang zh", object(), {})
+        assert pycode._voice_language == "zh"
         # Reset
-        cheetahclaws.cmd_voice("lang auto", object(), {})
-        assert cheetahclaws._voice_language == "auto"
+        pycode.cmd_voice("lang auto", object(), {})
+        assert pycode._voice_language == "auto"

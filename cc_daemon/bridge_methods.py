@@ -11,7 +11,7 @@ Exposed methods:
         Spawn a bridge worker inside the daemon. ``kind`` is one of
         ``telegram`` / ``slack`` / ``wechat``; ``config`` is the
         per-bridge config dict (tokens, chat_id, etc.). Requires the
-        corresponding ``CHEETAHCLAWS_ENABLE_F<6|7|8>`` flag to be set,
+        corresponding ``PYCODE_ENABLE_F<6|7|8>`` flag to be set,
         otherwise raises RuntimeError surfaced as -32603 over RPC.
 
     bridge.stop(kind, timeout_s=5.0)

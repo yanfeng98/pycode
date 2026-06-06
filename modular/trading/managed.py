@@ -69,7 +69,7 @@ def _universe_for(broker: PaperBroker, db_path: Path | str | None = None) -> lis
     """Pick the symbol universe for this rebalance.
 
     Priority:
-      1. The cheetahclaws watchlist (paper_trader.watchlist_list)
+      1. The pycode watchlist (paper_trader.watchlist_list)
       2. The default macro/sector ETF set (gives the agent something
          tradeable on day 1 even if no watchlist is set)
     """

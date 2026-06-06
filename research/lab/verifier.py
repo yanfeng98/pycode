@@ -43,7 +43,7 @@ _ARXIV_API     = "https://export.arxiv.org/api/query"
 _SEM_SCHOLAR   = "https://api.semanticscholar.org/graph/v1/paper/search"
 _CROSSREF_API  = "https://api.crossref.org/works"
 
-_USER_AGENT = "cheetahclaws-research-lab/0.1 (mailto:research@example.com)"
+_USER_AGENT = "pycode-research-lab/0.1 (mailto:research@example.com)"
 
 
 @dataclass

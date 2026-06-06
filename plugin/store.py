@@ -13,21 +13,21 @@ from .types import PluginEntry, PluginManifest, PluginScope, parse_plugin_identi
 
 # ── Config paths ──────────────────────────────────────────────────────────────
 
-USER_PLUGIN_DIR  = Path.home() / ".cheetahclaws" / "plugins"
-USER_PLUGIN_CFG  = Path.home() / ".cheetahclaws" / "plugins.json"
+USER_PLUGIN_DIR  = Path.home() / ".pycode" / "plugins"
+USER_PLUGIN_CFG  = Path.home() / ".pycode" / "plugins.json"
 
 # Colon-separated list of dirs that hold plugin subdirs discovered in-place
 # (no install/copy). External plugins are disabled by default — the user must
 # run `/plugin enable <name>` once, which persists under "external_enabled"
 # in the user config.
-PLUGIN_PATH_ENV     = "CHEETAHCLAWS_PLUGIN_PATH"
+PLUGIN_PATH_ENV     = "PYCODE_PLUGIN_PATH"
 _EXTERNAL_ENABLED_KEY = "external_enabled"
 
 def _project_plugin_dir() -> Path:
-    return Path.cwd() / ".cheetahclaws" / "plugins"
+    return Path.cwd() / ".pycode" / "plugins"
 
 def _project_plugin_cfg() -> Path:
-    return Path.cwd() / ".cheetahclaws" / "plugins.json"
+    return Path.cwd() / ".pycode" / "plugins.json"
 
 
 # ── Config read/write ─────────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ def _plugin_cfg_for(scope: PluginScope) -> Path:
 # ── External plugin discovery ────────────────────────────────────────────────
 
 def _external_plugin_dirs() -> list[Path]:
-    """Return existing directories listed in $CHEETAHCLAWS_PLUGIN_PATH."""
+    """Return existing directories listed in $PYCODE_PLUGIN_PATH."""
     raw = os.environ.get(PLUGIN_PATH_ENV, "")
     result: list[Path] = []
     for segment in raw.split(os.pathsep):
@@ -73,7 +73,7 @@ def _external_plugin_dirs() -> list[Path]:
 
 
 def _scan_external_plugins() -> list[PluginEntry]:
-    """Discover plugins sitting in-place under $CHEETAHCLAWS_PLUGIN_PATH.
+    """Discover plugins sitting in-place under $PYCODE_PLUGIN_PATH.
 
     Each immediate subdirectory with a plugin.json or PLUGIN.md counts.
     Malformed manifests are skipped with a warning on stderr — one bad
@@ -114,7 +114,7 @@ def _scan_external_plugins() -> list[PluginEntry]:
 def list_plugins(scope: PluginScope | None = None) -> list[PluginEntry]:
     """Return all installed plugins (optionally filtered by scope).
 
-    External plugins (from $CHEETAHCLAWS_PLUGIN_PATH) are included unless a
+    External plugins (from $PYCODE_PLUGIN_PATH) are included unless a
     USER or PROJECT plugin already holds the same name (installed wins).
     """
     entries: list[PluginEntry] = []

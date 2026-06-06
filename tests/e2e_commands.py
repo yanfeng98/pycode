@@ -37,7 +37,7 @@ def test_commands():
 
 def _run_tests(tmpdir):
     # Import after chdir so paths resolve correctly
-    from cheetahclaws import cmd_init, cmd_export, cmd_copy, cmd_status, info, err
+    from pycode import cmd_init, cmd_export, cmd_copy, cmd_status, info, err
 
     state = FakeState(messages=[
         {"role": "user", "content": "Write a hello world function"},

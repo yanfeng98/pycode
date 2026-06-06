@@ -1,5 +1,5 @@
 """
-ui/render.py — All terminal rendering for CheetahClaws.
+ui/render.py — All terminal rendering for PyCode.
 
 Provides:
   - ANSI color helpers (C, clr, info, ok, warn, err)
@@ -538,7 +538,7 @@ _DEBATE_SPINNER_PHRASES = [
 ]
 
 # Rotating "did you know" tips shown beneath the spinner while the model works,
-# Claude-Code style. Each references a real CheetahClaws feature/command.
+# Claude-Code style. Each references a real PyCode feature/command.
 _SPINNER_TIPS = [
     "Use /compact to shrink a long conversation without losing the thread",
     "Run /checkpoint to snapshot the session, then /rewind to jump back",

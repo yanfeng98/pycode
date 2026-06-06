@@ -1,10 +1,10 @@
-"""mcp package — Model Context Protocol client for cheetahclaws.
+"""mcp package — Model Context Protocol client for pycode.
 
 Usage
 -----
 MCP servers are configured in one of two JSON files:
 
-  ~/.cheetahclaws/mcp.json        (user-level, all projects)
+  ~/.pycode/mcp.json        (user-level, all projects)
   .mcp.json                      (project-level, current dir, overrides user)
 
 Format:

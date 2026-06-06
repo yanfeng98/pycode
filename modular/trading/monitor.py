@@ -8,13 +8,13 @@ What it does in one `scan()` call:
   4. New insider activity since last scan (delta detection)
 
 Every alert is structured (`Alert` dataclass) and has a severity.
-Optional dispatch to Telegram / WeChat / Slack via cheetahclaws's
+Optional dispatch to Telegram / WeChat / Slack via pycode's
 existing bridges.
 
 This module is **not** a continuously-running daemon. It runs one scan
 when called. To run periodically:
   - manually: invoke `/trading monitor scan` whenever you want
-  - cron-style: pair with cheetahclaws's `/monitor` system or external cron
+  - cron-style: pair with pycode's `/monitor` system or external cron
   - bridge-driven: any of the bridges can be configured to call it
 
 Frequency note: yfinance is 15-20 min delayed for free tier, so running
@@ -36,7 +36,7 @@ from .data import fetchers
 from .discover import anomaly as anomaly_mod
 
 
-_STATE_DB = Path.home() / ".cheetahclaws" / "trading" / "monitor_state.db"
+_STATE_DB = Path.home() / ".pycode" / "trading" / "monitor_state.db"
 
 
 @dataclass

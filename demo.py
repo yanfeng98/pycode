@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Demo script for cheetahclaws.
+Demo script for pycode.
 Requires ANTHROPIC_API_KEY environment variable.
 
 Run:
@@ -38,7 +38,7 @@ def demo():
     print("=" * 60)
     state2 = AgentState()
     _run_demo(state2, config, system_prompt,
-              "List all Python files in the current directory and show me the first 5 lines of cheetahclaws.py")
+              "List all Python files in the current directory and show me the first 5 lines of pycode.py")
 
     print("\n" + "=" * 60)
     print("DEMO 3: Code writing (uses Write + Bash tools)")

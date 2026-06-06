@@ -1,8 +1,8 @@
-# CheetahClaws Roadmap
+# PyCode Roadmap
 
-> **CheetahClaws is evolving into a Python-native, local-first Agent OS for autonomous engineering, research workflows, and reproducible multi-model agent infrastructure.**
+> **PyCode is evolving into a Python-native, local-first Agent OS for autonomous engineering, research workflows, and reproducible multi-model agent infrastructure.**
 
-This roadmap defines the community direction, technical architecture, industrial product path, and contribution priorities for CheetahClaws.
+This roadmap defines the community direction, technical architecture, industrial product path, and contribution priorities for PyCode.
 
 The goal is not only to build an impressive agent demo.  
 The goal is to build infrastructure that solves real user problems.
@@ -32,11 +32,11 @@ The goal is to build infrastructure that solves real user problems.
 
 ## 1. Vision
 
-CheetahClaws aims to become a **Python-native Agent OS / Agent Runtime** for researchers, developers, engineering teams, and advanced users who want to build, run, inspect, control, and reproduce autonomous agents across different models and environments.
+PyCode aims to become a **Python-native Agent OS / Agent Runtime** for researchers, developers, engineering teams, and advanced users who want to build, run, inspect, control, and reproduce autonomous agents across different models and environments.
 
-In product language, CheetahClaws is an **Agent OS**.
+In product language, PyCode is an **Agent OS**.
 
-In systems language, CheetahClaws is a **durable agent runtime infrastructure layer** that manages:
+In systems language, PyCode is a **durable agent runtime infrastructure layer** that manages:
 
 - models
 - tools
@@ -51,7 +51,7 @@ In systems language, CheetahClaws is a **durable agent runtime infrastructure la
 - evaluations
 - integrations
 
-CheetahClaws should not only answer prompts.  
+PyCode should not only answer prompts.  
 It should help users complete real engineering and research tasks safely, reproducibly, and transparently.
 
 ---
@@ -60,7 +60,7 @@ It should help users complete real engineering and research tasks safely, reprod
 
 ### One-line positioning
 
-> **CheetahClaws is a Python-native, local-first Agent OS for secure, reproducible, multi-model autonomous workflows.**
+> **PyCode is a Python-native, local-first Agent OS for secure, reproducible, multi-model autonomous workflows.**
 
 ### Open-source positioning
 
@@ -70,9 +70,9 @@ It should help users complete real engineering and research tasks safely, reprod
 
 > **A secure agent runtime for engineering and research automation, with enterprise deployment, workflow templates, human approval, audit logs, and multi-model execution.**
 
-### What CheetahClaws is
+### What PyCode is
 
-CheetahClaws is:
+PyCode is:
 
 - **Python-native**: easy to read, modify, extend, debug, and research.
 - **Local-first**: supports local files, local tools, local models, and private deployments.
@@ -83,9 +83,9 @@ CheetahClaws is:
 - **Safety-aware**: tool execution, file editing, shell commands, and network access should be governed by explicit permissions.
 - **Industrializable**: should support deployment, integrations, audit, governance, and reliability metrics.
 
-### What CheetahClaws is not
+### What PyCode is not
 
-CheetahClaws should not primarily be:
+PyCode should not primarily be:
 
 - only a Claude Code clone
 - only a chatbot
@@ -100,7 +100,7 @@ CheetahClaws should not primarily be:
 
 ## 3. Who We Serve
 
-CheetahClaws should be useful for both open-source users and future industrial customers.
+PyCode should be useful for both open-source users and future industrial customers.
 
 ### Primary open-source users
 
@@ -127,9 +127,9 @@ CheetahClaws should be useful for both open-source users and future industrial c
 
 ## 4. User Problems We Aim to Solve
 
-CheetahClaws should be guided by real user problems, not only infrastructure ambitions.
+PyCode should be guided by real user problems, not only infrastructure ambitions.
 
-| User | Pain Point | CheetahClaws Solution | Success Metric |
+| User | Pain Point | PyCode Solution | Success Metric |
 |---|---|---|---|
 | Developer | CI failures take too long to investigate. | Agent inspects logs, identifies likely cause, edits code, runs tests, and proposes a fix. | Reduced time-to-fix; test pass rate. |
 | Developer | Small repo issues consume repetitive engineering time. | Agent resolves GitHub/GitLab issues with traceable plans, diffs, tests, and PR summaries. | Issues resolved per week; human approval rate. |
@@ -144,7 +144,7 @@ CheetahClaws should be guided by real user problems, not only infrastructure amb
 
 ## 5. Product Principles
 
-CheetahClaws should follow these principles.
+PyCode should follow these principles.
 
 ### 5.1 Runtime before app
 
@@ -161,7 +161,7 @@ The main unit of value should be a completed task, not a long chat.
 
 ### 5.3 Local-first by default
 
-Users should be able to run CheetahClaws with local models, local files, and local tools whenever possible.
+Users should be able to run PyCode with local models, local files, and local tools whenever possible.
 
 This matters for:
 
@@ -189,7 +189,7 @@ The same workflow should be runnable with:
 - LM Studio
 - any OpenAI-compatible endpoint
 
-CheetahClaws should make it easy to compare models under the same workflow.
+PyCode should make it easy to compare models under the same workflow.
 
 ### 5.5 Safety is infrastructure
 
@@ -216,7 +216,7 @@ Users should be able to answer:
 
 Industrial users care about solved problems, reliability, security, and return on investment.
 
-CheetahClaws should prioritize a few high-value workflows over many shallow demos.
+PyCode should prioritize a few high-value workflows over many shallow demos.
 
 ### 5.8 Human-in-the-loop first, full autonomy later
 
@@ -232,9 +232,9 @@ Full autonomy should be introduced only when permissions, rollback, audit, and r
 
 ## 6. Agent OS Primitives
 
-CheetahClaws should expose a set of OS-like primitives for agentic systems.
+PyCode should expose a set of OS-like primitives for agentic systems.
 
-| Traditional OS Concept | CheetahClaws Agent OS Equivalent |
+| Traditional OS Concept | PyCode Agent OS Equivalent |
 |---|---|
 | Process | Agent instance |
 | Thread | Sub-agent / worker |
@@ -257,7 +257,7 @@ These primitives should guide the architecture and implementation.
 
 ## 7. Technical Architecture Roadmap
 
-CheetahClaws should evolve around six infrastructure layers.
+PyCode should evolve around six infrastructure layers.
 
 ---
 
@@ -388,7 +388,7 @@ Priority:
 
 Goal: provide explicit, inspectable memory and context management.
 
-Memory should not only mean chat history. CheetahClaws should support multiple memory types:
+Memory should not only mean chat history. PyCode should support multiple memory types:
 
 | Memory Type | Description |
 |---|---|
@@ -484,7 +484,7 @@ Priority:
 
 Goal: make every agent run inspectable, debuggable, auditable, and reproducible.
 
-CheetahClaws should provide a trace system that records:
+PyCode should provide a trace system that records:
 
 - model used
 - prompts and responses
@@ -547,7 +547,7 @@ Priority:
 
 Goal: let users package reusable workflows, tools, prompts, policies, and evaluations.
 
-A CheetahClaws skill should include:
+A PyCode skill should include:
 
 - instructions
 - tool requirements
@@ -615,11 +615,11 @@ It should start as a secure agent runtime for engineering and research automatio
 
 Recommended positioning:
 
-> **CheetahClaws Enterprise: Secure Agent Runtime for Engineering and Research Automation.**
+> **PyCode Enterprise: Secure Agent Runtime for Engineering and Research Automation.**
 
 Expanded description:
 
-> CheetahClaws Enterprise helps teams run, govern, audit, and reproduce autonomous agents inside engineering and research workflows. It supports local-first deployment, multi-model execution, approval workflows, trace replay, and enterprise integrations.
+> PyCode Enterprise helps teams run, govern, audit, and reproduce autonomous agents inside engineering and research workflows. It supports local-first deployment, multi-model execution, approval workflows, trace replay, and enterprise integrations.
 
 ---
 
@@ -716,7 +716,7 @@ Priority:
 
 ### 8.5 Integration Hub
 
-CheetahClaws should integrate with existing workflows instead of asking users to change everything.
+PyCode should integrate with existing workflows instead of asking users to change everything.
 
 Early integrations:
 
@@ -937,13 +937,13 @@ Priority:
 
 ## 9. Flagship Workflows
 
-To avoid becoming a collection of disconnected features, CheetahClaws should focus on a small number of high-quality workflows.
+To avoid becoming a collection of disconnected features, PyCode should focus on a small number of high-quality workflows.
 
 ---
 
 ### Workflow 1: Autonomous Coding Issue Resolver
 
-Goal: given a GitHub issue or local bug report, CheetahClaws should inspect the repo, plan a fix, edit code, run tests, diagnose failures, and summarize the final patch.
+Goal: given a GitHub issue or local bug report, PyCode should inspect the repo, plan a fix, edit code, run tests, diagnose failures, and summarize the final patch.
 
 Example:
 
@@ -1160,7 +1160,7 @@ Tasks:
 Success criteria:
 
 - New contributors can understand the project direction within 3 minutes.
-- README clearly explains what CheetahClaws is and is not.
+- README clearly explains what PyCode is and is not.
 - Roadmap provides concrete contribution paths.
 - Industrial users can identify at least one concrete workflow that solves their problem.
 
@@ -1196,7 +1196,7 @@ Success criteria:
 
 ### Phase 2: Safe Tool Runtime
 
-Goal: make CheetahClaws safe enough for autonomous workflows.
+Goal: make PyCode safe enough for autonomous workflows.
 
 Tasks:
 
@@ -1315,7 +1315,7 @@ Tasks:
 
 Success criteria:
 
-- Researchers can use CheetahClaws for paper-to-code and experiment workflows.
+- Researchers can use PyCode for paper-to-code and experiment workflows.
 - Experiment outputs can be transformed into tables and reports.
 - Research workflows are reproducible and traceable.
 
@@ -1323,7 +1323,7 @@ Success criteria:
 
 ### Phase 7: Multi-Model Benchmark Platform
 
-Goal: make CheetahClaws a standard tool for evaluating agentic model ability.
+Goal: make PyCode a standard tool for evaluating agentic model ability.
 
 Tasks:
 
@@ -1347,7 +1347,7 @@ Success criteria:
 
 ### Phase 8: Enterprise Deployment and Integrations
 
-Goal: make CheetahClaws deployable in real team and enterprise environments.
+Goal: make PyCode deployable in real team and enterprise environments.
 
 Tasks:
 
@@ -1365,7 +1365,7 @@ Tasks:
 
 Success criteria:
 
-- Teams can deploy CheetahClaws in private infrastructure.
+- Teams can deploy PyCode in private infrastructure.
 - Admins can configure models, integrations, permissions, and policies.
 - Workflows can be approved, audited, and monitored.
 
@@ -1398,7 +1398,7 @@ Success criteria:
 
 ### Phase 10: Team/Lab/Enterprise Agent OS
 
-Goal: make CheetahClaws useful as shared agent infrastructure.
+Goal: make PyCode useful as shared agent infrastructure.
 
 Tasks:
 
@@ -1415,7 +1415,7 @@ Tasks:
 
 Success criteria:
 
-- A lab or team can run CheetahClaws as shared agent infrastructure.
+- A lab or team can run PyCode as shared agent infrastructure.
 - Workflows, traces, and artifacts can be shared and reviewed.
 - Permissions are configurable at project/team level.
 - Teams can measure value, risk, reliability, and cost.
@@ -1424,7 +1424,7 @@ Success criteria:
 
 ## 11. Success Metrics
 
-CheetahClaws should be evaluated by real usefulness, not only features.
+PyCode should be evaluated by real usefulness, not only features.
 
 ### Technical metrics
 
@@ -1553,7 +1553,7 @@ Avoid adding many unrelated demos before the runtime is stable and useful workfl
 A possible future structure:
 
 ```text
-cheetahclaws/
+pycode/
   runtime/
     agent_runtime.py
     model_runtime.py
@@ -1674,7 +1674,7 @@ Phase 10: support teams, labs, and enterprise Agent OS
 
 The long-term goal is:
 
-> **CheetahClaws should become the Python-native, local-first Agent OS for researchers, developers, and engineering teams: a runtime that manages models, tools, memory, workflows, permissions, traces, and human approvals for secure, reproducible autonomous agents.**
+> **PyCode should become the Python-native, local-first Agent OS for researchers, developers, and engineering teams: a runtime that manages models, tools, memory, workflows, permissions, traces, and human approvals for secure, reproducible autonomous agents.**
 
 ---
 
@@ -1701,7 +1701,7 @@ We welcome contributions in the following areas:
 
 If you are unsure where to start, pick a `good-first-issue` or help improve the documentation, tests, and examples.
 
-CheetahClaws is not just an assistant.  
+PyCode is not just an assistant.  
 It is becoming an open, hackable infrastructure layer for the next generation of autonomous agents.
 
 The north star is simple:

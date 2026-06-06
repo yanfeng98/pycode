@@ -17,7 +17,7 @@ HEADER = {
     "height": 34,
     "timestamp": 1747262400,
     "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"},
-    "title": "CheetahClaws /lab — 9 agents drive a paper from question to PDF",
+    "title": "PyCode /lab — 9 agents drive a paper from question to PDF",
     "idle_time_limit": 1.3,
 }
 
@@ -49,8 +49,8 @@ def type_string(s, base=0.04, jitter=0.02):
 
 
 # Scene 1 — launch + /lab start
-out(0.0, f"{GREEN}~{RST} {CYAN}❯{RST} cheetahclaws\r\n")
-out(0.3, f"{DIM}[CheetahClaws v3.05.79 · claude-sonnet-4-6][/lab engine v0]{RST}\r\n\r\n")
+out(0.0, f"{GREEN}~{RST} {CYAN}❯{RST} pycode\r\n")
+out(0.3, f"{DIM}[PyCode v3.05.79 · claude-sonnet-4-6][/lab engine v0]{RST}\r\n\r\n")
 out(0.2, f"{BOLD}{CYAN}[~] »{RST} ")
 out(0.5, "")
 type_string("/lab start \"Compare logistic regression vs random forest on iris, k-fold CV\"")
@@ -107,7 +107,7 @@ out(0.1, "\r\n")
 
 # Final
 out(0.4, f"  {GREEN}[FINALISE]{RST}  Bundle ready.\r\n\r\n")
-out(0.4, f"{GREEN}✓{RST}  Output at {CYAN}~/.cheetahclaws/research_papers/lab_a3b1c8e9f012/{RST}\r\n\r\n")
+out(0.4, f"{GREEN}✓{RST}  Output at {CYAN}~/.pycode/research_papers/lab_a3b1c8e9f012/{RST}\r\n\r\n")
 out(0.3, f"    ├── {BOLD}report.md{RST}              {DIM}(2,940 words, 12 refs){RST}\r\n")
 out(0.15, f"    ├── references.bib       {DIM}(verified BibTeX){RST}\r\n")
 out(0.15, f"    ├── citations_verified.json\r\n")

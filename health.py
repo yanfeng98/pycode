@@ -1,5 +1,5 @@
 """
-health.py — Lightweight HTTP health-check server for CheetahClaws.
+health.py — Lightweight HTTP health-check server for PyCode.
 
 Disabled by default.  Enable in config:
   /config health_check_port=8765

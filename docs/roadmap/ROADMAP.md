@@ -1,16 +1,16 @@
-# CheetahClaws Roadmap
+# PyCode Roadmap
 
-> **CheetahClaws is evolving from a Python-native AI assistant into a local-first, multi-model Agent OS for autonomous coding, research workflows, and reproducible agent infrastructure.**
+> **PyCode is evolving from a Python-native AI assistant into a local-first, multi-model Agent OS for autonomous coding, research workflows, and reproducible agent infrastructure.**
 
-This document outlines the long-term direction, near-term milestones, and contribution priorities for the CheetahClaws community.
+This document outlines the long-term direction, near-term milestones, and contribution priorities for the PyCode community.
 
 ---
 
 ## 1. Vision
 
-CheetahClaws aims to become a **Python-native Agent OS / Agent Runtime** for researchers, developers, and advanced users who want to build, run, inspect, control, and reproduce autonomous agents across different models and environments.
+PyCode aims to become a **Python-native Agent OS / Agent Runtime** for researchers, developers, and advanced users who want to build, run, inspect, control, and reproduce autonomous agents across different models and environments.
 
-Instead of being only a coding assistant or a Claude Code reimplementation, CheetahClaws should provide the infrastructure layer for agentic workflows:
+Instead of being only a coding assistant or a Claude Code reimplementation, PyCode should provide the infrastructure layer for agentic workflows:
 
 - unified model runtime
 - safe tool execution
@@ -28,9 +28,9 @@ In systems language, this is a **durable agent runtime infrastructure layer**.
 
 ## 2. Core Positioning
 
-### What CheetahClaws is
+### What PyCode is
 
-CheetahClaws is:
+PyCode is:
 
 - **Python-native**: easy to read, modify, extend, and research.
 - **Local-first**: supports local models, local tools, local files, and local workflows.
@@ -39,9 +39,9 @@ CheetahClaws is:
 - **Reproducible**: agent runs should be traceable, comparable, replayable, and debuggable.
 - **Safety-aware**: tool execution, file editing, shell commands, and network access should be governed by explicit permissions.
 
-### What CheetahClaws is not
+### What PyCode is not
 
-CheetahClaws should not primarily be:
+PyCode should not primarily be:
 
 - only a Claude Code clone
 - only a chatbot
@@ -56,7 +56,7 @@ The project should focus on **developer and research agent infrastructure** firs
 
 ## 3. Design Philosophy
 
-CheetahClaws should follow these principles:
+PyCode should follow these principles:
 
 1. **Runtime before app**  
    Build stable primitives for running agents before adding many user-facing demos.
@@ -65,7 +65,7 @@ CheetahClaws should follow these principles:
    Useful agents need durable workflows, task graphs, checkpoints, tools, tests, and recovery mechanisms.
 
 3. **Local-first by default**  
-   Users should be able to run CheetahClaws with local models, local files, and local tools whenever possible.
+   Users should be able to run PyCode with local models, local files, and local tools whenever possible.
 
 4. **Multi-model by design**  
    The same workflow should be runnable with Claude, GPT, Gemini, Qwen, DeepSeek, Kimi, Zhipu, Ollama, vLLM, LM Studio, and other OpenAI-compatible endpoints.
@@ -77,15 +77,15 @@ CheetahClaws should follow these principles:
    Agent traces, tool calls, file diffs, command logs, cost, latency, context snapshots, and memory changes should be visible.
 
 7. **Research-friendly engineering**  
-   CheetahClaws should make it easy to benchmark agents, compare models, reproduce results, and study failure modes.
+   PyCode should make it easy to benchmark agents, compare models, reproduce results, and study failure modes.
 
 ---
 
 ## 4. Agent OS Primitives
 
-CheetahClaws should expose a set of OS-like primitives for agentic systems.
+PyCode should expose a set of OS-like primitives for agentic systems.
 
-| Traditional OS Concept | CheetahClaws Agent OS Equivalent |
+| Traditional OS Concept | PyCode Agent OS Equivalent |
 |---|---|
 | Process | Agent instance |
 | Thread | Sub-agent / worker |
@@ -105,7 +105,7 @@ These primitives should guide the architecture and roadmap.
 
 ## 5. Architecture Roadmap
 
-CheetahClaws should evolve around six infrastructure layers.
+PyCode should evolve around six infrastructure layers.
 
 ---
 
@@ -221,7 +221,7 @@ Priority:
 
 Goal: provide explicit, inspectable memory and context management.
 
-Memory should not only mean chat history. CheetahClaws should support multiple memory types:
+Memory should not only mean chat history. PyCode should support multiple memory types:
 
 | Memory Type | Description |
 |---|---|
@@ -306,7 +306,7 @@ Priority:
 
 Goal: make every agent run inspectable and debuggable.
 
-CheetahClaws should provide a trace system that records:
+PyCode should provide a trace system that records:
 
 - model used
 - prompts and responses
@@ -359,7 +359,7 @@ Priority:
 
 Goal: let users package reusable workflows, tools, prompts, and policies.
 
-A CheetahClaws skill should include:
+A PyCode skill should include:
 
 - instructions
 - tool requirements
@@ -407,13 +407,13 @@ Priority:
 
 ## 6. Flagship Workflows
 
-To avoid becoming a collection of disconnected features, CheetahClaws should focus on a small number of high-quality workflows.
+To avoid becoming a collection of disconnected features, PyCode should focus on a small number of high-quality workflows.
 
 ---
 
 ### Workflow 1: Autonomous Coding Issue Resolver
 
-Goal: given a GitHub issue or local bug report, CheetahClaws should inspect the repo, plan a fix, edit code, run tests, diagnose failures, and summarize the final patch.
+Goal: given a GitHub issue or local bug report, PyCode should inspect the repo, plan a fix, edit code, run tests, diagnose failures, and summarize the final patch.
 
 Example:
 
@@ -551,7 +551,7 @@ Tasks:
 Success criteria:
 
 - New contributors can understand the project direction within 3 minutes.
-- README clearly explains what CheetahClaws is and is not.
+- README clearly explains what PyCode is and is not.
 - Roadmap provides concrete contribution paths.
 
 ---
@@ -583,7 +583,7 @@ Success criteria:
 
 ### Phase 2: Safe Tool Runtime
 
-Goal: make CheetahClaws safe enough for autonomous workflows.
+Goal: make PyCode safe enough for autonomous workflows.
 
 Tasks:
 
@@ -669,7 +669,7 @@ Tasks:
 Success criteria:
 
 - Users can solve real repo issues.
-- Researchers can use CheetahClaws for paper-to-code and experiment workflows.
+- Researchers can use PyCode for paper-to-code and experiment workflows.
 - Benchmarks produce reproducible reports.
 
 ---
@@ -698,7 +698,7 @@ Success criteria:
 
 ### Phase 7: Agent OS for Teams and Labs
 
-Goal: make CheetahClaws useful for research labs, teams, and shared infrastructure.
+Goal: make PyCode useful for research labs, teams, and shared infrastructure.
 
 Tasks:
 
@@ -713,7 +713,7 @@ Tasks:
 
 Success criteria:
 
-- A lab or team can run CheetahClaws as shared agent infrastructure.
+- A lab or team can run PyCode as shared agent infrastructure.
 - Workflows, traces, and artifacts can be shared and reviewed.
 - Permissions are configurable at project/team level.
 
@@ -780,7 +780,7 @@ Advanced issues:
 A possible future structure:
 
 ```text
-cheetahclaws/
+pycode/
   runtime/
     agent_runtime.py
     model_runtime.py
@@ -866,7 +866,7 @@ Phase 7: support teams and labs
 
 The long-term goal is:
 
-> **CheetahClaws should become the Python-native, local-first Agent OS for researchers and advanced developers: a runtime that manages models, tools, memory, workflows, permissions, and traces for reproducible autonomous agents.**
+> **PyCode should become the Python-native, local-first Agent OS for researchers and advanced developers: a runtime that manages models, tools, memory, workflows, permissions, and traces for reproducible autonomous agents.**
 
 ---
 
@@ -889,5 +889,5 @@ We welcome contributions in the following areas:
 
 If you are unsure where to start, pick a `good-first-issue` or help improve the documentation, tests, and examples.
 
-CheetahClaws is not just an assistant.  
+PyCode is not just an assistant.  
 It is becoming an open, hackable infrastructure layer for the next generation of autonomous agents.

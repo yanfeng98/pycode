@@ -2,7 +2,7 @@
 
 Currently the only thing here is an autouse fixture that redirects the
 research-lab default output directory to a per-session ``tmp_path`` so
-running ``pytest`` does NOT pollute ``~/.cheetahclaws/research_papers/``
+running ``pytest`` does NOT pollute ``~/.pycode/research_papers/``
 with little folders for every test that hits the orchestrator.
 
 Any test that wants to write to a specific path (verifying directory
@@ -20,7 +20,7 @@ import pytest
 def _isolate_lab_output_dir(tmp_path, monkeypatch):
     """Redirect DEFAULT_OUTPUT_DIR to a tmp dir for the duration of the
     test. Without this, tests calling ``run_one_lab_session(topic="t", …)``
-    were creating real folders in ``~/.cheetahclaws/research_papers/``.
+    were creating real folders in ``~/.pycode/research_papers/``.
 
     Imported lazily so this file doesn't break test discovery if
     research/lab/ isn't on the import path (e.g. minimal CI matrices).

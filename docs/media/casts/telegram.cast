@@ -1,6 +1,6 @@
-{"version": 2, "width": 105, "height": 32, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "CheetahClaws Telegram bridge \u2014 control the agent from your phone", "idle_time_limit": 1.4}
-[0.0, "o", "[32m~[0m [36m\u276f[0m cheetahclaws\r\n"]
-[0.3, "o", "[2m[CheetahClaws v3.05.79 \u00b7 claude-sonnet-4-6][0m\r\n\r\n"]
+{"version": 2, "width": 105, "height": 32, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "PyCode Telegram bridge \u2014 control the agent from your phone", "idle_time_limit": 1.4}
+[0.0, "o", "[32m~[0m [36m\u276f[0m pycode\r\n"]
+[0.3, "o", "[2m[PyCode v3.05.79 \u00b7 claude-sonnet-4-6][0m\r\n\r\n"]
 [0.5, "o", "[1m[36m[~] \u00bb[0m "]
 [1.0, "o", ""]
 [1.051, "o", "/"]
@@ -68,7 +68,7 @@
 [11.359, "o", "[34m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518[0m\r\n\r\n"]
 [11.959, "o", "[34m\u250c\u2500 Telegram \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510[0m\r\n"]
 [12.259, "o", "[34m\u2502[0m  [2m11:51[0m  \ud83d\udc06 Job #2 done. [32mBackup OK[0m \u2014 4.2 GB \u2192 s3://prod-backups/2026-05-10/\r\n"]
-[12.459, "o", "[34m\u2502[0m         [2mTook 7m 51s. Logs at ~/.cheetahclaws/jobs/2/stdout.txt[0m\r\n"]
+[12.459, "o", "[34m\u2502[0m         [2mTook 7m 51s. Logs at ~/.pycode/jobs/2/stdout.txt[0m\r\n"]
 [12.759, "o", "[34m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518[0m\r\n\r\n"]
 [13.159, "o", "[2mAlso available: /wechat (\u5fae\u4fe1), /slack \u2014 same job queue & passthrough.[0m\r\n\r\n"]
 [13.659, "o", "[1m[36m[~] \u00bb[0m "]

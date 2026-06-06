@@ -89,7 +89,7 @@ def _run_wizard(monkeypatch, inputs: list[str], config: dict,
                              lambda *_a, **_kw: list(ollama_models),
                              raising=False)
 
-    # Don't write to ~/.cheetahclaws/config.json from a test.
+    # Don't write to ~/.pycode/config.json from a test.
     import cc_config
     monkeypatch.setattr(cc_config, "save_config", lambda *_a, **_kw: None)
 

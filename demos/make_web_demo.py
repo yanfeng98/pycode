@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of the CheetahClaws Web UI (`/web` chat) using PIL.
+Generate animated GIF demo of the PyCode Web UI (`/web` chat) using PIL.
 
 Simulates the web chat interface:
   - Sidebar with sessions + search + "+ New"
@@ -121,7 +121,7 @@ def draw_sidebar(d, active_idx=0, search_text=""):
     # Header
     d.rectangle([0, 0, SIDEBAR_W, 54], fill=SURFACE)
     d.line([0, 54, SIDEBAR_W, 54], fill=BORDER, width=1)
-    d.text((16, 18), "CheetahClaws", font=F15B, fill=ACCENT)
+    d.text((16, 18), "PyCode", font=F15B, fill=ACCENT)
     # + New button
     btn_x, btn_y, btn_w, btn_h = SIDEBAR_W - 62, 14, 50, 26
     rr(d, [btn_x, btn_y, btn_x + btn_w, btn_y + btn_h], 6, fill=ACCENT)

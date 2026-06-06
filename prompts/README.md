@@ -1,7 +1,7 @@
 # `prompts/` — system prompt assets
 
 This directory holds the raw Markdown used to build every system prompt
-CheetahClaws sends to an LLM.  [`prompts/select.py`](select.py) loads
+PyCode sends to an LLM.  [`prompts/select.py`](select.py) loads
 and assembles these files; the higher-level assembly logic (env block,
 memory injection, conditional fragments) lives in
 [`context.py`](../context.py).
@@ -94,7 +94,7 @@ Rationale (from the [Gemini 3 prompting guide](https://ai.google.dev/gemini-api/
 > "Once a system instruction becomes a 300-line constitution, you can
 > no longer tell what's working and what's superstition."
 
-CheetahClaws sets a stricter cap at 150 lines on `default.md` and 20
+PyCode sets a stricter cap at 150 lines on `default.md` and 20
 lines per overlay.  If `default.md` is getting long, extract long-lived
 conditional content into `fragments/*.md` and append it from
 `build_system_prompt()`.

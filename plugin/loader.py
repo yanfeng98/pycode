@@ -11,11 +11,11 @@ from .types import PluginEntry, PluginScope
 
 
 def _plugins_disabled() -> bool:
-    return os.environ.get("CHEETAHCLAWS_DISABLE_PLUGINS", "0") == "1"
+    return os.environ.get("PYCODE_DISABLE_PLUGINS", "0") == "1"
 
 
 def _plugin_allowlist() -> set[str] | None:
-    raw = os.environ.get("CHEETAHCLAWS_PLUGIN_ALLOWLIST", "").strip()
+    raw = os.environ.get("PYCODE_PLUGIN_ALLOWLIST", "").strip()
     if not raw:
         return None
     return {name.strip() for name in raw.split(",") if name.strip()}
@@ -25,8 +25,8 @@ def load_all_plugins(scope: PluginScope | None = None) -> list[PluginEntry]:
     """Return enabled plugins (optionally filtered by scope).
 
     Gated by two env vars (defense in depth — plugins run arbitrary Python):
-      * CHEETAHCLAWS_DISABLE_PLUGINS=1 — load nothing.
-      * CHEETAHCLAWS_PLUGIN_ALLOWLIST=a,b,c — load only the named plugins.
+      * PYCODE_DISABLE_PLUGINS=1 — load nothing.
+      * PYCODE_PLUGIN_ALLOWLIST=a,b,c — load only the named plugins.
     """
     if _plugins_disabled():
         return []
@@ -136,7 +136,7 @@ _warned_once: set[str] = set()
 def _warn_external_once(entry: PluginEntry) -> None:
     """One-line stderr notice the first time an EXTERNAL-scope plugin is loaded.
 
-    EXTERNAL plugins come from $CHEETAHCLAWS_PLUGIN_PATH and may live anywhere;
+    EXTERNAL plugins come from $PYCODE_PLUGIN_PATH and may live anywhere;
     surface this in the log so a stolen env var doesn't load code silently.
     """
     if entry.scope is not PluginScope.EXTERNAL:
@@ -148,8 +148,8 @@ def _warn_external_once(entry: PluginEntry) -> None:
     print(
         f"[plugin] Loading EXTERNAL plugin '{entry.name}' from "
         f"{entry.install_dir} — this executes arbitrary Python with your "
-        f"privileges. Set CHEETAHCLAWS_DISABLE_PLUGINS=1 or "
-        f"CHEETAHCLAWS_PLUGIN_ALLOWLIST=<names> to restrict.",
+        f"privileges. Set PYCODE_DISABLE_PLUGINS=1 or "
+        f"PYCODE_PLUGIN_ALLOWLIST=<names> to restrict.",
         file=sys.stderr, flush=True,
     )
 

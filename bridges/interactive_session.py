@@ -106,11 +106,11 @@ class InteractiveSession:
     def __init__(self, cmd: str, send_fn: Callable[[str], None],
                  session_key: str = "") -> None:
         # Enabled by default; bridges already enforce owner-only via chat_id
-        # whitelist. Operators can hard-disable with CHEETAHCLAWS_BRIDGE_TERMINAL=0.
-        if os.environ.get("CHEETAHCLAWS_BRIDGE_TERMINAL", "1") == "0":
+        # whitelist. Operators can hard-disable with PYCODE_BRIDGE_TERMINAL=0.
+        if os.environ.get("PYCODE_BRIDGE_TERMINAL", "1") == "0":
             raise RuntimeError(
                 "Remote interactive session is disabled "
-                "(CHEETAHCLAWS_BRIDGE_TERMINAL=0)."
+                "(PYCODE_BRIDGE_TERMINAL=0)."
             )
         if not isinstance(cmd, str) or "\x00" in cmd or len(cmd) > 4096:
             raise RuntimeError("Refused: command empty, too long, or contains NUL.")

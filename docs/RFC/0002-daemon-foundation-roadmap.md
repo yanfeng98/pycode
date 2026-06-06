@@ -1,7 +1,7 @@
 # Daemon Foundation Roadmap
 
 - **Status:** Tracking
-- **Refs:** [#68](https://github.com/SafeRL-Lab/cheetahclaws/issues/68), [RFC 0001 design note](./0001-daemon-design-note.md)
+- **Refs:** [#68](https://github.com/yanfeng98/pycode/issues/68), [RFC 0001 design note](./0001-daemon-design-note.md)
 - **Last updated:** 2026-05-12 (all nine items landed: F-1, F-2, F-3, F-4 incl. #1/#2/#3/#4, F-5, F-6 Phase 1+2, F-7, F-8, F-9 incl. quota-pause)
 
 The "foundation PR" described at the end of [RFC 0001](./0001-daemon-design-note.md) is too big for one reviewable change (~5 KLoC including stdlib HTTP server, auth, JSON-RPC + SSE, SQLite schema, `daemon` CLI, bridges-into-daemon, subprocess-per-agent, and conservative cost defaults). This document splits it into nine stackable PRs and pins the acceptance criteria for each. Implementation follows this index in order; later items can land in parallel once F-1 and F-2 are merged.
@@ -23,12 +23,12 @@ The "foundation PR" described at the end of [RFC 0001](./0001-daemon-design-note
 ## F-1 — daemon skeleton
 
 **Scope.** Adopt the `cc_daemon/` reference scaffolding from
-[`feature/daemon-spike`](https://github.com/SafeRL-Lab/cheetahclaws/tree/feature/daemon-spike)
+[`feature/daemon-spike`](https://github.com/yanfeng98/pycode/tree/feature/daemon-spike)
 (`server`, `auth`, `originator`, `rpc`, `events`, `permission`, `methods`)
 **as-is** — those modules encode the contract the maintainer reviewed in
 PR #74.  Layer the foundation glue on top:
 
-- `cc_daemon/discovery.py` — atomic `~/.cheetahclaws/daemon.json` so
+- `cc_daemon/discovery.py` — atomic `~/.pycode/daemon.json` so
   REPL / Web / bridge clients can locate the running daemon (transport,
   address, version).  Spike's pid file stays for "is anything running?"
   liveness; discovery answers "where is it?".
@@ -46,10 +46,10 @@ PR #74.  Layer the foundation glue on top:
   the spike's stub `{"status": "ok"}`.  Auth-gated by default; opt out
   via `--unauthenticated-metrics`.  Adds Windows guard around
   `socketserver.UnixStreamServer` (unavailable on Windows).
-- `commands/daemon_cmd.py` — `cheetahclaws daemon {status, stop, logs,
+- `commands/daemon_cmd.py` — `pycode daemon {status, stop, logs,
   rotate-token}` subcommand handlers.  `status` reads discovery + pings
   `system.ping`; `stop` calls `system.shutdown` RPC then falls back to
-  SIGTERM / TerminateProcess; `logs` tails `~/.cheetahclaws/logs/daemon.log`;
+  SIGTERM / TerminateProcess; `logs` tails `~/.pycode/logs/daemon.log`;
   `rotate-token` regenerates the token (notes that existing TCP clients
   receive 401 until they re-read the file).
 - `health.py` — refactor: extract module-level `healthz_payload(config)`
@@ -58,13 +58,13 @@ PR #74.  Layer the foundation glue on top:
   HTTP server and `cc_daemon/server.py` reuse the same
   circuit-breaker / quota / runtime-registry probes.  No behaviour
   change for existing `health_check_port` users.
-- `cheetahclaws.py` — main() short-circuit: `cheetahclaws serve`
-  dispatches to `cc_daemon.cli.serve_main`; `cheetahclaws daemon
+- `pycode.py` — main() short-circuit: `pycode serve`
+  dispatches to `cc_daemon.cli.serve_main`; `pycode daemon
   <action>` dispatches to `commands.daemon_cmd.dispatch`.  Replaces the
   spike's `spike-daemon` shim.
 
 **Acceptance.**
-- `cheetahclaws serve` starts; `cheetahclaws daemon status` reports pid,
+- `pycode serve` starts; `pycode daemon status` reports pid,
   transport, address, uptime, ping outcome.
 - Unix socket (POSIX): `curl --unix-socket <path> -X POST /rpc
   -H "Cheetahclaws-Api-Version: 0" -d '{"jsonrpc":"2.0","id":1,"method":"system.ping"}'`
@@ -74,16 +74,16 @@ PR #74.  Layer the foundation glue on top:
   spike's brute-force throttle (429).
 - `curl … GET /events` keeps the stream open; heartbeats arrive at
   spike's 15 s cadence.
-- `cheetahclaws daemon stop` → `system.shutdown` RPC → discovery file
+- `pycode daemon stop` → `system.shutdown` RPC → discovery file
   cleared and process exits 0.
-- `cheetahclaws daemon rotate-token` regenerates the token; existing TCP
+- `pycode daemon rotate-token` regenerates the token; existing TCP
   clients receive 401 on next request until they re-read the file.
 - pytest green on Linux, macOS, Windows (TCP-only on Windows; Unix
   socket tests skip on Windows).
 
 ## F-2 — SQLite schema + events persistence + jobs migration
 
-**Scope.** Seven additive tables in `~/.cheetahclaws/sessions.db`; swap
+**Scope.** Seven additive tables in `~/.pycode/sessions.db`; swap
 the F-1 in-memory event ring for a SQLite-backed channel; migrate
 `jobs.py` JSON storage to SQLite.  **Originator-tracked permission flow
 is already provided by spike's `cc_daemon/originator.py` +
@@ -108,7 +108,7 @@ is already provided by spike's `cc_daemon/originator.py` +
   Default retention: 24 h / 100 K rows; opportunistic prune every 100
   publishes.
 - `jobs.py` — `_persist`/`_row_to_job` hit SQLite; `_ensure_migrated()`
-  imports legacy `~/.cheetahclaws/jobs.json` once (tracked via
+  imports legacy `~/.pycode/jobs.json` once (tracked via
   `schema_meta.jobs_migrated_from_json`).  Migration is **one-way**:
   after the marker is set, edits to the JSON file are no longer read.
   The file is left on disk for backward viewing only (prior-release
@@ -160,7 +160,7 @@ daemon is detected.
 
 - `monitor/store.py` — SQLite-backed (`monitor_subscriptions` and
   `monitor_reports` tables).  One-shot import of legacy
-  `~/.cheetahclaws/monitor_subscriptions.json` on first call (tracked
+  `~/.pycode/monitor_subscriptions.json` on first call (tracked
   in `schema_meta.monitor_migrated_from_json`); JSON kept readable for
   one release.  New helpers: `save_report`, `list_reports`.  Public
   API of the legacy store unchanged.
@@ -201,7 +201,7 @@ daemon is detected.
 
 **Acceptance.**
 
-- `cheetahclaws serve` running → `monitor.subscribe` over RPC persists
+- `pycode serve` running → `monitor.subscribe` over RPC persists
   to SQLite; daemon scheduler fires on cadence; reports show up in
   `monitor_reports` and on the SSE channel as `monitor_report` events.
 - Daemon stop → start with same data dir → `monitor.list` over RPC
@@ -241,7 +241,7 @@ daemon is detected.
 ### Skeleton landed — what's done so far
 
 A POSIX-only skeleton landed under the `agent_runner_subprocess` /
-`CHEETAHCLAWS_ENABLE_F4` feature flag (off by default; REPL is byte-for-byte
+`PYCODE_ENABLE_F4` feature flag (off by default; REPL is byte-for-byte
 unchanged). Files:
 
 | File | LoC | Role |
@@ -480,11 +480,11 @@ deployment. It spawns `python -m agent_runner --pipe` via
 `runner_supervisor.start`, with the agent runtime stubbed in a tightly
 scoped way:
 
-- `agent_runner._pipe_main` checks `CHEETAHCLAWS_E2E_FAKE_AGENT=1` after
+- `agent_runner._pipe_main` checks `PYCODE_E2E_FAKE_AGENT=1` after
   the handshake and, if set, replaces `agent.run` with a small scripted
   generator (`TextChunk` → optional `PermissionRequest` → `TurnDone`).
   The hook is env-gated so production paths can never reach it.
-- A companion env var `CHEETAHCLAWS_E2E_FAKE_PERMISSION=1` makes the
+- A companion env var `PYCODE_E2E_FAKE_PERMISSION=1` makes the
   stub emit one `PermissionRequest` so the test can drive the F-4.1
   routing through real IPC.
 
@@ -517,7 +517,7 @@ e2e).
 
 ## F-5 — proactive watcher in daemon
 
-**Scope.** `_proactive_watcher_loop` from `cheetahclaws.py` becomes a daemon-owned task.
+**Scope.** `_proactive_watcher_loop` from `pycode.py` becomes a daemon-owned task.
 
 **Acceptance.**
 - `/proactive 5m` while daemon is running: setting persists, sentinel runs in daemon, survives REPL exit.
@@ -533,7 +533,7 @@ e2e).
 | `cc_daemon/cli.py:cmd_serve`       | Starts the proactive scheduler after bind + discovery (so external clients can subscribe to `proactive_tick` *before* the first tick lands), with `owned_by_daemon=True`. Shutdown watcher stops it alongside `monitor.scheduler`. |
 | `cc_daemon/server.py`              | `DaemonState.__init__` registers `proactive_methods` alongside `system_methods`, `monitor_methods`, and `agent_methods`. |
 | `commands/core.py:cmd_proactive`   | When a foreign daemon is registered, the slash command routes through the `proactive.set` / `proactive.get` RPCs instead of mutating `RuntimeContext`. On RPC failure, falls back to today's in-process path so a misbehaving daemon doesn't break the REPL UX. |
-| `cheetahclaws.py:_proactive_watcher_loop` | Polls `_proactive_foreign_daemon_running()` and step-asides when a daemon owns the watcher — prevents double-fire across REPL + daemon. |
+| `pycode.py:_proactive_watcher_loop` | Polls `_proactive_foreign_daemon_running()` and step-asides when a daemon owns the watcher — prevents double-fire across REPL + daemon. |
 
 Event payload (`proactive_tick`):
 
@@ -577,7 +577,7 @@ F-7 depends on F-6 (shared scaffolding); F-8 the same.
 ### §F-6 — Telegram bridge skeleton (landed)
 
 A POSIX + Windows-compatible skeleton landed under the
-`CHEETAHCLAWS_ENABLE_F6` feature flag (off by default; REPL is
+`PYCODE_ENABLE_F6` feature flag (off by default; REPL is
 byte-for-byte unchanged). The Phase 1 surface is "everything F-4 #2
 needs to deliver runner notifications, plus a clean lifecycle"; the
 Phase 2 inbound refactor (phone → `session.send` → SSE-subscribed
@@ -587,7 +587,7 @@ Files:
 
 | File | LoC | Role |
 |------|-----|------|
-| `cc_daemon/bridge_supervisor.py`                 | ~430 | Lifecycle (`start` / `stop` / `stop_all` / `get` / `list_all`), per-kind feature-flag gate (`CHEETAHCLAWS_ENABLE_F6/7/8`), outbound `notify()` mailbox consumed by F-4 #2 + `bridge.send` RPC, `bridges` table upsert/finalize, redacted config snapshots in event payloads. |
+| `cc_daemon/bridge_supervisor.py`                 | ~430 | Lifecycle (`start` / `stop` / `stop_all` / `get` / `list_all`), per-kind feature-flag gate (`PYCODE_ENABLE_F6/7/8`), outbound `notify()` mailbox consumed by F-4 #2 + `bridge.send` RPC, `bridges` table upsert/finalize, redacted config snapshots in event payloads. |
 | `cc_daemon/bridge_methods.py`                    | ~135 | `bridge.start` / `bridge.stop` / `bridge.list` / `bridge.send` / `bridge.status` RPCs. Registered from `cc_daemon/server.py:DaemonState.__init__` next to `agent_methods`. |
 | `cc_daemon/server.py`                            | +6   | `DaemonState.__init__` adds `bridge_methods.register`. The methods are exposed unconditionally so `bridge.list` always answers, but `bridge.start` itself enforces the per-kind flag. |
 | `cc_daemon/cli.py`                               | +6   | `_watch_shutdown` calls `bridge_supervisor.stop_all` before triggering the HTTP listener shutdown, so a SIGTERM cleanly tears down bridge worker threads. |
@@ -598,14 +598,14 @@ Per-bridge flag matrix (per the "Bridge flag" decision):
 
 | Env var                          | Effect                          |
 |----------------------------------|---------------------------------|
-| `CHEETAHCLAWS_ENABLE_F6`         | Telegram-in-daemon allowed.     |
-| `CHEETAHCLAWS_ENABLE_F7`         | Slack-in-daemon (requires F-6). |
-| `CHEETAHCLAWS_ENABLE_F8`         | WeChat-in-daemon (requires F-6).|
+| `PYCODE_ENABLE_F6`         | Telegram-in-daemon allowed.     |
+| `PYCODE_ENABLE_F7`         | Slack-in-daemon (requires F-6). |
+| `PYCODE_ENABLE_F8`         | WeChat-in-daemon (requires F-6).|
 
 Acceptance status (Phase 1):
 
 - ✅ **Bridge survives REPL exit.** The worker thread is daemon-owned;
-  the REPL never owns its lifetime. `cheetahclaws daemon stop` shuts it
+  the REPL never owns its lifetime. `pycode daemon stop` shuts it
   down via `_watch_shutdown` → `bridge_supervisor.stop_all`.
 - ✅ **Connection state persisted.** A row lands in the `bridges` table
   on every start/stop. `bridge.list` merges live handles + persisted
@@ -687,7 +687,7 @@ how to dispatch a `kind="slack"` worker, and the existing
 `bridges/slack.py` `_slack_supervisor(token, channel, config)` plugs
 in alongside Telegram's. What's new for F-7:
 
-- **Feature flag `CHEETAHCLAWS_ENABLE_F7`** (default off).
+- **Feature flag `PYCODE_ENABLE_F7`** (default off).
   `bridge_supervisor.enabled("slack")` reads this; `bridge.start kind="slack"`
   raises a clear error when it's missing — and a separate clear error
   when F-7 is on but F-6 isn't (the shared scaffolding has to be
@@ -730,7 +730,7 @@ the existing `bridges/wechat.py`:
 
 Files / tests:
 
-- **Feature flag `CHEETAHCLAWS_ENABLE_F8`** (default off; depends on
+- **Feature flag `PYCODE_ENABLE_F8`** (default off; depends on
   F-6 enabled too).
 - **Tests** in `tests/test_cc_daemon_bridge_supervisor.py::TestWechatWorker`:
   F-6 dependency error, supervisor invocation with `(token, base_url,
@@ -748,7 +748,7 @@ Acceptance status (Phase 1) — identical to F-6:
 
 ## F-9 — cost guardrail defaults under `serve`
 
-**Scope.** When running under `cheetahclaws serve`, the four budget keys default to non-`None`:
+**Scope.** When running under `pycode serve`, the four budget keys default to non-`None`:
 
 ```jsonc
 {
@@ -762,7 +762,7 @@ Acceptance status (Phase 1) — identical to F-6:
 REPL `--in-process` mode keeps `None` defaults (no surprise for existing users).
 
 **Acceptance.**
-- `cheetahclaws serve` started without overrides → `cheetahclaws daemon status` reports the four defaults.
+- `pycode serve` started without overrides → `pycode daemon status` reports the four defaults.
 - Agent runner exceeds per-session budget → status moves to `paused_budget`, `quota_warn` event emitted, runner pauses.
 - `agent.resume` RPC with a new budget argument unpauses the runner.
 - REPL without daemon: budgets still default to `None`.
@@ -803,7 +803,7 @@ Tests for the quota-pause hook in `tests/test_cc_daemon_quota_pause.py` (2 cases
 Cost-default knobs operators can override:
 
 ```jsonc
-// ~/.cheetahclaws/config.json (overrides win over F-9 defaults)
+// ~/.pycode/config.json (overrides win over F-9 defaults)
 {
   "session_token_budget": 500000,   // 500k tokens per session
   "session_cost_budget":  5.0,      // $5 per session
@@ -812,7 +812,7 @@ Cost-default knobs operators can override:
 }
 ```
 
-REPL invariant: `cheetahclaws` (no `serve`) still imports `cc_config`
+REPL invariant: `pycode` (no `serve`) still imports `cc_config`
 directly, so the four budget keys remain `None` (unlimited) — F-9 only
 fires inside `cmd_serve`. Verified by the existing
 `tests/test_cc_daemon_cli.py` round-trip plus the new `_apply_serve_defaults`
@@ -823,7 +823,7 @@ unit tests (which don't depend on a daemon being up).
 - **Tests.** Every PR ships unit tests; F-1, F-3, F-4, F-6/7/8 also ship `tests/e2e_daemon_<area>.py`.
 - **Docs.** Every PR updates the relevant section in `docs/architecture.md`. The "Daemon" header is created by F-1; subsequent PRs append.
 - **Config keys.** New keys go in `cc_config.DEFAULTS`; documented in `docs/architecture.md`.
-- **Backwards compatibility.** Users who never run `cheetahclaws serve` see no behavior change until the eventual default flip — that flip is out of scope here and tracked in [#68](https://github.com/SafeRL-Lab/cheetahclaws/issues/68) as the "Phase D" item.
+- **Backwards compatibility.** Users who never run `pycode serve` see no behavior change until the eventual default flip — that flip is out of scope here and tracked in [#68](https://github.com/yanfeng98/pycode/issues/68) as the "Phase D" item.
 
 ## Updating this document
 

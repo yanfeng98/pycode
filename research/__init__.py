@@ -1,4 +1,4 @@
-"""CheetahClaws Research — multi-source topic research with engagement scoring.
+"""PyCode Research — multi-source topic research with engagement scoring.
 
 Public API:
     from research import research, Brief, SourceStatus
@@ -10,7 +10,7 @@ Public API:
         limit=30,                         # max results per source
         use_cache=True,
         synthesize=True,                  # run LLM synthesis
-        config=None,                      # cheetahclaws config (for model + API keys)
+        config=None,                      # pycode config (for model + API keys)
     )
 
 Sources are organized under research.sources.* and each expose a

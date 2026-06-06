@@ -29,7 +29,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-_JOBS_PATH = Path.home() / ".cheetahclaws" / "jobs.json"
+_JOBS_PATH = Path.home() / ".pycode" / "jobs.json"
 _MAX_JOBS = 100          # keep last N jobs on disk
 _MAX_STEPS = 30          # max steps to record per job
 _RESULT_PREVIEW = 600    # chars of result to store
@@ -148,7 +148,7 @@ class Job:
 # ── Storage ──────────────────────────────────────────────────────────────────
 #
 # F-2 swapped the JSON-file backend for the SQLite ``jobs`` table.  The
-# legacy ``~/.cheetahclaws/jobs.json`` is migrated on first access and
+# legacy ``~/.pycode/jobs.json`` is migrated on first access and
 # kept readable for one release as a fallback.  Public API
 # (``create``, ``start``, ``get``, ``list_recent`` …) is unchanged.
 
@@ -168,7 +168,7 @@ def _ensure_migrated() -> None:
 
     Note: this migration is **one-way**.  Once the schema_meta marker is
     set, the JSON file is never read again — subsequent edits to
-    ``~/.cheetahclaws/jobs.json`` are ignored.  The file is left on disk
+    ``~/.pycode/jobs.json`` are ignored.  The file is left on disk
     so that users still on the prior release (or anyone holding a
     backup-style script that scrapes it) can read it, but it is no
     longer the source of truth.  To redo the migration, delete the

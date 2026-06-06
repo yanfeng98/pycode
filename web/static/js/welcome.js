@@ -10,7 +10,7 @@ Object.assign(ChatApp.prototype, {
     dash.style.cssText = 'max-width:680px;margin:0 auto;padding:20px 0;';
     dash.innerHTML = `
       <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:28px;font-weight:700;color:var(--accent);margin-bottom:4px;">CheetahClaws</div>
+        <div style="font-size:28px;font-weight:700;color:var(--accent);margin-bottom:4px;">PyCode</div>
         <div style="font-size:13px;color:var(--text-muted);">Personal AI Assistant &bull; Support Any Model &bull; Autonomous 24/7</div>
       </div>
 

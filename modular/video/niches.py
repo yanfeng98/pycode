@@ -1,6 +1,6 @@
 """
 Content niche definitions for viral video generation.
-Ported from v-content-creator by the CheetahClaws integration.
+Ported from v-content-creator by the PyCode integration.
 """
 
 import random

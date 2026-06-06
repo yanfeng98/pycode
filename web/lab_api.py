@@ -2,7 +2,7 @@
 
 Mounted under ``/api/lab/*`` from web/server.py. We expose JSON
 endpoints so the frontend (web/lab.html) can drive the lab without
-opening the cheetahclaws REPL.
+opening the pycode REPL.
 
 Endpoints:
 

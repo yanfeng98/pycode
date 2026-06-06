@@ -1,5 +1,5 @@
 """
-logging_utils.py — Structured JSON logging for CheetahClaws.
+logging_utils.py — Structured JSON logging for PyCode.
 
 Writes newline-delimited JSON records to stderr (default) or a log file.
 Thread-safe. Zero external dependencies.
@@ -100,7 +100,7 @@ def _emit(level_name: str, event: str, **fields: Any) -> None:
 
 
 # Detect web terminal mode: set by web/server.py via env var
-_is_web_terminal = os.environ.get("CHEETAHCLAWS_WEB_TERMINAL") == "1"
+_is_web_terminal = os.environ.get("PYCODE_WEB_TERMINAL") == "1"
 
 
 # ── Public helpers ─────────────────────────────────────────────────────────

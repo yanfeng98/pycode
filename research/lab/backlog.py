@@ -170,7 +170,7 @@ def run_backlog_worker(*, config: dict,
                         rec.run_id, rec.topic, rec.created_at
                     ) / "report.md"
                 else:
-                    report_path = (_Path.home() / ".cheetahclaws"
+                    report_path = (_Path.home() / ".pycode"
                                    / "research_papers" / run_id / "report.md")
                 print(_clr(
                     f"  ↳ /lab daemon  📄 [{run_id}] will save to: "

@@ -1,5 +1,5 @@
 """
-bridges/telegram.py — Telegram bot bridge for CheetahClaws.
+bridges/telegram.py — Telegram bot bridge for PyCode.
 
 Provides:
   - _tg_api / _tg_send / _tg_typing_loop  (HTTP helpers)
@@ -265,7 +265,7 @@ def _tg_poll_loop(token: str, chat_id: int, config: dict) -> str:
         offset = flush["result"][-1]["update_id"] + 1
     else:
         offset = 0
-    _tg_send(token, chat_id, "🟢 cheetahclaws is online.\nSend me a message and I'll process it.")
+    _tg_send(token, chat_id, "🟢 pycode is online.\nSend me a message and I'll process it.")
 
     while not _telegram_stop.is_set():
         try:
@@ -548,7 +548,7 @@ def _tg_poll_loop(token: str, chat_id: int, config: dict) -> str:
                         _telegram_stop.set()
                         break
                     elif tg_cmd == "/start":
-                        _tg_send(token, chat_id, "🟢 cheetahclaws bridge is active. Send me anything.")
+                        _tg_send(token, chat_id, "🟢 pycode bridge is active. Send me anything.")
                         continue
                     slash_cb = session_ctx.handle_slash
                     if slash_cb:

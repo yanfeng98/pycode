@@ -1,5 +1,5 @@
 """
-commands/config_cmd.py — Configuration and model commands for CheetahClaws.
+commands/config_cmd.py — Configuration and model commands for PyCode.
 
 Commands: /model, /config, /verbose, /thinking, /permissions, /cwd
 """

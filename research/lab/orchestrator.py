@@ -173,7 +173,7 @@ class LabRun:
     on_stage_change: Optional[Callable[[Stage], None]] = None
     # Optional override for the filesystem root where this run's
     # report.md, references.bib, sandbox workspace, etc. all go.
-    # When None, falls back to ~/.cheetahclaws/research_papers/<human-name>/.
+    # When None, falls back to ~/.pycode/research_papers/<human-name>/.
     # Tests inject a tmp_path here so they don't pollute the user's home.
     output_root: Optional["Path"] = None
 

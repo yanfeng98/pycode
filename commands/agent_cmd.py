@@ -1,5 +1,5 @@
 """
-commands/agent_cmd.py — /agent slash command for CheetahClaws.
+commands/agent_cmd.py — /agent slash command for PyCode.
 
   /agent                       → interactive wizard (beginner-friendly)
   /agent start <template> ...  → direct launch (power-user)
@@ -61,9 +61,9 @@ def _hdr(title: str) -> None:
 def _resolve_output_path(filename: str, agent_name: str) -> Path:
     """Resolve a user-supplied output filename to an absolute path.
 
-    Relative paths are placed under `~/.cheetahclaws/agents/<agent_name>/output/`
+    Relative paths are placed under `~/.pycode/agents/<agent_name>/output/`
     so all autonomous-agent artifacts stay in one place — no more files
-    landing in the cheetahclaws source tree because the user happened to
+    landing in the pycode source tree because the user happened to
     launch from there. Absolute paths are passed through unchanged.
 
     Creates the parent directory eagerly so the model's first Write call
@@ -71,7 +71,7 @@ def _resolve_output_path(filename: str, agent_name: str) -> Path:
     """
     p = Path(filename).expanduser()
     if not p.is_absolute():
-        p = Path.home() / ".cheetahclaws" / "agents" / agent_name / "output" / p
+        p = Path.home() / ".pycode" / "agents" / agent_name / "output" / p
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
 

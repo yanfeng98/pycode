@@ -1,4 +1,4 @@
-"""End-to-end tests for `cheetahclaws serve` + `cheetahclaws daemon ...`.
+"""End-to-end tests for `pycode serve` + `pycode daemon ...`.
 
 These tests boot the *real* daemon as a subprocess, hit it from the test
 process via http.client, and verify discovery / auth / RPC / SSE / shutdown
@@ -29,7 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 @pytest.fixture
 def daemon_proc(tmp_path):
-    """Start `cheetahclaws serve --listen tcp://...` in a subprocess.
+    """Start `pycode serve --listen tcp://...` in a subprocess.
 
     Yields ``(proc, home, address, token)``.  Tears the process down by
     sending the ``system.shutdown`` RPC; falls back to terminate() on
@@ -42,7 +42,7 @@ def daemon_proc(tmp_path):
     env["XDG_RUNTIME_DIR"] = str(tmp_path / "xdg")
 
     proc = subprocess.Popen(
-        [sys.executable, "cheetahclaws.py", "serve",
+        [sys.executable, "pycode.py", "serve",
          "--listen", "tcp://127.0.0.1:0"],
         cwd=str(REPO_ROOT),
         env=env,
@@ -50,7 +50,7 @@ def daemon_proc(tmp_path):
         stderr=subprocess.PIPE,
     )
 
-    cheetah_dir = tmp_path / ".cheetahclaws"
+    cheetah_dir = tmp_path / ".pycode"
     discovery_file = cheetah_dir / "daemon.json"
     token_file = cheetah_dir / "daemon_token"
 
@@ -142,7 +142,7 @@ def _run_subcommand(args: list[str], home: Path, *, timeout=10.0):
     env["USERPROFILE"] = str(home)
     env["XDG_RUNTIME_DIR"] = str(home / "xdg")
     proc = subprocess.run(
-        [sys.executable, "cheetahclaws.py", *args],
+        [sys.executable, "pycode.py", *args],
         cwd=str(REPO_ROOT), env=env, timeout=timeout,
         capture_output=True,
     )
@@ -155,7 +155,7 @@ def _run_subcommand(args: list[str], home: Path, *, timeout=10.0):
 
 def test_daemon_writes_discovery_and_token(daemon_proc):
     _proc, home, address, token = daemon_proc
-    info_path = home / ".cheetahclaws" / "daemon.json"
+    info_path = home / ".pycode" / "daemon.json"
     info = json.loads(info_path.read_text(encoding="utf-8"))
     assert info["transport"] == "tcp"
     assert info["address"] == address
@@ -283,7 +283,7 @@ def test_daemon_stop_clears_discovery(daemon_proc):
     assert rc == 0, f"stderr: {stderr}"
     assert "stopped" in (_stdout + stderr).lower()
     proc.wait(timeout=5)
-    assert not (home / ".cheetahclaws" / "daemon.json").exists()
+    assert not (home / ".pycode" / "daemon.json").exists()
 
 
 def test_daemon_logs_subcommand(daemon_proc):
@@ -297,7 +297,7 @@ def test_daemon_logs_subcommand(daemon_proc):
 
 def test_daemon_rotate_token_changes_file(daemon_proc):
     _proc, home, _address, token = daemon_proc
-    token_path = home / ".cheetahclaws" / "daemon_token"
+    token_path = home / ".pycode" / "daemon_token"
     rc, stdout, _stderr = _run_subcommand(["daemon", "rotate-token"], home)
     assert rc == 0
     assert "rotated" in stdout.lower()
@@ -313,13 +313,13 @@ def _start_daemon(home: Path, *, wait_s: float = 10.0) -> tuple[subprocess.Popen
     env["USERPROFILE"] = str(home)
     env["XDG_RUNTIME_DIR"] = str(home / "xdg")
     proc = subprocess.Popen(
-        [sys.executable, "cheetahclaws.py", "serve",
+        [sys.executable, "pycode.py", "serve",
          "--listen", "tcp://127.0.0.1:0"],
         cwd=str(REPO_ROOT), env=env,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
-    discovery_file = home / ".cheetahclaws" / "daemon.json"
-    token_file = home / ".cheetahclaws" / "daemon_token"
+    discovery_file = home / ".pycode" / "daemon.json"
+    token_file = home / ".pycode" / "daemon_token"
     deadline = time.monotonic() + wait_s
     info = None
     while time.monotonic() < deadline:
@@ -358,7 +358,7 @@ def _stop_daemon(proc: subprocess.Popen, address: str, token: str) -> None:
 
 
 def test_sessions_db_initialised_on_first_serve(tmp_path):
-    """F-2 schema: cheetahclaws serve initialises ~/.cheetahclaws/sessions.db
+    """F-2 schema: pycode serve initialises ~/.pycode/sessions.db
     with the daemon tables before accepting any RPC."""
     proc, address, token = _start_daemon(tmp_path)
     try:
@@ -368,7 +368,7 @@ def test_sessions_db_initialised_on_first_serve(tmp_path):
     finally:
         _stop_daemon(proc, address, token)
 
-    db_path = tmp_path / ".cheetahclaws" / "sessions.db"
+    db_path = tmp_path / ".pycode" / "sessions.db"
     assert db_path.exists()
     import sqlite3
     conn = sqlite3.connect(str(db_path))

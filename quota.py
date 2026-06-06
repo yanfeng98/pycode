@@ -11,7 +11,7 @@ Config keys (all optional; None / 0 = no limit):
   daily_token_budget    int    max tokens today (all sessions in this process)
   daily_cost_budget     float  max USD today (all sessions in this process)
 
-Daily counters are stored in ~/.cheetahclaws/quota/YYYY-MM-DD.json.
+Daily counters are stored in ~/.pycode/quota/YYYY-MM-DD.json.
 Thread-safe within a single process; no cross-process locking.
 """
 from __future__ import annotations

@@ -1,6 +1,6 @@
-"""cli.py — `cheetahclaws serve` entry point.
+"""cli.py — `pycode serve` entry point.
 
-The interactive daemon-control verbs (`cheetahclaws daemon status / stop /
+The interactive daemon-control verbs (`pycode daemon status / stop /
 logs / rotate-token`) live in :mod:`commands.daemon_cmd`; this module is
 just the long-running serve loop.
 
@@ -10,11 +10,11 @@ constructors, with these additions for the foundation:
 * Calls :func:`bootstrap.bootstrap` so logging / tool registry are wired
   up the same way as the REPL.
 * Pins ``log_file`` to ``<data_dir>/logs/daemon.log`` (overridable via
-  user config) so ``cheetahclaws daemon logs`` has signal to tail.
+  user config) so ``pycode daemon logs`` has signal to tail.
 * Threads the loaded ``config`` and ``unauthenticated_metrics`` flag
   through ``DaemonState`` so ``/healthz`` / ``/readyz`` / ``/metrics``
   return real ``health.py`` payloads.
-* Writes ``~/.cheetahclaws/daemon.json`` (discovery) on bind and removes
+* Writes ``~/.pycode/daemon.json`` (discovery) on bind and removes
   it on exit, in addition to the spike's pid file.
 * Watches ``DaemonState.shutdown_event`` so ``system.shutdown`` over RPC
   triggers graceful exit cross-platform (Windows can't deliver SIGTERM
@@ -34,7 +34,7 @@ from . import discovery
 from .auth import load_or_create_token
 
 
-DEFAULT_DATA_DIR = Path.home() / ".cheetahclaws"
+DEFAULT_DATA_DIR = Path.home() / ".pycode"
 DEFAULT_RUN_DIR = DEFAULT_DATA_DIR / "run"
 DEFAULT_UNIX_SOCKET = DEFAULT_RUN_DIR / "daemon.sock"
 DEFAULT_TOKEN_PATH = DEFAULT_DATA_DIR / "daemon_token"
@@ -44,7 +44,7 @@ DEFAULT_PID_FILE = DEFAULT_RUN_DIR / "daemon.pid"
 # ── F-9: serve-mode cost-guardrail defaults ───────────────────────────────
 #
 # REPL ``--in-process`` mode keeps the all-None defaults from cc_config so
-# existing users see no surprise.  Headless ``cheetahclaws serve`` mode
+# existing users see no surprise.  Headless ``pycode serve`` mode
 # applies *conservative* defaults instead: a daemon often runs unattended
 # for hours/days, an unbounded agent that's quietly compounding costs
 # while no one is watching is the failure mode F-9 (#68) addresses.
@@ -100,12 +100,12 @@ def parse_listen(spec: str) -> tuple[str, object]:
     )
 
 
-# ── argparse for `cheetahclaws serve` ─────────────────────────────────────
+# ── argparse for `pycode serve` ─────────────────────────────────────
 
 def _build_serve_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="cheetahclaws serve",
-        description="Run the headless cheetahclaws daemon.",
+        prog="pycode serve",
+        description="Run the headless pycode daemon.",
     )
     p.add_argument("--listen", default=None,
                    help=f"unix://path or tcp://host:port "
@@ -142,7 +142,7 @@ def _build_serve_parser() -> argparse.ArgumentParser:
 
 
 def serve_main(argv: Optional[list[str]] = None) -> int:
-    """Entry point used by ``cheetahclaws serve`` (dispatched from cheetahclaws.py)."""
+    """Entry point used by ``pycode serve`` (dispatched from pycode.py)."""
     parser = _build_serve_parser()
     args = parser.parse_args(argv)
     return cmd_serve(args)
@@ -271,7 +271,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     except OSError as exc:
         print(f"warning: discovery write failed: {exc}", file=sys.stderr, flush=True)
 
-    print(f"cheetahclaws daemon listening on {listen_repr} (pid={os.getpid()})", flush=True)
+    print(f"pycode daemon listening on {listen_repr} (pid={os.getpid()})", flush=True)
     if audit_enabled:
         print(f"audit log: {data_dir / 'logs' / 'auth.jsonl'}", flush=True)
 
@@ -386,7 +386,7 @@ def _write_pidfile(path: Path) -> None:
 
 def _lookup_version() -> str:
     try:
-        import cheetahclaws as _root
+        import pycode as _root
         return getattr(_root, "VERSION", "unknown")
     except Exception:
         return "unknown"
@@ -397,15 +397,15 @@ def _lookup_version() -> str:
 # The Cheetahclaws spike branch (RFC 0001-spike-notes.md §"How to run it")
 # documented a subparser CLI with verbs ``serve``, ``status``, ``stop``,
 # and ``rotate-token``.  Foundation moves the canonical surface to
-# ``cheetahclaws serve`` / ``cheetahclaws daemon <action>``, but anyone
+# ``pycode serve`` / ``pycode daemon <action>``, but anyone
 # following the spike notes should still be able to invoke
 # ``python -m cc_daemon.cli ...``.
 #
 # We handle that here by dispatching:
-#   * ``serve``  → the same :func:`serve_main` used by ``cheetahclaws serve``
+#   * ``serve``  → the same :func:`serve_main` used by ``pycode serve``
 #   * ``status`` / ``stop`` / ``logs`` / ``rotate-token``
 #                → :func:`commands.daemon_cmd.dispatch` (the same code path
-#                  used by ``cheetahclaws daemon <action>``)
+#                  used by ``pycode daemon <action>``)
 #
 # Output / exit codes match the new surface; a few flags from the old
 # spike CLI (``--token-path`` / ``--print-token`` on rotate-token) are
@@ -418,7 +418,7 @@ _USAGE = (
     "  serve         Run the headless daemon. See `serve --help` for flags.\n"
     "  status        Print pid / transport / address / uptime / ping outcome.\n"
     "  stop          Graceful shutdown via system.shutdown RPC + signal fallback.\n"
-    "  logs [-n N]   Tail ~/.cheetahclaws/logs/daemon.log.\n"
+    "  logs [-n N]   Tail ~/.pycode/logs/daemon.log.\n"
     "  rotate-token  Regenerate the TCP bearer token.\n"
 )
 

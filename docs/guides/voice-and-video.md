@@ -9,7 +9,7 @@
 <center style="color:#000000;text-decoration:underline">Voice Input: speak your prompt → offline Whisper transcription → AI responds</center>
 </div>
 
-CheetahClaws v3.05 adds a fully offline voice-to-prompt pipeline. Speak your request — it is transcribed and submitted as if you had typed it.
+PyCode v3.05 adds a fully offline voice-to-prompt pipeline. Speak your request — it is transcribed and submitted as if you had typed it.
 
 ### Quick start
 
@@ -22,8 +22,8 @@ pip install sounddevice        # recommended: cross-platform, no extra binary
 # 2. Install a local STT backend (recommended — works offline, no API key)
 pip install faster-whisper numpy
 
-# 3. Start CheetahClaws and speak
-cheetahclaws
+# 3. Start PyCode and speak
+pycode
 [myproject] ❯ /voice
   🎙  Listening… (speak now, auto-stops on silence, Ctrl+C to cancel)
   🎙  ████
@@ -56,9 +56,9 @@ export NANO_CLAUDE_WHISPER_MODEL=tiny    # fastest, lightest
 
 ### Keyterm boosting
 
-Before each recording, CheetahClaws extracts coding vocabulary from:
+Before each recording, PyCode extracts coding vocabulary from:
 - **Git branch** (e.g. `feat/voice-input` → "feat", "voice", "input")
-- **Project root name** (e.g. "cheetahclaws")
+- **Project root name** (e.g. "pycode")
 - **Recent source file stems** (e.g. `authentication_handler.py` → "authentication", "handler")
 - **Global coding terms**: `MCP`, `grep`, `TypeScript`, `OAuth`, `regex`, `gRPC`, …
 
@@ -91,7 +91,7 @@ The selected device is shown in `/voice status` and used for all subsequent reco
 
 ### How it compares to Claude Code
 
-| | Claude Code | CheetahClaws v3.05 |
+| | Claude Code | PyCode v3.05 |
 |---|---|---|
 | STT service | Anthropic private WebSocket (`voice_stream`) | `faster-whisper` / `openai-whisper` / OpenAI API |
 | Requires Anthropic OAuth | Yes | **No** |
@@ -164,7 +164,7 @@ Select **"2. Custom script"** to provide your own narration text instead of havi
   Pick mode: 2
 
   Paste your narration text (type END on a new line when done):
-  CheetahClaws is a lightweight Python AI coding assistant
+  PyCode is a lightweight Python AI coding assistant
   that supports any model — Claude, GPT, Gemini, or local Ollama.
   END
   → Script: 18 words
@@ -189,7 +189,7 @@ Steps skipped in script mode: Topic, Style/Niche, Duration (auto-derived from wo
 Subtitles are rendered with **Pillow + NotoSansSC font** — not libass. This means:
 
 - Chinese, Japanese, Korean, Cyrillic, Arabic, Thai all render correctly
-- Font is downloaded once to `~/.cheetahclaws/fonts/` on first run (~8 MB)
+- Font is downloaded once to `~/.pycode/fonts/` on first run (~8 MB)
 - Two-pass approach: fast `-c:v copy` assembly, then PIL PNG overlays via `filter_complex`
 - Falls back to no subtitles if PIL fails — never crashes the pipeline
 

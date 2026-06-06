@@ -63,7 +63,7 @@ def search(query: str, limit: int = 20, config: dict | None = None,
         "keyword": query,
         "page": 1,
         "page_size": min(limit, 20),
-        "search_id": "cheetahclaws-research",
+        "search_id": "pycode-research",
         "sort": "general",     # general | popularity | time
         "note_type": 0,        # 0 = all
     }

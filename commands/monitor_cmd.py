@@ -236,7 +236,7 @@ def cmd_monitor(args: str, state, config) -> bool:
         if _live is not None:
             info(f"Scheduler is owned by the running daemon "
                  f"(pid={_live.get('pid', '?')}); /monitor stop is a no-op. "
-                 f"Run `cheetahclaws daemon stop` to stop the daemon itself.")
+                 f"Run `pycode daemon stop` to stop the daemon itself.")
         elif _sched.stop():
             ok("Monitor scheduler stopped.")
         else:
@@ -537,7 +537,7 @@ def _wizard_configure_notifications(config: dict) -> None:
         try:
             from bridges.telegram import _tg_send
             _tg_send(token, int(chat_id),
-                     "✅ CheetahClaws Monitor connected! You'll receive AI reports here.")
+                     "✅ PyCode Monitor connected! You'll receive AI reports here.")
             ok("Telegram configured and test message sent!")
         except Exception as e:
             warn(f"Saved, but test message failed: {e}")
@@ -565,7 +565,7 @@ def _wizard_configure_notifications(config: dict) -> None:
 
         try:
             from bridges.slack import _slack_send
-            _slack_send(token, channel, "✅ CheetahClaws Monitor connected! You'll receive AI reports here.")
+            _slack_send(token, channel, "✅ PyCode Monitor connected! You'll receive AI reports here.")
             ok("Slack configured and test message sent!")
         except Exception as e:
             warn(f"Saved, but test message failed: {e}")

@@ -11,7 +11,7 @@ import urllib.request
 
 
 # ── Font cache for subtitle rendering ────────────────────────────────────────
-_FONT_CACHE = os.path.join(os.path.expanduser("~"), ".cheetahclaws", "fonts")
+_FONT_CACHE = os.path.join(os.path.expanduser("~"), ".pycode", "fonts")
 
 # Download sources for a CJK-capable Unicode font (tried in order)
 _FONT_SOURCES = [
@@ -26,7 +26,7 @@ def _get_subtitle_font() -> tuple[str | None, str | None]:
     """
     Find or download a font with Unicode/CJK support.
     Returns (font_file_path, fontsdir) or (None, None).
-    On first call downloads NotoSansSC and caches to ~/.cheetahclaws/fonts/.
+    On first call downloads NotoSansSC and caches to ~/.pycode/fonts/.
     """
     # 1. Cached font (fastest path after first run)
     os.makedirs(_FONT_CACHE, exist_ok=True)

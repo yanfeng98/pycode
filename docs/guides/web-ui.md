@@ -1,6 +1,6 @@
 # Web UI Guide
 
-CheetahClaws ships with a production-ready browser UI built on a pure Python stdlib HTTP server plus ten small vanilla-JS modules — no Node.js, no bundler, no build step. This guide covers installation, accounts, the Chat UI, the PTY terminal, the full HTTP API, observability, and how the pieces fit together.
+PyCode ships with a production-ready browser UI built on a pure Python stdlib HTTP server plus ten small vanilla-JS modules — no Node.js, no bundler, no build step. This guide covers installation, accounts, the Chat UI, the PTY terminal, the full HTTP API, observability, and how the pieces fit together.
 
 <div align="center">
  <img src="../media/demos/web_demo.gif" width="850" alt="Web UI demo — sidebar, tool cards, approval prompts, markdown streaming"/>
@@ -15,20 +15,20 @@ CheetahClaws ships with a production-ready browser UI built on a pure Python std
 pip install 'cheetahclaws[web]'
 
 # Launch (auto-picks a free port if 8080 is taken):
-cheetahclaws --web
+pycode --web
 
 # Explicit port / host / no-auth:
-cheetahclaws --web --port 9000
-cheetahclaws --web --host 0.0.0.0             # open to the local network
-cheetahclaws --web --no-auth                  # localhost dev only — skips login
+pycode --web --port 9000
+pycode --web --host 0.0.0.0             # open to the local network
+pycode --web --no-auth                  # localhost dev only — skips login
 
-# Pin a model at launch (persists to ~/.cheetahclaws/config.json):
-cheetahclaws --web --model custom/qwen2.5-72b
+# Pin a model at launch (persists to ~/.pycode/config.json):
+pycode --web --model custom/qwen2.5-72b
 ```
 
-`--model` in `--web` mode is persisted to disk before the server starts, because every request handler reloads config from `~/.cheetahclaws/config.json`. To switch models without restarting, use the Settings panel in the Chat UI or send `/model <name>` in the message box.
+`--model` in `--web` mode is persisted to disk before the server starts, because every request handler reloads config from `~/.pycode/config.json`. To switch models without restarting, use the Settings panel in the Chat UI or send `/model <name>` in the message box.
 
-> **Prerequisite for `custom/<model>`.** The `custom/` provider is an OpenAI-compatible client with **no built-in base URL** — it always reads `CUSTOM_BASE_URL` (env var) or `custom_base_url` (in `~/.cheetahclaws/config.json`). If both are empty you'll get `ValueError: custom provider requires a base_url`. Quick setup before the launch line above:
+> **Prerequisite for `custom/<model>`.** The `custom/` provider is an OpenAI-compatible client with **no built-in base URL** — it always reads `CUSTOM_BASE_URL` (env var) or `custom_base_url` (in `~/.pycode/config.json`). If both are empty you'll get `ValueError: custom provider requires a base_url`. Quick setup before the launch line above:
 >
 > ```bash
 > export CUSTOM_BASE_URL=http://localhost:8000/v1   # don't forget the /v1 suffix
@@ -40,7 +40,7 @@ cheetahclaws --web --model custom/qwen2.5-72b
 Startup banner:
 
 ```
-  CheetahClaws Web Terminal
+  PyCode Web Terminal
   ────────────────────────────────────────
   Terminal: http://localhost:8080
   Chat UI:  http://localhost:8080/chat
@@ -76,7 +76,7 @@ GET  /api/auth/whoami      →  { user: { id, username, is_admin, created_at } }
 ```
 
 - Password hashing: **bcrypt** (called directly — passlib was dropped because it crashes on `bcrypt>=4.1`; existing `$2b$...` hashes remain compatible).
-- JWT: **PyJWT**, HS256, **7-day TTL**. Signing secret is generated once and persisted to `~/.cheetahclaws/web_secret` with `O_CREAT \| O_EXCL` + 0o600. If the file's mode is later loosened (world-readable), the loader refuses to read it and prints a clear `chmod 600` fixup message. Override with the `CHEETAHCLAWS_WEB_SECRET` env var (recommended in production — secret never touches disk).
+- JWT: **PyJWT**, HS256, **7-day TTL**. Signing secret is generated once and persisted to `~/.pycode/web_secret` with `O_CREAT \| O_EXCL` + 0o600. If the file's mode is later loosened (world-readable), the loader refuses to read it and prints a clear `chmod 600` fixup message. Override with the `PYCODE_WEB_SECRET` env var (recommended in production — secret never touches disk).
 - Cookie: `ccjwt=<jwt>; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800`.
 - `--no-auth` short-circuits auth to a synthetic single-user `user_id=1` for localhost testing.
 
@@ -108,7 +108,7 @@ This means in a multi-user web deployment, user A cannot hijack user B's termina
 
 All session metadata and message history live in SQLite, not RAM. Server restarts do **not** lose anything.
 
-- **DB file:** `~/.cheetahclaws/web.db` (0600). Override with `CHEETAHCLAWS_WEB_DB`.
+- **DB file:** `~/.pycode/web.db` (0600). Override with `PYCODE_WEB_DB`.
 - **Five tables** (SQLAlchemy 2.x, declared in `web/models.py`):
 
 | Table | Columns | Notes |
@@ -229,7 +229,7 @@ Streaming events from the agent are rendered as distinct UI components, not raw 
 
 ## PTY terminal (`/`)
 
-A full xterm.js (v5.5) terminal emulator in the browser — identical to running `cheetahclaws` in a native shell. 100% feature parity.
+A full xterm.js (v5.5) terminal emulator in the browser — identical to running `pycode` in a native shell. 100% feature parity.
 
 - WebSocket transport with automatic SSE fallback (works through VS Code port forwarding and other proxies that break `Upgrade: websocket`).
 - Fit addon + web-links addon + 256-color ANSI.
@@ -294,7 +294,7 @@ All `/api/*` routes other than `/api/auth/*` and the ops endpoints require a val
 | Route | Method | Response |
 |-------|--------|----------|
 | `/health` | GET | `200 {"ok": true, "db": "ok", "uptime_s": ...}` or `503` with `db_err` if the DB is unreachable |
-| `/metrics` | GET | Prometheus v0.0.4 text. Exports `cheetahclaws_uptime_seconds`, `cheetahclaws_requests_total`, `cheetahclaws_requests_4xx`, `cheetahclaws_requests_5xx`, `cheetahclaws_auth_logins_total`, `cheetahclaws_auth_logins_failed`, `cheetahclaws_auth_registrations_total`, `cheetahclaws_users_total`, `cheetahclaws_ws_connections_total` |
+| `/metrics` | GET | Prometheus v0.0.4 text. Exports `pycode_uptime_seconds`, `pycode_requests_total`, `pycode_requests_4xx`, `pycode_requests_5xx`, `pycode_auth_logins_total`, `pycode_auth_logins_failed`, `pycode_auth_registrations_total`, `pycode_users_total`, `pycode_ws_connections_total` |
 
 ### WebSocket events
 
@@ -327,7 +327,7 @@ Every HTTP response emits one JSON record on stderr through the `web.server` log
 {"ts":1776368300.054,"level":"info","logger":"web.server","msg":"req","method":"POST","path":"/api/auth/login","status":200,"dur_ms":259,"user_id":1,"peer":"127.0.0.1:45122"}
 ```
 
-Other structured events: `server_start`, `server_stop`, `register`, `login`, `login_failed`, `db_init_failed`, `message persist failed` (from `web.api`). Level controlled by `CHEETAHCLAWS_LOG_LEVEL` (default `INFO`; set `DEBUG` for verbose).
+Other structured events: `server_start`, `server_stop`, `register`, `login`, `login_failed`, `db_init_failed`, `message persist failed` (from `web.api`). Level controlled by `PYCODE_LOG_LEVEL` (default `INFO`; set `DEBUG` for verbose).
 
 Child loggers (`web.server`, `web.auth`, `web.api`, `web.db`) all inherit the JSON formatter set up in `web/logging_setup.py`.
 
@@ -349,10 +349,10 @@ pytest tests/test_web_api.py -v
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `CHEETAHCLAWS_WEB_DB` | `~/.cheetahclaws/web.db` | SQLite file path |
-| `CHEETAHCLAWS_WEB_SECRET` | persisted to `~/.cheetahclaws/web_secret` | JWT HS256 signing key |
-| `CHEETAHCLAWS_LOG_LEVEL` | `INFO` | `DEBUG` / `INFO` / `WARNING` / `ERROR` |
-| `CHEETAHCLAWS_WEB_SERVER` | set by `start_web_server` to `1` | Guards against recursive `--web` launches via shell aliases |
+| `PYCODE_WEB_DB` | `~/.pycode/web.db` | SQLite file path |
+| `PYCODE_WEB_SECRET` | persisted to `~/.pycode/web_secret` | JWT HS256 signing key |
+| `PYCODE_LOG_LEVEL` | `INFO` | `DEBUG` / `INFO` / `WARNING` / `ERROR` |
+| `PYCODE_WEB_SERVER` | set by `start_web_server` to `1` | Guards against recursive `--web` launches via shell aliases |
 
 ---
 
@@ -399,7 +399,7 @@ That's expected. Fill in the `Create your first account` form; the first user be
 The `ccjwt` cookie is missing or expired. Refresh the page; the Chat UI will pop the login overlay automatically.
 
 **8080 is taken**
-`cheetahclaws --web` (with no `--port`) auto-falls back to a free port — check the banner for the real URL. If you must use 8080, stop the conflicting process first.
+`pycode --web` (with no `--port`) auto-falls back to a free port — check the banner for the real URL. If you must use 8080, stop the conflicting process first.
 
 **I changed a JS file but the browser shows the old version**
 Normal reload now works (we send `Cache-Control: no-cache, must-revalidate` + weak ETag). If it's really stuck, `Ctrl+Shift+R` / `Cmd+Shift+R` forces a bypass.
@@ -407,13 +407,13 @@ Normal reload now works (we send `Cache-Control: no-cache, must-revalidate` + we
 **`/chat` loads but every JS/CSS asset is 404** (`/marked.min.js`, `/static/js/chat.js`, …)
 Two known causes:
 
-1. **Non-editable install missing package data.** The chat UI's static files live in `web/static/js/` as setuptools package-data. If you installed CheetahClaws non-editable (`pip install .` or `pip install cheetahclaws`) with an old `setuptools` (< 62) or a stale build cache, the `web/static/` subtree may not have been copied into `site-packages/web/`. Reinstall editable (`pip install -e '.[web]'`) or upgrade build tooling (`pip install -U pip setuptools build` then reinstall).
+1. **Non-editable install missing package data.** The chat UI's static files live in `web/static/js/` as setuptools package-data. If you installed PyCode non-editable (`pip install .` or `pip install cheetahclaws`) with an old `setuptools` (< 62) or a stale build cache, the `web/static/` subtree may not have been copied into `site-packages/web/`. Reinstall editable (`pip install -e '.[web]'`) or upgrade build tooling (`pip install -U pip setuptools build` then reinstall).
 2. **Install path contains a hidden directory** (e.g. `~/.venv/`, `~/.local/`). Older versions of `web/server.py` rejected any served file whose absolute path contained a dot-prefixed segment, even when that segment was in the install prefix and not the requested file. Fixed on `main` — the dotfile guard now only inspects path segments inside the `web/` package itself.
 
 If you're hitting this in Docker specifically, see [docs/guides/docker.md](docker.md#custom-dockerfile-pitfalls) for the Dockerfile-specific variant.
 
 **Lost my admin password**
-Blow away the SQLite DB and re-register: `rm ~/.cheetahclaws/web.db` then restart. You'll lose all chat history — for real recovery, open the DB with any SQLite client and rewrite the `password_hash` (`bcrypt.hashpw(b"newpass", bcrypt.gensalt()).decode()`).
+Blow away the SQLite DB and re-register: `rm ~/.pycode/web.db` then restart. You'll lose all chat history — for real recovery, open the DB with any SQLite client and rewrite the `password_hash` (`bcrypt.hashpw(b"newpass", bcrypt.gensalt()).decode()`).
 
 **Can't connect from another device**
 Start with `--host 0.0.0.0`. Your firewall must also allow the port, and mobile devices need to reach the host by IP (not `localhost`).
@@ -422,22 +422,22 @@ Start with `--host 0.0.0.0`. Your firewall must also allow the port, and mobile 
 `/metrics` returns plain text at `text/plain; version=0.0.4`. It's unauthenticated and works without the `ccjwt` cookie. If it 401s, you're hitting `/api/metrics` instead of `/metrics` — note the leading segment.
 
 **"DB init failed" on startup**
-The log line is JSON with the full exception. Usually a file-permission issue on `~/.cheetahclaws/web.db` or a broken install of SQLAlchemy. Verify `pip install 'cheetahclaws[web]'` completed without errors.
+The log line is JSON with the full exception. Usually a file-permission issue on `~/.pycode/web.db` or a broken install of SQLAlchemy. Verify `pip install 'cheetahclaws[web]'` completed without errors.
 
 **Slash command output appears twice in the Chat UI but once in the terminal**
-Fixed (May 10, 2026). The chat client used to receive every synchronous slash-command event through both the HTTP `data.events` payload **and** the WS broadcast, so each reply rendered twice; the terminal has no parallel WS path so it always rendered once. If you see this on an older build, pull `web/api.py` from `main` — `handle_slash_sync` and `handle_slash_stream` no longer re-broadcast events to WS subscribers when a single-client response channel is already in use. See [Issue #111](https://github.com/SafeRL-Lab/cheetahclaws/issues/111).
+Fixed (May 10, 2026). The chat client used to receive every synchronous slash-command event through both the HTTP `data.events` payload **and** the WS broadcast, so each reply rendered twice; the terminal has no parallel WS path so it always rendered once. If you see this on an older build, pull `web/api.py` from `main` — `handle_slash_sync` and `handle_slash_stream` no longer re-broadcast events to WS subscribers when a single-client response channel is already in use. See [Issue #111](https://github.com/yanfeng98/pycode/issues/111).
 
 **`ValueError: custom provider requires a base_url. Set CUSTOM_BASE_URL env var or run: /config custom_base_url=http://...`**
-You launched with `--model custom/<name>` (e.g. against a local vLLM) but never told CheetahClaws where the server lives. The `custom/` provider has no default endpoint — it's a generic OpenAI-compatible client. Fix either way:
+You launched with `--model custom/<name>` (e.g. against a local vLLM) but never told PyCode where the server lives. The `custom/` provider has no default endpoint — it's a generic OpenAI-compatible client. Fix either way:
 
 ```bash
 # Env-var form (one-shot for this terminal):
 export CUSTOM_BASE_URL=http://localhost:8000/v1   # /v1 suffix is mandatory
 export CUSTOM_API_KEY=EMPTY                       # any non-empty string; vLLM ignores it
-cheetahclaws --web --model custom/qwen2.5-72b
+pycode --web --model custom/qwen2.5-72b
 
-# Persisted form (saved to ~/.cheetahclaws/config.json):
-cheetahclaws
+# Persisted form (saved to ~/.pycode/config.json):
+pycode
 /config custom_base_url=http://localhost:8000/v1
 /config custom_api_key=EMPTY
 /model custom/qwen2.5-72b
@@ -445,8 +445,8 @@ cheetahclaws
 
 Verify the server is actually reachable first: `curl http://localhost:8000/v1/models` should list the model whose name matches the suffix after `custom/`. Full walkthrough including vLLM launch flags and tool-call setup: [recipes.md → "Alternative: self-hosted vLLM …"](recipes.md#alternative-self-hosted-vllm-or-any-openai-compatible-endpoint-via-the-custom-provider).
 
-**`cheetahclaws --web --model X` runs but the agent calls a different model**
-Fixed (May 10, 2026). The CLI override branch only ran in the interactive-REPL path, so `--web` ignored `--model` and the per-request `load_config()` call kept using the previous saved value (typically the last model you ran in the REPL). Symptom: `404: model 'X' does not exist` against your `custom_base_url` even though the CLI argument names a different model. Pull from `main` so `args.model` is persisted to `~/.cheetahclaws/config.json` before `start_web_server` runs. Workaround on older builds: edit the config file directly, or use `/model custom/<name>` from the Chat UI.
+**`pycode --web --model X` runs but the agent calls a different model**
+Fixed (May 10, 2026). The CLI override branch only ran in the interactive-REPL path, so `--web` ignored `--model` and the per-request `load_config()` call kept using the previous saved value (typically the last model you ran in the REPL). Symptom: `404: model 'X' does not exist` against your `custom_base_url` even though the CLI argument names a different model. Pull from `main` so `args.model` is persisted to `~/.pycode/config.json` before `start_web_server` runs. Workaround on older builds: edit the config file directly, or use `/model custom/<name>` from the Chat UI.
 
 ---
 

@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for the CheetahClaws web UI.
+"""SQLAlchemy ORM models for the PyCode web UI.
 
 Schema:
     users           — login accounts (bcrypt password hash)

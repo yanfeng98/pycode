@@ -1,5 +1,5 @@
 """
-bootstrap.py — Explicit startup sequence for CheetahClaws.
+bootstrap.py — Explicit startup sequence for PyCode.
 
 Call ``bootstrap(config)`` once after loading config and before starting
 the REPL.  It makes the startup order visible, documented, and testable —
@@ -21,7 +21,7 @@ _bootstrapped: bool = False
 
 
 def bootstrap(config: dict) -> None:
-    """Run the CheetahClaws startup sequence.  Idempotent."""
+    """Run the PyCode startup sequence.  Idempotent."""
     global _bootstrapped
 
     # ── 1. Structured logging ──────────────────────────────────────────────
@@ -55,7 +55,7 @@ def bootstrap(config: dict) -> None:
 
 def _get_version() -> str:
     try:
-        import cheetahclaws
-        return getattr(cheetahclaws, "VERSION", "unknown")
+        import pycode
+        return getattr(pycode, "VERSION", "unknown")
     except Exception:
         return "unknown"

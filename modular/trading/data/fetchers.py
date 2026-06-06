@@ -464,6 +464,6 @@ def fetch_news(symbol: str, limit: int = 10) -> dict:
 
 def _http_get_json(url: str, timeout: int = 15) -> dict:
     """Simple HTTP GET returning parsed JSON."""
-    req = urllib.request.Request(url, headers={"User-Agent": "CheetahClaws/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "PyCode/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode())

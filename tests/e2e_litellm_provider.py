@@ -20,7 +20,7 @@ import os
 
 import pytest
 
-# Default to a low-cost Anthropic model since cheetahclaws ships with that
+# Default to a low-cost Anthropic model since pycode ships with that
 # key by convention. Override via CC_LITELLM_E2E_MODEL=openai/gpt-4o-mini etc.
 _DEFAULT_MODEL = "anthropic/claude-haiku-4-5-20251001"
 _MODEL = os.environ.get("CC_LITELLM_E2E_MODEL", _DEFAULT_MODEL)

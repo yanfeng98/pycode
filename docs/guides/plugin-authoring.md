@@ -1,20 +1,20 @@
 # Plugin Authoring Guide
 
-Build and distribute plugins for CheetahClaws. Plugins can add tools (callable by the AI), slash commands (typed by the user), skills (prompt templates), and MCP servers.
+Build and distribute plugins for PyCode. Plugins can add tools (callable by the AI), slash commands (typed by the user), skills (prompt templates), and MCP servers.
 
 ## Quick Start
 
 ```bash
 # Create a plugin from the example template
-cp -r examples/example-plugin ~/.cheetahclaws/plugins/my-plugin
-# Edit the files, then restart cheetahclaws
-cheetahclaws
+cp -r examples/example-plugin ~/.pycode/plugins/my-plugin
+# Edit the files, then restart pycode
+pycode
 /plugin                  # verify it's loaded
 ```
 
 Or install from a git repo:
 ```bash
-/plugin install my-plugin@https://github.com/you/cheetahclaws-my-plugin
+/plugin install my-plugin@https://github.com/you/pycode-my-plugin
 ```
 
 ---
@@ -49,7 +49,7 @@ The only required file is the manifest (`plugin.json` or `PLUGIN.md`).
   "skills": ["skills/my-skill.md"],
   "mcp_servers": {},
   "dependencies": ["some-pip-package>=1.0"],
-  "homepage": "https://github.com/you/cheetahclaws-my-plugin"
+  "homepage": "https://github.com/you/pycode-my-plugin"
 }
 ```
 
@@ -333,9 +333,9 @@ Plugins live in one of three scopes:
 
 | Scope | Directory | Config | Use case |
 |-------|-----------|--------|----------|
-| **User** (default) | `~/.cheetahclaws/plugins/<name>/` | `~/.cheetahclaws/plugins.json` | Personal tools available everywhere |
-| **Project** | `.cheetahclaws/plugins/<name>/` | `.cheetahclaws/plugins.json` | Project-specific tools, committed to git |
-| **External** | Any dir listed in `$CHEETAHCLAWS_PLUGIN_PATH` | enable state in `~/.cheetahclaws/plugins.json` | Shared team/company plugins, no install step |
+| **User** (default) | `~/.pycode/plugins/<name>/` | `~/.pycode/plugins.json` | Personal tools available everywhere |
+| **Project** | `.pycode/plugins/<name>/` | `.pycode/plugins.json` | Project-specific tools, committed to git |
+| **External** | Any dir listed in `$PYCODE_PLUGIN_PATH` | enable state in `~/.pycode/plugins.json` | Shared team/company plugins, no install step |
 
 ```bash
 # Install to user scope (default)
@@ -347,24 +347,24 @@ Plugins live in one of three scopes:
 
 ---
 
-## External Plugins (`CHEETAHCLAWS_PLUGIN_PATH`)
+## External Plugins (`PYCODE_PLUGIN_PATH`)
 
-External plugins are discovered **in-place** from directories you control — CheetahClaws never copies them to `~/.cheetahclaws/plugins/`. This is the right fit for shared team or company plugin directories: the ops team maintains one source of truth, users just point an env var at it.
+External plugins are discovered **in-place** from directories you control — PyCode never copies them to `~/.pycode/plugins/`. This is the right fit for shared team or company plugin directories: the ops team maintains one source of truth, users just point an env var at it.
 
 ### Setup
 
 ```bash
 # Single directory
-export CHEETAHCLAWS_PLUGIN_PATH=/opt/company/cheetahclaws-plugins
+export PYCODE_PLUGIN_PATH=/opt/company/pycode-plugins
 
 # Multiple directories (colon-separated on Linux/macOS, semicolon on Windows)
-export CHEETAHCLAWS_PLUGIN_PATH=/opt/company/plugins:$HOME/my-shared-plugins
+export PYCODE_PLUGIN_PATH=/opt/company/plugins:$HOME/my-shared-plugins
 ```
 
 Each **immediate subdirectory** with a `plugin.json` or `PLUGIN.md` is picked up:
 
 ```
-/opt/company/cheetahclaws-plugins/
+/opt/company/pycode-plugins/
 ├── audit-tools/
 │   ├── plugin.json
 │   └── tools.py
@@ -385,7 +385,7 @@ Installed plugins (3):
   company-skills  [external] disabled Shared team prompts
 ```
 
-Enable once — the decision persists to `~/.cheetahclaws/plugins.json` and survives restarts:
+Enable once — the decision persists to `~/.pycode/plugins.json` and survives restarts:
 
 ```
 /plugin enable audit-tools
@@ -395,11 +395,11 @@ If the plugin declares `dependencies` in its manifest, pip packages are installe
 
 ### Name collisions
 
-If the same plugin name exists in both installed (`USER`/`PROJECT`) and external scopes, the **installed** entry wins. Within external scopes, the **earliest** directory in `CHEETAHCLAWS_PLUGIN_PATH` wins — same semantics as `$PATH`.
+If the same plugin name exists in both installed (`USER`/`PROJECT`) and external scopes, the **installed** entry wins. Within external scopes, the **earliest** directory in `PYCODE_PLUGIN_PATH` wins — same semantics as `$PATH`.
 
 ### Maintenance
 
-- `/plugin uninstall <name>` on an external plugin only drops CheetahClaws's enable-state record. **It never deletes the source directory** — that's the plugin author's to manage.
+- `/plugin uninstall <name>` on an external plugin only drops PyCode's enable-state record. **It never deletes the source directory** — that's the plugin author's to manage.
 - `/plugin update <name>` is refused for externals (update the source directory directly, e.g. `git pull` in the shared repo).
 - Malformed `plugin.json` files are logged to stderr and skipped; one broken manifest in the path cannot crash `/plugin`.
 
@@ -411,10 +411,10 @@ If the same plugin name exists in both installed (`USER`/`PROJECT`) and external
 
 ```bash
 # Copy to user plugins
-cp -r my-plugin ~/.cheetahclaws/plugins/my-plugin
+cp -r my-plugin ~/.pycode/plugins/my-plugin
 
-# Start CheetahClaws
-cheetahclaws
+# Start PyCode
+pycode
 
 # Verify
 /plugin                          # should show your plugin
@@ -452,7 +452,7 @@ def test_my_tool_returns_string():
 
 1. Push your plugin to a public git repo
 2. Users install with: `/plugin install <name>@<git-url>`
-3. Consider naming your repo `cheetahclaws-<name>` for discoverability
+3. Consider naming your repo `pycode-<name>` for discoverability
 
 ### Checklist before publishing
 
@@ -461,7 +461,7 @@ def test_my_tool_returns_string():
 - [ ] Graceful degradation for optional dependencies
 - [ ] No hardcoded paths or API keys
 - [ ] README with install instructions and usage examples
-- [ ] Tested with `cheetahclaws` on Python 3.10+
+- [ ] Tested with `pycode` on Python 3.10+
 
 ---
 
@@ -470,10 +470,10 @@ def test_my_tool_returns_string():
 | Mistake | Fix |
 |---------|-----|
 | Calling `register_tool()` directly | Export `TOOL_DEFS` list instead — the loader registers for you |
-| Importing `cheetahclaws` in plugin code | Use `config` parameter or `import runtime` for runtime state |
+| Importing `pycode` in plugin code | Use `config` parameter or `import runtime` for runtime state |
 | Assuming hooks exist (`hook_session_start`, etc.) | No event-based hooks — use tool/command handlers instead |
 | Putting runtime state in `config["_xxx"]` | Use `runtime.get_ctx(config)` for session state |
-| Hardcoding file paths | Use `Path.home() / ".cheetahclaws"` or relative paths |
+| Hardcoding file paths | Use `Path.home() / ".pycode"` or relative paths |
 
 ---
 

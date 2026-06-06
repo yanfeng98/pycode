@@ -1,5 +1,5 @@
 """
-commands/session.py — Session management commands for CheetahClaws.
+commands/session.py — Session management commands for PyCode.
 
 Commands: /save, /load, /resume, /history, /cloudsave, /exit
 Also exports: save_latest, _build_session_data (used by repl.py)
@@ -449,7 +449,7 @@ def cmd_cloudsave(args: str, state, config) -> bool:
     /cloudsave                 — upload current session to Gist
     /cloudsave push [desc]     — same as above with optional description
     /cloudsave auto on|off     — toggle auto-upload on /exit
-    /cloudsave list            — list your cheetahclaws Gists
+    /cloudsave list            — list your pycode Gists
     /cloudsave load <gist_id>  — download and load a session from Gist
     """
     from cloudsave import validate_token, upload_session, list_sessions, download_session
@@ -497,7 +497,7 @@ def cmd_cloudsave(args: str, state, config) -> bool:
         return True
 
     if sub == "list":
-        info("Fetching your cheetahclaws sessions from GitHub Gist…")
+        info("Fetching your pycode sessions from GitHub Gist…")
         sessions, err_msg = list_sessions(token)
         if err_msg:
             err(err_msg)
@@ -508,7 +508,7 @@ def cmd_cloudsave(args: str, state, config) -> bool:
         info(f"Found {len(sessions)} session(s):")
         for s in sessions:
             ts = s["updated_at"][:16].replace("T", " ")
-            desc = s["description"].replace("[cheetahclaws]", "").strip()
+            desc = s["description"].replace("[pycode]", "").strip()
             print(f"  {clr(s['id'][:8], 'yellow')}…  {clr(ts, 'dim')}  {desc or s['files'][0]}")
         return True
 

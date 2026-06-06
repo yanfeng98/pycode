@@ -158,44 +158,44 @@ Returns Prometheus text exposition format string. Includes (at
 minimum):
 
 ```
-# HELP cheetahclaws_kernel_schema_version Kernel schema version
-# TYPE cheetahclaws_kernel_schema_version gauge
-cheetahclaws_kernel_schema_version 5
+# HELP pycode_kernel_schema_version Kernel schema version
+# TYPE pycode_kernel_schema_version gauge
+pycode_kernel_schema_version 5
 
-# HELP cheetahclaws_kernel_uptime_seconds Seconds since kernel registered
-# TYPE cheetahclaws_kernel_uptime_seconds counter
-cheetahclaws_kernel_uptime_seconds 12345.6
+# HELP pycode_kernel_uptime_seconds Seconds since kernel registered
+# TYPE pycode_kernel_uptime_seconds counter
+pycode_kernel_uptime_seconds 12345.6
 
-# HELP cheetahclaws_kernel_agents Number of agents by state
-# TYPE cheetahclaws_kernel_agents gauge
-cheetahclaws_kernel_agents{state="READY"} 3
-cheetahclaws_kernel_agents{state="RUNNING"} 1
+# HELP pycode_kernel_agents Number of agents by state
+# TYPE pycode_kernel_agents gauge
+pycode_kernel_agents{state="READY"} 3
+pycode_kernel_agents{state="RUNNING"} 1
 ... (and DEAD)
 
-# HELP cheetahclaws_kernel_events_total Lifetime event count
-# TYPE cheetahclaws_kernel_events_total counter
-cheetahclaws_kernel_events_total 9876
+# HELP pycode_kernel_events_total Lifetime event count
+# TYPE pycode_kernel_events_total counter
+pycode_kernel_events_total 9876
 
-# HELP cheetahclaws_kernel_scheduler_queue Items in scheduler queue by state
-# TYPE cheetahclaws_kernel_scheduler_queue gauge
-cheetahclaws_kernel_scheduler_queue{state="queued"} 5
-cheetahclaws_kernel_scheduler_queue{state="dispatched"} 2
+# HELP pycode_kernel_scheduler_queue Items in scheduler queue by state
+# TYPE pycode_kernel_scheduler_queue gauge
+pycode_kernel_scheduler_queue{state="queued"} 5
+pycode_kernel_scheduler_queue{state="dispatched"} 2
 
-# HELP cheetahclaws_kernel_ledger_breached Agents with at least one breached dim
-# TYPE cheetahclaws_kernel_ledger_breached gauge
-cheetahclaws_kernel_ledger_breached 0
+# HELP pycode_kernel_ledger_breached Agents with at least one breached dim
+# TYPE pycode_kernel_ledger_breached gauge
+pycode_kernel_ledger_breached 0
 
-# HELP cheetahclaws_kernel_mailbox_pending Pending messages across all inboxes
-# TYPE cheetahclaws_kernel_mailbox_pending gauge
-cheetahclaws_kernel_mailbox_pending 12
+# HELP pycode_kernel_mailbox_pending Pending messages across all inboxes
+# TYPE pycode_kernel_mailbox_pending gauge
+pycode_kernel_mailbox_pending 12
 
-# HELP cheetahclaws_kernel_fs_objects Total AgentFS objects
-# TYPE cheetahclaws_kernel_fs_objects gauge
-cheetahclaws_kernel_fs_objects 84
+# HELP pycode_kernel_fs_objects Total AgentFS objects
+# TYPE pycode_kernel_fs_objects gauge
+pycode_kernel_fs_objects 84
 
-# HELP cheetahclaws_kernel_fs_bytes Total AgentFS bytes stored
-# TYPE cheetahclaws_kernel_fs_bytes gauge
-cheetahclaws_kernel_fs_bytes 1048576
+# HELP pycode_kernel_fs_bytes Total AgentFS bytes stored
+# TYPE pycode_kernel_fs_bytes gauge
+pycode_kernel_fs_bytes 1048576
 ```
 
 Format compliance:

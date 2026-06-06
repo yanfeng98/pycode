@@ -75,7 +75,7 @@ class DaemonState:
         proactive_methods.register(self.rpc, self)
         # RFC 0002 F-6/7/8 — bridge_methods are registered unconditionally
         # so a caller probing for `bridge.list` always gets a response, but
-        # `bridge.start` itself enforces the per-kind CHEETAHCLAWS_ENABLE_F<n>
+        # `bridge.start` itself enforces the per-kind PYCODE_ENABLE_F<n>
         # flag so a daemon that's not opted in stays REPL-equivalent.
         bridge_methods.register(self.rpc, self)
         # RFC 0002 F-6 Phase 2 — session.send / session.reply /
@@ -95,7 +95,7 @@ class DaemonState:
 
 
 class DaemonRequestHandler(BaseHTTPRequestHandler):
-    server_version = "cheetahclaws-daemon/0"
+    server_version = "pycode-daemon/0"
     # Quiet stdlib stderr logging; project should route through its own log
     # facility if desired.
     def log_message(self, fmt, *args):  # noqa

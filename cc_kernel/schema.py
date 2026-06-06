@@ -1,6 +1,6 @@
 """schema.py — kernel.db DDL and idempotent initialisation.
 
-The kernel uses its own SQLite database (``~/.cheetahclaws/kernel.db``)
+The kernel uses its own SQLite database (``~/.pycode/kernel.db``)
 separate from F-2's ``sessions.db``. Rationale is documented in
 RFC 0003 §4 ("Why a separate database from sessions.db").
 

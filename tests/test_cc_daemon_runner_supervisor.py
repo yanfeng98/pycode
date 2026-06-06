@@ -38,7 +38,7 @@ pytestmark_skipif_windows = sys.platform.startswith("win")
 # ── A tiny in-test runner that speaks the F-4 protocol ─────────────────────
 #
 # Written inline so we don't add a fixture file. The supervisor will spawn
-# this via -c so it runs without any cheetahclaws imports at all — keeps
+# this via -c so it runs without any pycode imports at all — keeps
 # the test self-contained and fast.
 
 _MOCK_RUNNER_SOURCE = textwrap.dedent("""
@@ -111,21 +111,21 @@ class TestSupervisorBasics(unittest.TestCase):
     def test_enabled_default_off(self):
         from cc_daemon import runner_supervisor
         # Clear the env var first so a stray export doesn't fool the test.
-        old = os.environ.pop("CHEETAHCLAWS_ENABLE_F4", None)
+        old = os.environ.pop("PYCODE_ENABLE_F4", None)
         try:
             self.assertFalse(runner_supervisor.enabled())
         finally:
             if old is not None:
-                os.environ["CHEETAHCLAWS_ENABLE_F4"] = old
+                os.environ["PYCODE_ENABLE_F4"] = old
 
     @unittest.skipIf(pytestmark_skipif_windows, "POSIX only")
     def test_enabled_via_env(self):
         from cc_daemon import runner_supervisor
-        os.environ["CHEETAHCLAWS_ENABLE_F4"] = "1"
+        os.environ["PYCODE_ENABLE_F4"] = "1"
         try:
             self.assertTrue(runner_supervisor.enabled())
         finally:
-            os.environ.pop("CHEETAHCLAWS_ENABLE_F4", None)
+            os.environ.pop("PYCODE_ENABLE_F4", None)
 
     @unittest.skipIf(pytestmark_skipif_windows, "POSIX only")
     def test_get_returns_none_for_unknown(self):

@@ -1,6 +1,6 @@
 """GitHub Search — repos + issues.
 
-Unauthenticated: 10 req/min. With GITHUB_TOKEN or CHEETAHCLAWS_GITHUB_TOKEN:
+Unauthenticated: 10 req/min. With GITHUB_TOKEN or PYCODE_GITHUB_TOKEN:
 60 req/min (for search) and 5000/hr (for other endpoints).
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ def search(query: str, limit: int = 20, config: dict | None = None,
     headers = {"Accept": "application/vnd.github+json"}
     token = (
         (config or {}).get("github_token")
-        or os.environ.get("CHEETAHCLAWS_GITHUB_TOKEN")
+        or os.environ.get("PYCODE_GITHUB_TOKEN")
         or os.environ.get("GITHUB_TOKEN")
     )
     if token:

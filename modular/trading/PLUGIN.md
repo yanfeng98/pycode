@@ -2,7 +2,7 @@
 name: trading
 version: 3.1.0
 description: AI trading agent — multi-agent analysis, automatic candidate discovery (insider/earnings/sector/factor), composite ranking, anomaly detection, market monitor with bridge alerts, paper-trade tracking, calibration, risk verifier, walk-forward backtest, alt-data, mean-variance optimizer, managed portfolios, ML stacker, broker abstraction
-author: cheetahclaws
+author: pycode
 tags: [trading, finance, backtest, agent, calibration, risk, alt-data, ml, optimization]
 commands:
   - modular.trading.cmd
@@ -212,11 +212,11 @@ prompt / model / feature set, or accept reality before going live.
 
 | Path | Purpose |
 |---|---|
-| `~/.cheetahclaws/trading/paper_trades.db` | Paper trades + watchlist + snapshots |
-| `~/.cheetahclaws/trading/managed_portfolios.db` | Managed portfolios (cash, positions, equity curve, orders) |
-| `~/.cheetahclaws/trading/history/*.json` | Per-decision LLM output archive |
-| `~/.cheetahclaws/trading/memory/*.json` | BM25 reflections |
-| `~/.cheetahclaws/trading/ml/stacker.pkl` | Trained ML stacker model |
+| `~/.pycode/trading/paper_trades.db` | Paper trades + watchlist + snapshots |
+| `~/.pycode/trading/managed_portfolios.db` | Managed portfolios (cash, positions, equity curve, orders) |
+| `~/.pycode/trading/history/*.json` | Per-decision LLM output archive |
+| `~/.pycode/trading/memory/*.json` | BM25 reflections |
+| `~/.pycode/trading/ml/stacker.pkl` | Trained ML stacker model |
 
 ## Recommended workflow
 

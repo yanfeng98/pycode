@@ -32,7 +32,7 @@ def _base_config(**overrides) -> dict:
 
 def test_assembled_prompt_contains_identity_and_env():
     prompt = _context.build_system_prompt(_base_config())
-    assert "CheetahClaws" in prompt
+    assert "PyCode" in prompt
     assert "# Environment" in prompt
     assert "Current date:" in prompt
     assert "Working directory:" in prompt
@@ -102,7 +102,7 @@ def test_assembly_order_is_base_then_env_then_memory_then_plan(monkeypatch):
         runtime.get_session_ctx("test-session").plan_file = None
         runtime.release_session_ctx("test-session")
 
-    idx_identity = prompt.index("CheetahClaws")
+    idx_identity = prompt.index("PyCode")
     idx_env = prompt.index("# Environment")
     idx_memory = prompt.index("Your persistent memories:")
     idx_tmux = prompt.index("TmuxNewSession")
@@ -119,7 +119,7 @@ def test_missing_config_falls_back_to_default():
     """
     from prompts import select as _select
     prompt = _context.build_system_prompt(None)
-    assert "CheetahClaws" in prompt
+    assert "PyCode" in prompt
     assert "# Environment" in prompt
     default_body = (_select._BASE_DIR / "default.md").read_text(encoding="utf-8")
     # The base portion of the prompt must match default.md verbatim, so

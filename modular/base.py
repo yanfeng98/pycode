@@ -1,5 +1,5 @@
 """
-modular/base.py — Interface protocol for CheetahClaws feature modules.
+modular/base.py — Interface protocol for PyCode feature modules.
 
 Every module under modular/ is a regular Python package.
 This file documents the conventions modules should follow.

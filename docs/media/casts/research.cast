@@ -1,4 +1,4 @@
-{"version": 2, "width": 110, "height": 32, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "CheetahClaws /research \u2014 parallel fan-out across 20 sources", "idle_time_limit": 1.5}
+{"version": 2, "width": 110, "height": 32, "timestamp": 1747262400, "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}, "title": "PyCode /research \u2014 parallel fan-out across 20 sources", "idle_time_limit": 1.5}
 [0.0, "o", "[32m~[0m [36m\u276f[0m "]
 [0.6, "o", ""]
 [0.645, "o", "c"]
@@ -14,7 +14,7 @@
 [1.133, "o", "w"]
 [1.178, "o", "s"]
 [1.578, "o", "\r\n"]
-[1.878, "o", "[2m[CheetahClaws v3.05.79 \u00b7 claude-sonnet-4-6][0m\r\n\r\n"]
+[1.878, "o", "[2m[PyCode v3.05.79 \u00b7 claude-sonnet-4-6][0m\r\n\r\n"]
 [2.078, "o", "[1m[36m[~] \u00bb[0m "]
 [2.578, "o", ""]
 [2.623, "o", "/"]
@@ -111,7 +111,7 @@
 [15.886, "o", "\r\n"]
 [16.386, "o", "[2m\u25cf Verifying citations against arXiv / Semantic Scholar / CrossRef\u2026[0m\r\n"]
 [16.786, "o", "  [32m\u2713[0m  47 papers, [32m45 verified[0m, [31m2 flagged for hallucination[0m\r\n\r\n"]
-[17.186, "o", "[32m\u2713[0m  Brief saved \u2192 [36m~/.cheetahclaws/research_reports/llm-agents-2026-trends-17.md[0m\r\n"]
+[17.186, "o", "[32m\u2713[0m  Brief saved \u2192 [36m~/.pycode/research_reports/llm-agents-2026-trends-17.md[0m\r\n"]
 [17.386, "o", "   [2m3,124 words \u00b7 47 citations \u00b7 cross-platform heat table \u00b7 12-month trend sparkline[0m\r\n\r\n"]
 [17.886, "o", "[1m[36m[~] \u00bb[0m "]
 [18.386, "o", ""]

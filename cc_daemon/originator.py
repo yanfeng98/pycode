@@ -7,7 +7,7 @@ survives client-process restarts.
 
 Model:
 - Daemon mints a client_id (32 hex) on first connect for a given client kind.
-- Client persists it at ~/.cheetahclaws/clients/<kind>.id (mode 0600).
+- Client persists it at ~/.pycode/clients/<kind>.id (mode 0600).
 - Subsequent connects present the saved id via X-Client-Id header.
 - Daemon validates: known id → reuse; unknown id from a peer that already
   has a different active id → reject. Otherwise register.

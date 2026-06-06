@@ -1,4 +1,4 @@
-"""Voice package for cheetahclaws.
+"""Voice package for pycode.
 
 Public API
 ----------

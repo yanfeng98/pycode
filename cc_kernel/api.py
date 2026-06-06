@@ -17,7 +17,7 @@ just wires.
 
 Usage:
 
-    >>> kernel = Kernel.open("~/.cheetahclaws/kernel.db")
+    >>> kernel = Kernel.open("~/.pycode/kernel.db")
     >>> agent = kernel.create_agent(name="alice", template="research")
     >>> kernel.cap.create(pid=agent.pid, tool_grants=["Read"])
     >>> kernel.ledger.create(pid=agent.pid, grants={"tokens": 100_000})

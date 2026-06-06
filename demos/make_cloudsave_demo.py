@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws /cloudsave (Cloud Sync) using PIL.
+Generate animated GIF demo of pycode /cloudsave (Cloud Sync) using PIL.
 Simulates: long session with code changes → /cloudsave → encrypted upload →
 switch to laptop → /cloudload → session fully restored with files + history.
 """
@@ -76,7 +76,7 @@ def draw_frame(lines_segments):
 
 def banner(machine):
     return [
-        [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+        [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
         [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True)],
         [seg("│  ", SUBTEXT), seg("Machine: ", SUBTEXT), seg(machine, YELLOW, True)],
         [seg("│  Type /help for commands, Ctrl+C to cancel                  │", SUBTEXT)],
@@ -92,7 +92,7 @@ BANNER_LAPTOP  = banner("laptop   (home)")
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg(text + cur, TEXT),
     ]

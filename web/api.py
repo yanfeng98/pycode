@@ -1,4 +1,4 @@
-"""Structured chat API for CheetahClaws web UI.
+"""Structured chat API for PyCode web UI.
 
 Bridges the synchronous agent.run() generator to WebSocket event streaming,
 following the same pattern as the Telegram/Slack/WeChat bridges:
@@ -40,7 +40,7 @@ class ChatEvent:
         return json.dumps({"type": self.type, "data": self.data, "ts": self.ts})
 
 
-# ── Slash command handler (can't import from cheetahclaws.py — it has
+# ── Slash command handler (can't import from pycode.py — it has
 #    top-level code that runs on import).  Build our own from commands/*.
 # ──────────────────────────────────────────────────────────────────────────
 

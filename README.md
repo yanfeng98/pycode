@@ -3,19 +3,19 @@ English | [中文](docs/i18n/README.CN.MD)
 <br> 
 
 <div align="center">
-  <a href="[https://github.com/SafeRL-Lab/Robust-Gymnasium](https://github.com/SafeRL-Lab/cheetahclaws)">
+  <a href="[https://github.com/SafeRL-Lab/Robust-Gymnasium](https://github.com/yanfeng98/pycode)">
     <img src="docs/media/logos/logo-5.png" alt="Logo" width="280"> 
   </a>
 
   
-<h2 align="center" style="font-size: 30px;"><strong><em>CheetahClaws</em></strong>: A Fast and Easy-to-Use Agent Harness Infrastructure for Long-Horizon, Multi-Model, and Tool-Using AI Systems</h2>
+<h2 align="center" style="font-size: 30px;"><strong><em>PyCode</em></strong>: A Fast and Easy-to-Use Agent Harness Infrastructure for Long-Horizon, Multi-Model, and Tool-Using AI Systems</h2>
 </div>
 
 
 ### Quick Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yanfeng98/pycode/main/scripts/install.sh | bash
 ```
 
 After installation:
@@ -23,7 +23,7 @@ After installation:
 ```bash
 source ~/.zshrc     # macOS
 # or: source ~/.bashrc   # Linux
-cheetahclaws        # start chatting!
+pycode        # start chatting!
 ```
 
 Other install methods: [pip install](#alternative-install-with-pip) | [uv install](#alternative-install-with-uv) | [run from source](#alternative-run-directly-from-source-no-install) | [full details](#installation)
@@ -35,7 +35,7 @@ Other install methods: [pip install](#alternative-install-with-pip) | [uv instal
 - June 4, 2026 (**v3.05.81**): **Claude-Code-style quiet output** hides per-tool execution and shows one summary line per turn (on by default), with a live spinner timer + token estimate and a `✻ Worked for…` footer; `/verbose` overrides, toggle with `/quiet`. Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
 - June 4, 2026: **Context-window override** — `/config context_window=<N>` sets the context length that drives the prompt `%`, `/context`, the compaction trigger, and the output cap consistently (distinct from `max_tokens`; read live, no restart). Details: [docs/guides/reference.md](docs/guides/reference.md) · [docs/news.md](docs/news.md).
 - June 4, 2026: **Rich Live streaming** keeps long responses live via a bounded tail window — redrawing only the most recent screenful and committing the full output when done, fixing duplicate/stale frames (builds on PR #133). Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
-- May 31, 2026: **QQ bot bridge — `/qq` connects cheetahclaws to QQ groups + C2C private chats via the official `qq-botpy` SDK (PR #121).** Details: [docs/guides/bridges.md](docs/guides/bridges.md#qq-bridge) · [docs/news.md](docs/news.md).
+- May 31, 2026: **QQ bot bridge — `/qq` connects pycode to QQ groups + C2C private chats via the official `qq-botpy` SDK (PR #121).** Details: [docs/guides/bridges.md](docs/guides/bridges.md#qq-bridge) · [docs/news.md](docs/news.md).
 - May 12, 2026: **Security hardening sweep — env-var bot tokens, web CSRF cookie, terminal session owner-binding, and plugin/MCP/filesystem sandboxing (two CRITICAL + HIGH rounds, 2347 tests green).** Details: [docs/guides/security.md](docs/guides/security.md) · [docs/news.md](docs/news.md).
 - May 12, 2026: **Daemon foundation roadmap — all nine F-1…F-9 items landed: subprocess agent runners, on-crash restart policy, daemonized Telegram/Slack/WeChat bridges, and budget guardrails.** Details: [docs/news.md](docs/news.md).
 
@@ -43,18 +43,18 @@ For more news, see [here](docs/news.md).
 
 ---
 
-# CheetahClaws
+# PyCode
 
-CheetahClaws: **A Fast** and **Easy-to-Use** Python native Agent Harness Infrastructure, **Supporting Any Model**, such as Claude, GPT, Gemini, Kimi, Qwen, Zhipu, DeepSeek, MiniMax, and local open-source models via Ollama or any OpenAI-compatible endpoint.
+PyCode: **A Fast** and **Easy-to-Use** Python native Agent Harness Infrastructure, **Supporting Any Model**, such as Claude, GPT, Gemini, Kimi, Qwen, Zhipu, DeepSeek, MiniMax, and local open-source models via Ollama or any OpenAI-compatible endpoint.
 
 ---
 
 ## Content
-- [CheetahClaws](#cheetahclaws)
+- [PyCode](#pycode)
   - [Content](#content)
     - [Demos](#demos)
-  - [Why CheetahClaws](#why-cheetahclaws)
-  - [CheetahClaws vs OpenClaw](#cheetahclaws-vs-openclaw)
+  - [Why PyCode](#why-pycode)
+  - [PyCode vs OpenClaw](#pycode-vs-openclaw)
   - [Features](#features)
   - [Supported Models](#supported-models)
     - [Closed-Source (API)](#closed-source-api)
@@ -106,36 +106,36 @@ CheetahClaws: **A Fast** and **Easy-to-Use** Python native Agent Harness Infrast
 
 ---
 
-## Why CheetahClaws
+## Why PyCode
 
 Claude Code is a powerful, production-grade AI coding assistant — but its source is a compiled ~12 MB TypeScript/Node bundle (~1,300 files, ~283K lines), tightly coupled to the Anthropic API, hard to modify, and impossible to run against a local or alternative model.
 
-**CheetahClaws** reimplements the same core loop in ~90K lines of readable Python — keeping what you need, dropping what you don't, and adding multi-provider + local-model support. Full comparison: [docs/guides/comparison.md](docs/guides/comparison.md).
+**PyCode** reimplements the same core loop in ~90K lines of readable Python — keeping what you need, dropping what you don't, and adding multi-provider + local-model support. Full comparison: [docs/guides/comparison.md](docs/guides/comparison.md).
 
-| Dimension | Claude Code (TypeScript) | CheetahClaws (Python) |
+| Dimension | Claude Code (TypeScript) | PyCode (Python) |
 |---|---|---|
 | Language | TypeScript + React/Ink | Python 3.8+ |
 | Source files / LoC | ~1,332 files / ~283K | ~315 files / ~90K (core; ~127K with tests) |
 | Built-in tools / commands | 44+ / 88 | 27 / 50+ |
 | Model providers | Anthropic only | 8+ (Anthropic · OpenAI · Gemini · Kimi · Qwen · DeepSeek · MiniMax · …) |
 | Local models | No | Yes — Ollama, LM Studio, vLLM, any OpenAI-compatible endpoint |
-| Build step | Yes (Bun + esbuild) | No — `python cheetahclaws.py` |
+| Build step | Yes (Bun + esbuild) | No — `python pycode.py` |
 | Extensibility | Closed (compile-time) | Open — `register_tool()` at runtime, Markdown skills, git plugins, MCP |
 | Voice input | Proprietary WebSocket (OAuth) | Local Whisper / OpenAI — works offline |
 
 **Where Claude Code wins:** richer React/Ink UI, more built-in tools, enterprise features (MDM, team permission sync, OAuth/keychain), AI-driven memory extraction, single-binary production reliability.
 
-**Where CheetahClaws wins:** any-model switching (`--model`/`/model`, no recompile) incl. full local/offline support; a readable agent loop in one file (`agent.py`, ~740 lines); zero build; runtime tool registration + MCP + git plugins + Markdown skills; task dependency graph (`blocks`/`blocked_by`); two-layer context compression; offline voice; cloud session sync; bridges to Telegram/WeChat/Slack/QQ.
+**Where PyCode wins:** any-model switching (`--model`/`/model`, no recompile) incl. full local/offline support; a readable agent loop in one file (`agent.py`, ~740 lines); zero build; runtime tool registration + MCP + git plugins + Markdown skills; task dependency graph (`blocks`/`blocked_by`); two-layer context compression; offline voice; cloud session sync; bridges to Telegram/WeChat/Slack/QQ.
 
 **Who it's for:** developers who want a local/non-Anthropic coding assistant, researchers studying how agentic assistants work, and teams who need a hackable baseline — without a Node.js build chain.
 
 ---
 
-## CheetahClaws vs OpenClaw
+## PyCode vs OpenClaw
 
-[OpenClaw](https://github.com/openclaw/openclaw) is another popular open-source assistant (TypeScript/Node). The two have **different primary goals** — OpenClaw is a personal life-assistant across messaging channels; CheetahClaws is a developer/coding tool.
+[OpenClaw](https://github.com/openclaw/openclaw) is another popular open-source assistant (TypeScript/Node). The two have **different primary goals** — OpenClaw is a personal life-assistant across messaging channels; PyCode is a developer/coding tool.
 
-| Dimension | OpenClaw (TypeScript) | CheetahClaws (Python) |
+| Dimension | OpenClaw (TypeScript) | PyCode (Python) |
 |---|---|---|
 | Lines of code | ~245K (~10,349 files) | ~90K core (~315 files) |
 | Primary focus | Personal assistant across channels | AI coding assistant / dev tool |
@@ -150,9 +150,9 @@ Claude Code is a powerful, production-grade AI coding assistant — but its sour
 | If you want… | Use |
 |---|---|
 | A personal assistant on WhatsApp/Signal/Discord, mobile-first, browser automation + Canvas | **OpenClaw** |
-| An AI coding assistant in your terminal, full offline/local models, multi-provider switching, source you can read in an afternoon | **CheetahClaws** |
+| An AI coding assistant in your terminal, full offline/local models, multi-provider switching, source you can read in an afternoon | **PyCode** |
 
-> Full comparison — both sides' wins + key design differences (agent loop, tool registration, context compression, memory): [docs/guides/comparison.md](docs/guides/comparison.md#cheetahclaws-vs-openclaw).
+> Full comparison — both sides' wins + key design differences (agent loop, tool registration, context compression, memory): [docs/guides/comparison.md](docs/guides/comparison.md#pycode-vs-openclaw).
 
 ---
 
@@ -165,7 +165,7 @@ Claude Code is a powerful, production-grade AI coding assistant — but its sour
 | 27 built-in tools | Read · Write · Edit · Bash · Glob · Grep · WebFetch · WebSearch · NotebookEdit · GetDiagnostics · Memory* · Agent/SendMessage · Skill · AskUserQuestion · Task* · SleepTimer · EnterPlanMode/ExitPlanMode · *(MCP + plugin tools auto-added)* |
 | MCP integration | Connect any MCP server (stdio/SSE/HTTP); tools auto-registered — see [extensions guide](docs/guides/extensions.md) |
 | Plugin system | Install/enable/update plugins from git URLs or local paths; multi-scope; recommendation engine |
-| Task management | `TaskCreate/Update/Get/List`, sequential IDs, dependency edges, persisted to `.cheetahclaws/tasks.json` |
+| Task management | `TaskCreate/Update/Get/List`, sequential IDs, dependency edges, persisted to `.pycode/tasks.json` |
 | Context compression | Four cooperating layers — dynamic `max_tokens` cap, per-model context-window registry, two-layer snip + AI summarize at 70%, and auto-fanout for oversized tool outputs. [Details](docs/guides/reference.md) |
 | Persistent memory | Dual-scope (user + project), 4 types, confidence/source metadata, conflict detection, recency-weighted search, `/memory consolidate` |
 | Multi-agent | Spawn typed sub-agents (coder/reviewer/researcher/…), git-worktree isolation, background mode |
@@ -223,21 +223,21 @@ Claude Code is a powerful, production-grade AI coding assistant — but its sour
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yanfeng98/pycode/main/scripts/install.sh | bash
 # or:
 pip install cheetahclaws
 ```
 
-Works on **Linux, macOS, WSL2, and Android (Termux)** (Python 3.10+). First run guides you through provider + API-key setup; re-run anytime with `cheetahclaws --setup`.
+Works on **Linux, macOS, WSL2, and Android (Termux)** (Python 3.10+). First run guides you through provider + API-key setup; re-run anytime with `pycode --setup`.
 
 > **Windows:** native Windows is not supported — use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install). **Android/Termux:** `pkg install python git && pip install cheetahclaws`.
 
 ### Alternative: install with `pip`
 
 ```bash
-git clone https://github.com/SafeRL-Lab/cheetahclaws.git
-cd cheetahclaws
-pip install .                       # then: cheetahclaws
+git clone https://github.com/yanfeng98/pycode.git
+cd pycode
+pip install .                       # then: pycode
 git pull && pip install --force-reinstall .   # to update
 ```
 
@@ -259,17 +259,17 @@ pip install ".[all]"        # everything above
 ### Alternative: install with `uv`
 
 ```bash
-git clone https://github.com/SafeRL-Lab/cheetahclaws.git && cd cheetahclaws
+git clone https://github.com/yanfeng98/pycode.git && cd pycode
 uv tool install ".[all]"            # minimal: uv tool install .
-uv tool install ".[all]" --reinstall   # update   ·   uv tool uninstall cheetahclaws
+uv tool install ".[all]" --reinstall   # update   ·   uv tool uninstall pycode
 ```
 
 ### Alternative: run directly from source (no install)
 
 ```bash
-git clone https://github.com/SafeRL-Lab/cheetahclaws.git && cd cheetahclaws
+git clone https://github.com/yanfeng98/pycode.git && cd pycode
 pip install -r requirements.txt
-python cheetahclaws.py              # changes take effect immediately
+python pycode.py              # changes take effect immediately
 ```
 
 ---
@@ -280,9 +280,9 @@ Every cloud provider follows the same pattern — export its API key (see the [S
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...     # or OPENAI_API_KEY / GEMINI_API_KEY / DEEPSEEK_API_KEY / …
-cheetahclaws                            # default model
-cheetahclaws --model gpt-4o             # pick any model
-cheetahclaws --model deepseek-chat --thinking --verbose
+pycode                            # default model
+pycode --model gpt-4o             # pick any model
+pycode --model deepseek-chat --thinking --verbose
 ```
 
 Provider get-key pages: [Anthropic](https://console.anthropic.com) · [OpenAI](https://platform.openai.com) · [Gemini](https://aistudio.google.com) · [Kimi](https://platform.moonshot.cn) · [Qwen](https://dashscope.aliyun.com) · [Zhipu](https://open.bigmodel.cn) · [DeepSeek](https://platform.deepseek.com) · [MiniMax](https://platform.minimaxi.chat).
@@ -301,7 +301,7 @@ Provider get-key pages: [Anthropic](https://console.anthropic.com) · [OpenAI](h
 curl -fsSL https://ollama.com/install.sh | sh   # install
 ollama pull qwen2.5-coder                        # pull a tool-calling model
 ollama serve                                     # http://localhost:11434 (auto-starts on macOS)
-cheetahclaws --model ollama/qwen2.5-coder        # run (use `ollama list` to see local models)
+pycode --model ollama/qwen2.5-coder        # run (use `ollama list` to see local models)
 ```
 
 ### LM Studio
@@ -309,7 +309,7 @@ cheetahclaws --model ollama/qwen2.5-coder        # run (use `ollama list` to see
 Download [LM Studio](https://lmstudio.ai), grab a GGUF model, start its **Local Server** (port 1234), then:
 
 ```bash
-cheetahclaws --model lmstudio/<model-name>
+pycode --model lmstudio/<model-name>
 ```
 
 ### vLLM / self-hosted OpenAI-compatible server
@@ -321,7 +321,7 @@ python -m vllm.entrypoints.openai.api_server \
 
 export CUSTOM_BASE_URL=http://localhost:8000/v1
 export CUSTOM_API_KEY=token-abc123      # any non-empty string if the server has no auth
-cheetahclaws --model custom/Qwen2.5-Coder-32B-Instruct
+pycode --model custom/Qwen2.5-Coder-32B-Instruct
 ```
 
 The name after `custom/` must match the server's `--served-model-name`. For the Web UI, `--web --model custom/<name>` persists the model before the server starts. Remote server? Point `CUSTOM_BASE_URL` at its IP.
@@ -330,12 +330,12 @@ The name after `custom/` must match the server's `--served-model-name`. For the 
 
 ### Atlas Cloud (hosted, OpenAI-compatible)
 
-> 🎁 **[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=cheetahclaws)** is a full-modal AI inference platform with an OpenAI-compatible API — DeepSeek, Qwen, GLM, Kimi, MiniMax and more behind one endpoint. It plugs into the zero-dependency `custom/` adapter:
+> 🎁 **[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=pycode)** is a full-modal AI inference platform with an OpenAI-compatible API — DeepSeek, Qwen, GLM, Kimi, MiniMax and more behind one endpoint. It plugs into the zero-dependency `custom/` adapter:
 
 ```bash
 export CUSTOM_BASE_URL=https://api.atlascloud.ai/v1
 export CUSTOM_API_KEY=your_atlascloud_api_key
-cheetahclaws --model custom/deepseek-ai/deepseek-v4-pro
+pycode --model custom/deepseek-ai/deepseek-v4-pro
 ```
 
 `deepseek-ai/deepseek-v4-pro` is a reasoning model; any other Atlas chat model id works the same way.
@@ -364,9 +364,9 @@ cheetahclaws --model custom/deepseek-ai/deepseek-v4-pro
 Three equivalent forms are accepted:
 
 ```bash
-cheetahclaws --model gpt-4o                  # 1. auto-detect by prefix
-cheetahclaws --model ollama/qwen2.5-coder    # 2. provider/model
-cheetahclaws --model kimi:moonshot-v1-32k    # 3. provider:model
+pycode --model gpt-4o                  # 1. auto-detect by prefix
+pycode --model ollama/qwen2.5-coder    # 2. provider/model
+pycode --model kimi:moonshot-v1-32k    # 3. provider:model
 ```
 
 **Auto-detection by prefix:** `claude-`→anthropic · `gpt-`/`o1`/`o3`→openai · `gemini-`→gemini · `moonshot-`/`kimi-`→kimi · `qwen`/`qwq-`→qwen · `glm-`→zhipu · `deepseek-`→deepseek · `MiniMax-`/`abab`→minimax · `llama`/`mistral`/`phi`/`gemma`/`mixtral`/`codellama`→ollama.
@@ -394,9 +394,9 @@ A production-ready browser interface — real user accounts (bcrypt + JWT), SQLi
 
 ```bash
 pip install 'cheetahclaws[web]'
-cheetahclaws --web                  # auto-picks a free port (tries 8080)
-cheetahclaws --web --port 9000 --host 0.0.0.0   # bind explicitly / open to LAN
-cheetahclaws --web --no-auth        # skip login (localhost dev only)
+pycode --web                  # auto-picks a free port (tries 8080)
+pycode --web --port 9000 --host 0.0.0.0   # bind explicitly / open to LAN
+pycode --web --no-auth        # skip login (localhost dev only)
 ```
 
 Open `http://localhost:<port>/chat` — first account becomes admin. Includes streaming chat (WS) + SSE slash commands, persistent sessions with folders/search/Markdown export, tool cards, inline permission approval, settings panel, light/dark/system theme, and `/health` + `/metrics` endpoints. A full xterm.js PTY terminal lives at `/` (100% CLI parity).
@@ -418,7 +418,7 @@ Detailed guides live in [`docs/guides/`](docs/guides/) to keep this README focus
 | [**Reference**](docs/guides/reference.md) | CLI, 50+ commands, 33 built-in tools, session search, error classification, tool cache |
 | [**Extensions**](docs/guides/extensions.md) | Memory, Skills, Sub-Agents, MCP servers, Plugins, Monitor, Autonomous Agents |
 | [**Bridges**](docs/guides/bridges.md) | Telegram, WeChat, Slack, QQ setup + remote control from your phone |
-| [**Security & env vars**](docs/guides/security.md) | Threat model, `CHEETAHCLAWS_*` vars, bot-token handling, Bash denylist, fs sandbox, CSRF |
+| [**Security & env vars**](docs/guides/security.md) | Threat model, `PYCODE_*` vars, bot-token handling, Bash denylist, fs sandbox, CSRF |
 | [**Voice & Video**](docs/guides/voice-and-video.md) | Offline Whisper voice input, Video factory, TTS factory |
 | [**Trading**](docs/guides/trading.md) | Multi-agent analysis, backtesting, BM25 memory, data fallbacks, SSJ integration |
 | [**Advanced**](docs/guides/advanced.md) | Brainstorm, SSJ, Tmux, proactive monitoring, checkpoints, plan mode, sessions, cloud sync |
@@ -435,7 +435,7 @@ Detailed guides live in [`docs/guides/`](docs/guides/) to keep this README focus
 ## Quick Reference
 
 ```
-cheetahclaws [OPTIONS] [PROMPT]
+pycode [OPTIONS] [PROMPT]
 
   -p, --print          Non-interactive: run prompt and exit
   -m, --model MODEL    Override model (e.g. gpt-4o, ollama/llama3.3)
@@ -451,11 +451,11 @@ cheetahclaws [OPTIONS] [PROMPT]
 ```
 
 ```bash
-cheetahclaws                                          # interactive REPL, default model
-cheetahclaws -m ollama/deepseek-r1:32b                # pick a model
-cheetahclaws -p "Write a Python fibonacci function"   # non-interactive
-cheetahclaws --accept-all -p "Init a pyproject.toml"  # CI / automation
-cheetahclaws --web --port 8008 --no-auth              # browser chat + terminal
+pycode                                          # interactive REPL, default model
+pycode -m ollama/deepseek-r1:32b                # pick a model
+pycode -p "Write a Python fibonacci function"   # non-interactive
+pycode --accept-all -p "Init a pyproject.toml"  # CI / automation
+pycode --web --port 8008 --no-auth              # browser chat + terminal
 ```
 
 See the [Reference Guide](docs/guides/reference.md) for all 50+ slash commands, tools, and config options.
@@ -467,10 +467,10 @@ See the [Reference Guide](docs/guides/reference.md) for all 50+ slash commands, 
 We welcome contributions! See the [Contributing Guide](CONTRIBUTING.md) for architecture, conventions, and the PR checklist.
 
 ```bash
-git clone https://github.com/SafeRL-Lab/cheetahclaws.git && cd cheetahclaws
+git clone https://github.com/yanfeng98/pycode.git && cd pycode
 pip install -r requirements.txt && pip install pytest
 python -m pytest tests/ -x -q       # 341+ tests should pass
-python cheetahclaws.py              # run the REPL
+python pycode.py              # run the REPL
 ```
 
 Building a plugin? See the [Plugin Authoring Guide](docs/guides/plugin-authoring.md) and the [example template](examples/example-plugin/).
@@ -500,11 +500,11 @@ Not all models support function calling — use `qwen2.5-coder`, `llama3.3`, `mi
 
 **Q: Can I use multiple API keys in one session?** Yes — set all keys upfront (env or `/config`), then switch models freely; each call uses the active provider's key.
 
-**Q: How do I set a default model across projects?** Add keys to `~/.bashrc`/`~/.zshrc` and set `{ "model": "claude-sonnet-4-6" }` in `~/.cheetahclaws/config.json`.
+**Q: How do I set a default model across projects?** Add keys to `~/.bashrc`/`~/.zshrc` and set `{ "model": "claude-sonnet-4-6" }` in `~/.pycode/config.json`.
 
-**Q: Can I pipe input to cheetahclaws?**
+**Q: Can I pipe input to pycode?**
 ```bash
-cat error.log | cheetahclaws -p "What is causing this error?"
+cat error.log | pycode -p "What is causing this error?"
 ```
 
 **Q: How do I set up voice input?** `pip install sounddevice faster-whisper numpy`, then `/voice` in the REPL (downloads a ~150 MB Whisper model on first use). See the [full FAQ](docs/guides/faq.md) for languages + keyterm tuning.
@@ -521,9 +521,9 @@ If you find the repository useful, please cite the study
   year={2026}
 }
 
-@article{cheetahclaws2026,
-  title={CheetahClaws: Agent Harness Infrastructure for Long-Horizon, Multi-Model, and Tool-Using AI Systems},
-  author={CheetahClaws Team},
+@article{pycode2026,
+  title={PyCode: Agent Harness Infrastructure for Long-Horizon, Multi-Model, and Tool-Using AI Systems},
+  author={PyCode Team},
   journal={github},
   year={2026}
 }

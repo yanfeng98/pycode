@@ -1,4 +1,4 @@
-# Contributor Guide: Where to Change What in cheetahclaws
+# Contributor Guide: Where to Change What in pycode
 
 This guide is for contributors implementing new features or updating existing behavior.
 It focuses on **which files matter**, **how data flows**, and **how to make safe changes quickly**.
@@ -9,7 +9,7 @@ It focuses on **which files matter**, **how data flows**, and **how to make safe
 
 If you remember only one thing, remember this flow:
 
-1. `cheetahclaws.py` handles CLI + REPL + slash commands.
+1. `pycode.py` handles CLI + REPL + slash commands.
 2. `context.py` rebuilds the system prompt each turn.
 3. `agent.py` runs the core loop (stream model output, execute tools, append tool results, continue).
 4. `providers.py` adapts model APIs (Anthropic vs OpenAI-compatible providers).
@@ -21,7 +21,7 @@ If you remember only one thing, remember this flow:
 ## 2) Core files you should read first
 
 ### Runtime + UX shell
-- `cheetahclaws.py`
+- `pycode.py`
   - Entry point (`main()`), REPL loop (`repl()`), command dispatch (`COMMANDS`, `handle_slash()`), permission prompt UI, diff rendering, voice command handling.
   - Add or change slash commands here.
 
@@ -97,7 +97,7 @@ Use this package for status transitions, dependency graph behavior, metadata sem
 - `checkpoint/types.py` `FileBackup` + `Snapshot` data models.
 - `checkpoint/store.py` file-level backup, snapshot persistence, rewind, cleanup.
 - `checkpoint/hooks.py` Write/Edit/NotebookEdit interception (backup before modify).
-- REPL command wiring lives in `cheetahclaws.py` (`cmd_checkpoint`, `cmd_rewind`).
+- REPL command wiring lives in `pycode.py` (`cmd_checkpoint`, `cmd_rewind`).
 
 Use this package for snapshot policies, backup strategies, file restore behavior, or storage format updates.
 
@@ -116,7 +116,7 @@ Use this package for snapshot policies, backup strategies, file restore behavior
 - `voice/recorder.py` capture backends (`sounddevice`, `arecord`, `sox`) + silence detection.
 - `voice/stt.py` backend fallback chain (`faster-whisper`, `openai-whisper`, OpenAI API).
 - `voice/keyterms.py` keyterm extraction from repo/branch/files.
-- REPL command wiring lives in `cheetahclaws.py` (`cmd_voice`).
+- REPL command wiring lives in `pycode.py` (`cmd_voice`).
 
 Use this package for STT backend changes, audio capture behavior, and prompt-boosting vocabulary logic.
 
@@ -126,7 +126,7 @@ Use this package for STT backend changes, audio capture behavior, and prompt-boo
 - `cc_kernel/runner/supervisor.py` — subprocess agent spawn + JSON-line IPC + streaming chunk relay.
 - `cc_kernel/runner/llm/` — LLM agent runner (Anthropic + scripted-mock providers, multi-turn dialogue, tool-calling loop, token streaming).
 - `cc_kernel/tools/` — tool registry + dispatch; auto-registered (Echo, Read, Write, Glob, List, Diff, AST) and opt-in (Exec, Fetch, Git).
-- `cc_kernel/cli.py` — `cheetahclaws kernel <action>` subcommand (read-only inspection over the daemon RPC).
+- `cc_kernel/cli.py` — `pycode kernel <action>` subcommand (read-only inspection over the daemon RPC).
 - Activated only when daemon runs with `--enable-kernel`. Default REPL/bridges path is byte-for-byte unchanged.
 
 Use this package for agent isolation, capability/quota policy, scheduler tuning, AgentFS storage, sandbox primitives, or new built-in tools. Every behavioural change MUST land with an RFC under `docs/RFC/` (acceptance criteria + BC story); see [`docs/agent-os.md`](agent-os.md) for the index of all 27 shipped RFCs.
@@ -152,7 +152,7 @@ Use this package for agent isolation, capability/quota policy, scheduler tuning,
 7. If the tool emits incremental output, route it through `ctx.on_chunk(payload)` so `Supervisor.wait(on_chunk=...)` callers see it (RFC 0028 substrate).
 
 ### Add a new slash command
-1. Add `cmd_<name>` function in `cheetahclaws.py`.
+1. Add `cmd_<name>` function in `pycode.py`.
 2. Add command mapping in `COMMANDS`.
 3. If command needs tool behavior, prefer a tool module and call that logic.
 4. Add tests in relevant test module (or create a focused one).
@@ -180,7 +180,7 @@ Use this package for agent isolation, capability/quota policy, scheduler tuning,
 ### Add a new feature package
 1. Create package module(s) with clear API + `ToolDef` registrations.
 2. Ensure package is imported from `tools.py` so registrations execute at startup.
-3. Add slash command wiring in `cheetahclaws.py` only if user-facing command is needed.
+3. Add slash command wiring in `pycode.py` only if user-facing command is needed.
 4. Add focused tests under `tests/test_<feature>.py`.
 
 ---
@@ -216,7 +216,7 @@ Recommended contributor workflow:
 - **Context pressure is real:** large tool outputs are truncated in `tool_registry.execute_tool`, then old results may be snipped/compacted.
 - **Neutral message format is the internal contract:** provider adapters must preserve tool call IDs and arguments correctly.
 - **Task and memory persistence are cwd/home dependent:** behavior can vary if tests or runtime change working directory.
-- **Path naming note:** most runtime dirs use `.cheetahclaws` (underscore).
+- **Path naming note:** most runtime dirs use `.pycode` (underscore).
 
 ---
 
@@ -225,7 +225,7 @@ Recommended contributor workflow:
 If you are new and want to ship your first feature quickly, read in this order:
 
 1. `README.md` (user surface)
-2. `cheetahclaws.py` (runtime shell)
+2. `pycode.py` (runtime shell)
 3. `agent.py` (core loop)
 4. `tool_registry.py` + `tools.py` (extension spine)
 5. Your target package (`memory/`, `mcp/`, `task/`, etc.)

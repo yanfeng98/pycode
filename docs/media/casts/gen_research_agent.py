@@ -17,7 +17,7 @@ HEADER = {
     "height": 32,
     "timestamp": 1747262400,
     "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"},
-    "title": "CheetahClaws /agent — autonomous research_assistant loop",
+    "title": "PyCode /agent — autonomous research_assistant loop",
     "idle_time_limit": 1.5,
 }
 
@@ -49,8 +49,8 @@ def type_string(s, base=0.04, jitter=0.02):
 
 
 # Scene 1 — launch + /agent wizard
-out(0.0, f"{GREEN}~{RST} {CYAN}❯{RST} cheetahclaws\r\n")
-out(0.3, f"{DIM}[CheetahClaws v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
+out(0.0, f"{GREEN}~{RST} {CYAN}❯{RST} pycode\r\n")
+out(0.3, f"{DIM}[PyCode v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
 out(0.2, f"{BOLD}{CYAN}[~] »{RST} ")
 out(0.4, "")
 type_string("/agent")
@@ -61,7 +61,7 @@ out(0.2, f"  1. {CYAN}research_assistant{RST}  {DIM}— daily literature & trend
 out(0.15, f"  2. {CYAN}auto_bug_fixer{RST}      {DIM}— scan repo, propose fixes, run tests{RST}\r\n")
 out(0.15, f"  3. {CYAN}paper_writer{RST}        {DIM}— draft & polish a paper section by section{RST}\r\n")
 out(0.15, f"  4. {CYAN}auto_coder{RST}          {DIM}— implement TODOs from a backlog file{RST}\r\n")
-out(0.15, f"  {DIM}(or drop a .md into ~/.cheetahclaws/agent_templates/ for a custom one){RST}\r\n\r\n")
+out(0.15, f"  {DIM}(or drop a .md into ~/.pycode/agent_templates/ for a custom one){RST}\r\n\r\n")
 out(0.3, f"{BOLD}Choose [1-4]:{RST} ")
 out(0.5, "")
 type_string("1")
@@ -72,7 +72,7 @@ type_string("Multi-agent debate vs single-model — papers from the last 30 days
 out(0.4, "\r\n\r\n")
 
 out(0.4, f"{GREEN}✓{RST}  Agent {BOLD}research_assistant_8f3a2c{RST} started — loop every 4 hours · push to Telegram\r\n")
-out(0.2, f"{DIM}    Output dir: ~/.cheetahclaws/agents/research_assistant_8f3a2c/output/{RST}\r\n\r\n")
+out(0.2, f"{DIM}    Output dir: ~/.pycode/agents/research_assistant_8f3a2c/output/{RST}\r\n\r\n")
 
 # Scene 2 — iteration 1
 def iteration(n, ts, color, summary_lines, stagnation=False):
@@ -83,7 +83,7 @@ def iteration(n, ts, color, summary_lines, stagnation=False):
     out(0.3, f"    {DIM}→ pushed iteration summary to Telegram chat 458291205{RST}\r\n\r\n")
 
 iteration(1, "11:00 PT", CYAN, [
-    f"{YELL}[Read]{RST} ~/.cheetahclaws/agents/.../state.json  {DIM}(first run, empty){RST}",
+    f"{YELL}[Read]{RST} ~/.pycode/agents/.../state.json  {DIM}(first run, empty){RST}",
     f"{YELL}[research]{RST} fanned out across 20 sources for the last 24h",
     f"{GREEN}● Found 17 new papers, 3 high-signal:{RST}",
     f"    {DIM}•{RST} \"AdvDebate: …\" (arXiv 2605.04123) — adversarial multi-agent debate",
@@ -115,7 +115,7 @@ out(0.3, f"    {YELL}● Loop paused.{RST} Next attempt at 09:00 PT (manual or /
 
 # Scene 4 — output summary
 out(0.4, f"{BOLD}Output (so far):{RST}\r\n")
-out(0.25, f"  ~/.cheetahclaws/agents/research_assistant_8f3a2c/output/\r\n")
+out(0.25, f"  ~/.pycode/agents/research_assistant_8f3a2c/output/\r\n")
 out(0.2, f"    ├── {BOLD}digest_day_1.md{RST}   {DIM}(2.4 KB, 4 papers analysed){RST}\r\n")
 out(0.2, f"    ├── state.json         {DIM}(loop bookkeeping){RST}\r\n")
 out(0.2, f"    └── notes.md           {DIM}(running scratchpad){RST}\r\n\r\n")

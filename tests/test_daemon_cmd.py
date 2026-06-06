@@ -1,4 +1,4 @@
-"""Tests for commands/daemon_cmd.py — `cheetahclaws daemon ...` subcommands.
+"""Tests for commands/daemon_cmd.py — `pycode daemon ...` subcommands.
 
 End-to-end behavior against a live daemon is covered in
 ``tests/e2e_daemon_skeleton.py`` (F-1 task #10).  This file exercises the

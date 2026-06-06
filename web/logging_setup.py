@@ -22,7 +22,7 @@ import time
 import threading
 from typing import Any
 
-_LEVEL_ENV = "CHEETAHCLAWS_LOG_LEVEL"
+_LEVEL_ENV = "PYCODE_LOG_LEVEL"
 
 _RESERVED = {
     "name", "msg", "args", "levelname", "levelno", "pathname", "filename",

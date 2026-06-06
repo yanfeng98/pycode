@@ -3,8 +3,8 @@
 ## CLI Reference
 
 ```
-cheetahclaws [OPTIONS] [PROMPT]
-# or: python cheetahclaws.py [OPTIONS] [PROMPT]
+pycode [OPTIONS] [PROMPT]
+# or: python pycode.py [OPTIONS] [PROMPT]
 
 Options:
   -p, --print          Non-interactive: run prompt and exit
@@ -24,21 +24,21 @@ Options:
 
 ```bash
 # Interactive REPL with default model
-cheetahclaws
+pycode
 
 # Switch model at startup
-cheetahclaws --model gpt-4o
-cheetahclaws -m ollama/deepseek-r1:32b
+pycode --model gpt-4o
+pycode -m ollama/deepseek-r1:32b
 
 # Non-interactive / scripting
-cheetahclaws --print "Write a Python fibonacci function"
-cheetahclaws -p "Explain the Rust borrow checker in 3 sentences" -m gemini/gemini-2.0-flash
+pycode --print "Write a Python fibonacci function"
+pycode -p "Explain the Rust borrow checker in 3 sentences" -m gemini/gemini-2.0-flash
 
 # CI / automation (no permission prompts)
-cheetahclaws --accept-all --print "Initialize a Python project with pyproject.toml"
+pycode --accept-all --print "Initialize a Python project with pyproject.toml"
 
 # Debug mode (see tokens + thinking)
-cheetahclaws --thinking --verbose
+pycode --thinking --verbose
 ```
 
 ---
@@ -97,7 +97,7 @@ Type `/` and press **Tab** to see all commands with descriptions. Continue typin
 | `/cloudsave` | Upload current session to a private GitHub Gist |
 | `/cloudsave push [desc]` | Upload with an optional description |
 | `/cloudsave auto on\|off` | Toggle auto-upload on `/exit` |
-| `/cloudsave list` | List your cheetahclaws Gists |
+| `/cloudsave list` | List your pycode Gists |
 | `/cloudsave load <gist_id>` | Download and restore a session from Gist |
 | `/brainstorm` | Run a multi-persona AI brainstorm; prompts for agent count (2–100, default 5) |
 | `/brainstorm <topic>` | Focus the brainstorm on a specific topic; prompts for agent count |
@@ -195,13 +195,13 @@ Type `/` and press **Tab** to see all commands with descriptions. Continue typin
 
 ## Console Themes
 
-`/theme` switches the entire CLI palette in-place — every existing `info / ok / warn / err` call site picks up the new colors without any code change. The choice persists to `~/.cheetahclaws/config.json` under `"theme"` and is re-applied on the next launch before any output renders.
+`/theme` switches the entire CLI palette in-place — every existing `info / ok / warn / err` call site picks up the new colors without any code change. The choice persists to `~/.pycode/config.json` under `"theme"` and is re-applied on the next launch before any output renders.
 
 ### Available themes
 
 | Theme         | Notes                                                  |
 |---------------|--------------------------------------------------------|
-| `default`     | Cyan accent, amber warn — the original CheetahClaws look |
+| `default`     | Cyan accent, amber warn — the original PyCode look |
 | `dracula`     | The Dracula palette (purple accent, soft green ok)     |
 | `nord`        | Frost blue accent, aurora green ok                     |
 | `gruvbox`     | Gruvbox Dark hard-contrast yellows / reds              |
@@ -213,7 +213,7 @@ Type `/` and press **Tab** to see all commands with descriptions. Continue typin
 | `midnight`    | Cyan/lime/red high-contrast dark                       |
 | `ocean`       | Sky-blue + emerald, easy on the eyes                   |
 | `monokai`     | Monokai cyan / green / yellow / pink semantics         |
-| `cheetah`     | Amber accent — matches the CheetahClaws logo           |
+| `cheetah`     | Amber accent — matches the PyCode logo           |
 | `mono`        | Truly grayscale (no chromatic colors)                  |
 | `none`        | Strips every ANSI escape — output is plain text        |
 
@@ -284,7 +284,7 @@ export MINIMAX_API_KEY=...           # MiniMax
 
 #### `.env` file (loaded automatically)
 
-CheetahClaws loads a `.env` file from the project directory at startup, before any other module reads `os.environ`. Existing shell variables take priority over `.env` values, so you can override locally with `export VAR=...`.
+PyCode loads a `.env` file from the project directory at startup, before any other module reads `os.environ`. Existing shell variables take priority over `.env` values, so you can override locally with `export VAR=...`.
 
 ```ini
 # .env in your project root
@@ -303,7 +303,7 @@ Set `ANTHROPIC_ENDPOINT` to point Claude API traffic at a corporate proxy or com
 export ANTHROPIC_ENDPOINT=https://anthropic-proxy.corp.example.com
 ```
 
-The env var always wins over any persisted value in `~/.cheetahclaws/config.json`, so `.env` changes take effect on the next launch without editing the JSON file. The endpoint is used by both the streaming client (`providers.py`) and the connectivity probes in `/doctor` and the setup wizard.
+The env var always wins over any persisted value in `~/.pycode/config.json`, so `.env` changes take effect on the next launch without editing the JSON file. The endpoint is used by both the streaming client (`providers.py`) and the connectivity probes in `/doctor` and the setup wizard.
 
 ### Method 2: Set Inside the REPL (persisted)
 
@@ -318,12 +318,12 @@ The env var always wins over any persisted value in `~/.cheetahclaws/config.json
 /config minimax_api_key=...
 ```
 
-Keys are saved to `~/.cheetahclaws/config.json` and loaded automatically on next launch.
+Keys are saved to `~/.pycode/config.json` and loaded automatically on next launch.
 
 ### Method 3: Edit the Config File Directly
 
 ```json
-// ~/.cheetahclaws/config.json
+// ~/.pycode/config.json
 {
   "model": "qwen/qwen-max",
   "max_tokens": 8192,
@@ -501,7 +501,7 @@ Completed tasks are treated as resolved — `TaskList` hides their blocking effe
 
 ### Persistence
 
-Tasks are saved to `.cheetahclaws/tasks.json` in the current working directory after every mutation and reloaded on first access.
+Tasks are saved to `.pycode/tasks.json` in the current working directory after every mutation and reloaded on first access.
 
 ### REPL commands
 

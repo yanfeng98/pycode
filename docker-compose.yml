@@ -1,4 +1,4 @@
-# CheetahClaws — home-server compose stack
+# PyCode — home-server compose stack
 #
 # Web UI + Telegram bridge in one container, talking to an Ollama instance
 # running on the Docker host (typical home-server / DGX-Spark setup).
@@ -12,12 +12,12 @@
 # See docs/guides/docker.md for the full walkthrough.
 
 services:
-  cheetahclaws:
+  pycode:
     build:
       context: .
       dockerfile: Dockerfile
-    image: cheetahclaws:latest
-    container_name: cheetahclaws
+    image: pycode:latest
+    container_name: pycode
     restart: unless-stopped
 
     # Inherit host UID/GID so files in ./workspace are owned by the host
@@ -32,7 +32,7 @@ services:
       # the host to access from your other PC / phone.
       - ./workspace:/workspace
       # Persisted config, sessions, history. Surviving container restarts.
-      - ./data:/home/cheetah/.cheetahclaws
+      - ./data:/home/pycode/.pycode
 
     # Ollama runs on the host. host.docker.internal resolves to the host
     # gateway on Linux 20.10+ via host-gateway, no host networking needed.
@@ -46,7 +46,7 @@ services:
 
       # Telegram bridge: when both are present, the bridge auto-starts in
       # the same process as the web server.
-      # Tokens go into ~/.cheetahclaws/config.json on first run; export
+      # Tokens go into ~/.pycode/config.json on first run; export
       # them here only if you want them re-applied each restart.
 
     # Resource hints (tune to your hardware). DGX-Spark: bump as desired.
@@ -57,5 +57,5 @@ services:
 
 # Named volumes alternative (uncomment if you prefer not to bind-mount):
 # volumes:
-#   cheetah-data:
-#   cheetah-workspace:
+#   pycode-data:
+#   pycode-workspace:

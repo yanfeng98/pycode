@@ -2,7 +2,7 @@
 name: voice
 version: 1.0.0
 description: Voice input module — record microphone → speech-to-text → submit as message
-author: cheetahclaws
+author: pycode
 tags: [voice, stt, audio, input]
 commands:
   - modular.voice.cmd

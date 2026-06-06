@@ -12,7 +12,7 @@ month-by-month, and where coverage is thin.
 Supports **time-range filtering** (`--range 30d|6m|1y`, or absolute
 `--since`/`--until`), **notable-citer analysis** for academic topics
 (find authors with > N total citations who've cited the top papers),
-and **auto-saved reports** to `~/.cheetahclaws/research_reports/` with
+and **auto-saved reports** to `~/.pycode/research_reports/` with
 a `/reports` command for browsing, opening, and exporting.
 
 The same pipeline is exposed to the agent as the **`Research`** tool, so
@@ -78,7 +78,7 @@ No configuration required — 13 of 20 sources work out of the box.
 
 You can also optionally set:
 
-- `CHEETAHCLAWS_GITHUB_TOKEN` (or `GITHUB_TOKEN`) — raises GitHub search limits from 10/min → 60/min
+- `PYCODE_GITHUB_TOKEN` (or `GITHUB_TOKEN`) — raises GitHub search limits from 10/min → 60/min
 - `SEMANTIC_SCHOLAR_API_KEY` (or `S2_API_KEY`) — raises Semantic Scholar limits
 - `STACKEXCHANGE_KEY` — raises StackOverflow daily quota from 300 → 10000
 - `OPENALEX_EMAIL` / `SEC_CONTACT_EMAIL` — identifier for polite-pool rate limits
@@ -98,8 +98,8 @@ You can also optionally set:
 | `--citation-threshold N` | Citation count to qualify as "notable" (default 10000). |
 | `--expand [N]` | Ask the active model to propose 2-6 sibling subqueries (default 4), run each in parallel, merge results. Best for broad topics where a single query misses facets. Adds 1 LLM call + N × source_count HTTP calls (per-source limit shrinks proportionally). |
 | `--save-as PATH` | Also copy the rendered brief to this path (`~/path.md` ok). Auto-save still happens. |
-| `--no-cache` | Skip the 24h SQLite cache at `~/.cheetahclaws/research_cache.db`. |
-| `--no-save` | Skip auto-save to `~/.cheetahclaws/research_reports/`. |
+| `--no-cache` | Skip the 24h SQLite cache at `~/.pycode/research_cache.db`. |
+| `--no-save` | Skip auto-save to `~/.pycode/research_reports/`. |
 | `--no-synth` | Skip the LLM brief generation — return raw results only. |
 
 ## Topic → domain auto-classification
@@ -305,7 +305,7 @@ Each weekly run:
 1. Fans out to all 20 sources
 2. Filters by the window you picked
 3. Renders the cross-platform attention heat table + sparkline
-4. Writes a saved report (under `~/.cheetahclaws/research_reports/`)
+4. Writes a saved report (under `~/.pycode/research_reports/`)
 5. Pushes a digest to your channels
 
 `/monitor run research:RLHF` forces an immediate manual run.
@@ -314,7 +314,7 @@ Each weekly run:
 ## Saved reports
 
 Every `/research` run auto-saves to
-`~/.cheetahclaws/research_reports/<YYYY-MM-DD_HHMMSS>-<slug>.md` plus
+`~/.pycode/research_reports/<YYYY-MM-DD_HHMMSS>-<slug>.md` plus
 a `.json` sidecar containing the full serialized Brief (results,
 statuses, notable citers). Opt out with `--no-save`.
 
@@ -437,7 +437,7 @@ skip are surfaced in a `## Missed / skipped sources` footer.
 
 ## Caching
 
-Results are cached in `~/.cheetahclaws/research_cache.db` (SQLite) with
+Results are cached in `~/.pycode/research_cache.db` (SQLite) with
 a 24h TTL. The cache key is `(source, normalized_query, limit)`. Pass
 `--no-cache` to force a fresh fetch.
 

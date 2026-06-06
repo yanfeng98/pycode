@@ -1,36 +1,27 @@
-# Contributing to CheetahClaws
-
-Thank you for your interest in contributing! This guide covers the architecture, conventions, and common pitfalls to help your PR land smoothly.
+# Contributing to PyCode
 
 ## Quick Start
 
 ### Option 1: uv (recommended — isolated environment)
 
 ```bash
-git clone git@github.com:SafeRL-Lab/cheetahclaws.git
-cd cheetahclaws
+git clone git@github.com:yanfeng98/pycode.git
+cd pycode
 
-# Install uv (if not already installed)
 pip install uv
-
-# Sync dependencies into an isolated .venv
 uv sync -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
-
-# Activate the virtual environment
 source .venv/bin/activate
 
-# Verify the package builds correctly
 uv build
 ls dist/
 
-# Override with editable install for development
 uv pip install -e .
 
 # Run tests
 python -m pytest tests/ -x -q    # all 327+ tests should pass
 
 # Run the REPL
-python cheetahclaws.py
+python pycode.py
 ```
 
 > **What each step does:**
@@ -51,22 +42,22 @@ python cheetahclaws.py
 ### Option 2: pip (quick & simple)
 
 ```bash
-git clone git@github.com:SafeRL-Lab/cheetahclaws.git
-cd cheetahclaws
+git clone git@github.com:yanfeng98/pycode.git
+cd pycode
 pip install -r requirements.txt
 pip install pytest
 python -m pytest tests/ -x -q    # all 327+ tests should pass
-python cheetahclaws.py            # run the REPL
+python pycode.py            # run the REPL
 ```
 
 ## Project Structure
 
 ```
-cheetahclaws/
-├── cheetahclaws.py          # REPL loop, slash commands, readline setup
+pycode/
+├── pycode.py          # REPL loop, slash commands, readline setup
 ├── agent.py                 # LLM turn loop, retries, permission checks
 ├── providers.py             # API streaming (Anthropic, OpenAI, Ollama, etc.)
-├── config.py                # User config (load/save to ~/.cheetahclaws/config.json)
+├── config.py                # User config (load/save to ~/.pycode/config.json)
 ├── runtime.py               # RuntimeContext — per-session live state (NOT config)
 ├── tool_registry.py         # Central tool registry (ToolDef, register_tool)
 ├── context.py               # System prompt builder (assembles base + overlay + env + fragments)
@@ -86,7 +77,7 @@ cheetahclaws/
 ├── bridges/                 # Telegram, WeChat, Slack integrations
 ├── plugin/                  # Plugin system (install, load, manifest parsing)
 ├── skill/                   # Skill system (Markdown prompt templates)
-├── cc_daemon/               # Daemon foundation (F-1..F-9 all landed) — `cheetahclaws serve` + RPC surface (agent/monitor/bridge/session/proactive/system); see docs/RFC/0002
+├── cc_daemon/               # Daemon foundation (F-1..F-9 all landed) — `pycode serve` + RPC surface (agent/monitor/bridge/session/proactive/system); see docs/RFC/0002
 ├── cc_mcp/                  # MCP (Model Context Protocol) client & tools
 ├── research/lab/            # Autonomous multi-agent research engine (/lab — 9-stage state machine + sandboxed experiments + citation verifier)
 ├── memory/                  # Persistent memory system
@@ -107,7 +98,7 @@ cheetahclaws/
 
 ### Config vs. RuntimeContext
 
-**`config` dict** — serializable user settings loaded from `~/.cheetahclaws/config.json`. Contains model name, API keys, permission mode, etc. Saved to disk by `save_config()`.
+**`config` dict** — serializable user settings loaded from `~/.pycode/config.json`. Contains model name, API keys, permission mode, etc. Saved to disk by `save_config()`.
 
 **`RuntimeContext`** (in `runtime.py`) — per-session live state: threads, bridge flags, plan mode state, pending images, etc. **Never** stored in the config dict.
 
@@ -145,7 +136,7 @@ register_tool(ToolDef(
 
 ### Plugin System
 
-Plugins live in `~/.cheetahclaws/plugins/<name>/` (user scope) or `.cheetahclaws/plugins/<name>/` (project scope). Installed via `/plugin install name@<url>`.
+Plugins live in `~/.pycode/plugins/<name>/` (user scope) or `.pycode/plugins/<name>/` (project scope). Installed via `/plugin install name@<url>`.
 
 **Manifest**: `plugin.json` at the plugin root:
 
@@ -184,7 +175,7 @@ COMMAND_DEFS = {
 
 ### Hooks System
 
-CheetahClaws does **not** have a generic event-based hooks system. The `checkpoint/hooks.py` module wraps Write/Edit/NotebookEdit tools to create file backups before writes. There is no `hooks.json` and no `hook_session_start`/`hook_stop` events.
+PyCode does **not** have a generic event-based hooks system. The `checkpoint/hooks.py` module wraps Write/Edit/NotebookEdit tools to create file backups before writes. There is no `hooks.json` and no `hook_session_start`/`hook_stop` events.
 
 ### Bridges
 
@@ -238,4 +229,4 @@ Before submitting a PR:
 
 ## Questions?
 
-Open an issue or start a discussion on the [GitHub repo](https://github.com/SafeRL-Lab/cheetahclaws).
+Open an issue or start a discussion on the [GitHub repo](https://github.com/yanfeng98/pycode).

@@ -1,4 +1,4 @@
-"""Tmux integration tools for CheetahClaws.
+"""Tmux integration tools for PyCode.
 
 Gives the AI model direct control over tmux sessions: create panes,
 send commands, read output, and manage layouts.  Auto-detected at

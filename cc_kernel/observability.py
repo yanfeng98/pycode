@@ -289,10 +289,10 @@ class ObservabilityStore:
                     label_str = ""
                 lines.append(f"{name}{label_str} {value}")
 
-        emit("cheetahclaws_kernel_schema_version",
+        emit("pycode_kernel_schema_version",
              "Kernel schema version", "gauge",
              [({}, s["schema_version"])])
-        emit("cheetahclaws_kernel_uptime_seconds",
+        emit("pycode_kernel_uptime_seconds",
              "Seconds since kernel registered", "counter",
              [({}, round(s["uptime_s"], 3))])
 
@@ -300,34 +300,34 @@ class ObservabilityStore:
             ({"state": k}, v)
             for k, v in s["agents"].items() if k != "total"
         ]
-        emit("cheetahclaws_kernel_agents",
+        emit("pycode_kernel_agents",
              "Number of agents by state", "gauge",
              agent_entries)
 
-        emit("cheetahclaws_kernel_events_total",
+        emit("pycode_kernel_events_total",
              "Lifetime event count", "counter",
              [({}, s["events"]["total"])])
 
         sched_entries = [
             ({"state": k}, v) for k, v in s["scheduler"].items()
         ]
-        emit("cheetahclaws_kernel_scheduler_queue",
+        emit("pycode_kernel_scheduler_queue",
              "Items in scheduler queue by state", "gauge",
              sched_entries)
 
-        emit("cheetahclaws_kernel_ledger_breached",
+        emit("pycode_kernel_ledger_breached",
              "Agents with at least one breached dim", "gauge",
              [({}, s["ledger"]["breached"])])
-        emit("cheetahclaws_kernel_mailbox_pending",
+        emit("pycode_kernel_mailbox_pending",
              "Pending messages across all inboxes", "gauge",
              [({}, s["mailbox"]["pending_messages"])])
-        emit("cheetahclaws_kernel_fs_objects",
+        emit("pycode_kernel_fs_objects",
              "Total AgentFS objects", "gauge",
              [({}, s["fs"]["objects"])])
-        emit("cheetahclaws_kernel_fs_bytes",
+        emit("pycode_kernel_fs_bytes",
              "Total AgentFS bytes stored", "gauge",
              [({}, s["fs"]["total_bytes"])])
-        emit("cheetahclaws_kernel_registry_entries",
+        emit("pycode_kernel_registry_entries",
              "AgentRegistry entries", "gauge",
              [({}, s["registry"]["entries"])])
 

@@ -31,8 +31,8 @@ _MAX_CMD_LEN      = 4096
 
 
 def _bridge_terminal_disabled() -> bool:
-    """Operators can hard-disable remote shell with CHEETAHCLAWS_BRIDGE_TERMINAL=0."""
-    return os.environ.get("CHEETAHCLAWS_BRIDGE_TERMINAL", "1") == "0"
+    """Operators can hard-disable remote shell with PYCODE_BRIDGE_TERMINAL=0."""
+    return os.environ.get("PYCODE_BRIDGE_TERMINAL", "1") == "0"
 
 
 def run_terminal(
@@ -46,11 +46,11 @@ def run_terminal(
     Execute `cmd` in a shell, streaming stdout+stderr back via send_fn.
 
     Enabled by default; bridges already enforce owner-only (chat_id whitelist).
-    Set CHEETAHCLAWS_BRIDGE_TERMINAL=0 to hard-disable for sensitive deployments.
+    Set PYCODE_BRIDGE_TERMINAL=0 to hard-disable for sensitive deployments.
     NUL byte / length / hard-denylist guards still apply.
     """
     if _bridge_terminal_disabled():
-        send_fn("⚠ Remote terminal is disabled (CHEETAHCLAWS_BRIDGE_TERMINAL=0).")
+        send_fn("⚠ Remote terminal is disabled (PYCODE_BRIDGE_TERMINAL=0).")
         _log.warn("terminal_blocked_disabled", session=session_key, cmd=cmd[:100])
         return
     if not isinstance(cmd, str) or "\x00" in cmd or len(cmd) > _MAX_CMD_LEN:

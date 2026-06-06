@@ -150,13 +150,13 @@ def test_setup_registers_module_level_providers():
         ui_input.setup(lambda: {}, lambda: {})
 
 
-def test_module_does_not_import_cheetahclaws():
+def test_module_does_not_import_pycode():
     """Regression guard for the circular-import concern from review."""
     import sys
     import ui.input as ui_input
-    # Reload ui.input in a clean state and confirm cheetahclaws is not pulled in.
-    # (Running this in the test session where cheetahclaws may already be loaded
+    # Reload ui.input in a clean state and confirm pycode is not pulled in.
+    # (Running this in the test session where pycode may already be loaded
     # is acceptable — the assertion is about ui.input's own import graph.)
     src = open(ui_input.__file__).read()
-    assert "import cheetahclaws" not in src
-    assert "from cheetahclaws" not in src
+    assert "import pycode" not in src
+    assert "from pycode" not in src

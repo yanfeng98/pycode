@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws proactive / background-event feature.
+Generate animated GIF demo of pycode proactive / background-event feature.
 Shows: timer reminder set → idle at prompt → [Background Event Triggered] →
 Claude fires reminder → user asks again → second reminder fires.
 """
@@ -75,7 +75,7 @@ def draw_frame(lines_segments):
 # ── Reusable line builders ────────────────────────────────────────────────
 
 BANNER = [
-    [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW)],
     [seg("│  Type /help for commands, Ctrl+C to cancel                  │", SUBTEXT)],
@@ -88,7 +88,7 @@ BANNER = [
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg(text + cur, TEXT),
     ]

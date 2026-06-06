@@ -1,6 +1,6 @@
 """Discovery file: tells clients where a running daemon lives.
 
-The daemon writes ``~/.cheetahclaws/daemon.json`` when it binds, and removes
+The daemon writes ``~/.pycode/daemon.json`` when it binds, and removes
 it on clean exit.  Clients call :func:`locate` to learn whether a daemon is
 running and how to reach it.
 
@@ -9,7 +9,7 @@ Schema::
     { "pid":        12345,
       "started_at": "2026-04-30T12:00:00Z",
       "transport":  "unix" | "tcp",
-      "address":    "/run/user/1000/cheetahclaws/daemon.sock"
+      "address":    "/run/user/1000/pycode/daemon.sock"
                   | "127.0.0.1:8765",
       "version":    "3.05.72",
       "schema":     1 }
@@ -34,7 +34,7 @@ DEFAULT_FILENAME = "daemon.json"
 # ── Path resolution ────────────────────────────────────────────────────────
 
 def get_default_path() -> Path:
-    """Default discovery-file location: ``~/.cheetahclaws/daemon.json``."""
+    """Default discovery-file location: ``~/.pycode/daemon.json``."""
     from cc_config import CONFIG_DIR
     return CONFIG_DIR / DEFAULT_FILENAME
 

@@ -1,4 +1,4 @@
-"""SQLite-backed persistence for the CheetahClaws web UI.
+"""SQLite-backed persistence for the PyCode web UI.
 
 Single source of truth for the SQLAlchemy engine + session factory + a tiny
 repository layer. Keeping CRUD here means the rest of the web package only
@@ -30,7 +30,7 @@ from web.models import (
 
 # ── Engine / session factory ─────────────────────────────────────────────
 
-DEFAULT_DB_PATH = Path.home() / ".cheetahclaws" / "web.db"
+DEFAULT_DB_PATH = Path.home() / ".pycode" / "web.db"
 
 _engine = None
 _SessionLocal: Optional[sessionmaker] = None
@@ -49,7 +49,7 @@ def init_db(db_path: Optional[Path] = None) -> None:
         if _engine is not None:
             return
         path = _ensure_db_path(Path(db_path or
-                                    os.environ.get("CHEETAHCLAWS_WEB_DB",
+                                    os.environ.get("PYCODE_WEB_DB",
                                                    str(DEFAULT_DB_PATH))))
         # check_same_thread=False — we use SQLAlchemy's pool which serializes
         # access; many threads need to share the connection.

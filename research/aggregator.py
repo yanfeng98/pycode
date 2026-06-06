@@ -48,7 +48,7 @@ def research(
         synthesize: call the active model to produce a markdown brief.
         max_total_results: cap on results kept after ranking.
         source_timeout: per-source timeout in seconds.
-        config: cheetahclaws config (for model + keys in synth / sources).
+        config: pycode config (for model + keys in synth / sources).
         progress_cb: optional callable(source_name, status) — "start"/"done"/"skipped"/"error".
 
     Returns:

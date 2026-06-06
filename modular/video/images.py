@@ -20,11 +20,11 @@ import urllib.parse
 
 def _find_gemini_image_gen() -> str | None:
     """Try to locate gemini_image_gen.py from the sibling v-content-creator project."""
-    # The cheetahclaws package lives at: .../cheetahclaws_versions/cheetahclaws/video/
-    # v-content-creator lives at:         .../cheetahclaws_versions/v-content-creator/
+    # The pycode package lives at: .../pycode_versions/pycode/video/
+    # v-content-creator lives at:         .../pycode_versions/v-content-creator/
     this_dir     = os.path.dirname(os.path.abspath(__file__))
-    pkg_root     = os.path.dirname(this_dir)          # .../cheetahclaws
-    versions_dir = os.path.dirname(pkg_root)           # .../cheetahclaws_versions
+    pkg_root     = os.path.dirname(this_dir)          # .../pycode
+    versions_dir = os.path.dirname(pkg_root)           # .../pycode_versions
     candidate    = os.path.join(versions_dir, "v-content-creator", "gemini_image_gen.py")
     if os.path.isfile(candidate):
         return os.path.dirname(candidate)
@@ -111,7 +111,7 @@ def _wikimedia_search(keywords: str, story_context: str = "") -> str | None:
         "&prop=imageinfo&iiprop=url|extmetadata&iilimit=1&gsrlimit=8&format=json"
     )
     try:
-        req = urllib.request.Request(api, headers={'User-Agent': 'CheetahClaws/1.0'})
+        req = urllib.request.Request(api, headers={'User-Agent': 'PyCode/1.0'})
         with urllib.request.urlopen(req, timeout=12) as resp:
             data = json.loads(resp.read())
         pages = data.get('query', {}).get('pages', {})
@@ -172,7 +172,7 @@ def _unsplash_search(keywords: str, width: int, height: int, access_key: str) ->
     url = (f"https://api.unsplash.com/search/photos"
            f"?query={query}&per_page=1&orientation={orient}&client_id={access_key}")
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'CheetahClaws/1.0'})
+        req = urllib.request.Request(url, headers={'User-Agent': 'PyCode/1.0'})
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
         results = data.get('results', [])

@@ -7,7 +7,7 @@ How it works:
   3. Label = "did this trade beat zero?" (will switch to vs-SPY when
      enough history is recorded)
   4. Train LightGBM with stratified k-fold CV; report AUC + accuracy
-  5. Persist model to ~/.cheetahclaws/trading/ml/stacker.pkl
+  5. Persist model to ~/.pycode/trading/ml/stacker.pkl
   6. .predict_proba(features) → probability the trade will be a hit
 
 When integrated into analyze, the stacker is run as a post-filter:
@@ -31,7 +31,7 @@ from . import features as feat_mod
 from .features import FeatureRow
 
 
-_DEFAULT_MODEL_DIR = Path.home() / ".cheetahclaws" / "trading" / "ml"
+_DEFAULT_MODEL_DIR = Path.home() / ".pycode" / "trading" / "ml"
 _DEFAULT_MODEL_PATH = _DEFAULT_MODEL_DIR / "stacker.pkl"
 
 

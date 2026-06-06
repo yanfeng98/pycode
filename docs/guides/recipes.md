@@ -1,6 +1,6 @@
 # Recipes — Common Use Cases
 
-Practical examples to get started with CheetahClaws after installation.
+Practical examples to get started with PyCode after installation.
 
 ---
 
@@ -12,8 +12,8 @@ Use a free, local model to review code without sending anything to the cloud.
 # Pull a capable model
 ollama pull qwen2.5-coder:14b
 
-# Start CheetahClaws with Ollama
-cheetahclaws --model ollama/qwen2.5-coder:14b
+# Start PyCode with Ollama
+pycode --model ollama/qwen2.5-coder:14b
 ```
 
 ```
@@ -53,14 +53,14 @@ CUDA_VISIBLE_DEVICES=6,7 python -m vllm.entrypoints.openai.api_server \
 ```
 
 **Step 2 — verify the endpoint is reachable.** This catches firewall / wrong-port
-issues before CheetahClaws ever sees them.
+issues before PyCode ever sees them.
 
 ```bash
 curl http://localhost:8000/v1/models
 # Should list "qwen2.5-72b"
 ```
 
-**Step 3 — point CheetahClaws at it.** The model string is `custom/<served-model-name>`;
+**Step 3 — point PyCode at it.** The model string is `custom/<served-model-name>`;
 it must match `--served-model-name` exactly. You also need a `base_url` — set it
 either via env var or `/config`. **Don't forget the `/v1` suffix.**
 
@@ -69,7 +69,7 @@ Env-var form (one-shot):
 ```bash
 export CUSTOM_BASE_URL=http://localhost:8000/v1
 export CUSTOM_API_KEY=EMPTY     # vLLM ignores the key, but the OpenAI SDK requires a non-empty string
-cheetahclaws --web --model custom/qwen2.5-72b
+pycode --web --model custom/qwen2.5-72b
 ```
 
 In-app form (persists across launches):
@@ -90,7 +90,7 @@ In-app form (persists across launches):
 | Connection refused from another machine | vLLM bound to `127.0.0.1` only, or firewall | Launch with `--host 0.0.0.0` and open the port |
 | Tool calls never fire | vLLM started without tool-call support | Add `--enable-auto-tool-choice --tool-call-parser hermes` (or the parser matching your model) |
 
-**Tip:** CheetahClaws queries `/v1/models` on first use to discover the model's real
+**Tip:** PyCode queries `/v1/models` on first use to discover the model's real
 context window, so you don't need to hard-code `context_limit` in
 `providers.py` — `--max-model-len` on the server is the source of truth.
 
@@ -108,19 +108,19 @@ pip install cheetahclaws[litellm]
 # Bedrock — uses your boto3 credential chain (AWS_PROFILE, ~/.aws/credentials,
 # IAM role on EC2). No api_key needed.
 export AWS_REGION=us-east-1
-cheetahclaws --model litellm/bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0
+pycode --model litellm/bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0
 
 # Azure OpenAI — deployment-id routing via the api_base + api_version pair.
 export AZURE_API_KEY=...
 export AZURE_API_BASE=https://my-resource.openai.azure.com
 export AZURE_API_VERSION=2024-10-01-preview
-cheetahclaws --model litellm/azure/my-gpt4o-deployment
+pycode --model litellm/azure/my-gpt4o-deployment
 
 # Vertex AI — Google Application Default Credentials.
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 export VERTEXAI_PROJECT=my-project
 export VERTEXAI_LOCATION=us-central1
-cheetahclaws --model litellm/vertex_ai/gemini-2.0-flash
+pycode --model litellm/vertex_ai/gemini-2.0-flash
 ```
 
 The model string format is **`litellm/<provider>/<model>`** — the first
@@ -146,14 +146,14 @@ zero-dependency and zero-config beyond `CUSTOM_BASE_URL`. Reach for
 
 ## 2. Remote Control via Telegram
 
-Control CheetahClaws from your phone while it runs on your server/workstation.
+Control PyCode from your phone while it runs on your server/workstation.
 
 **Setup (one time):**
 1. Message [@BotFather](https://t.me/BotFather) on Telegram, create a bot, get the token
 2. Get your chat ID from [@userinfobot](https://t.me/userinfobot)
 3. Configure:
 ```bash
-cheetahclaws
+pycode
 /config telegram_token=YOUR_BOT_TOKEN
 /config telegram_chat_id=YOUR_CHAT_ID
 /telegram start
@@ -177,7 +177,7 @@ Bot: [runs command, returns output]
 
 ## 3. Autonomous Research Agent
 
-Let CheetahClaws research a topic independently while you do other work.
+Let PyCode research a topic independently while you do other work.
 
 ```
 [project] » /agent
@@ -209,7 +209,7 @@ The agent will:
 
 ```bash
 # Start with the bug context
-cheetahclaws -p "Fix the TypeError in utils.py:42 where None is passed to len()"
+pycode -p "Fix the TypeError in utils.py:42 where None is passed to len()"
 ```
 
 Or interactively:
@@ -219,7 +219,7 @@ Or interactively:
              handlers/form.py. Find and fix it.
 ```
 
-CheetahClaws will:
+PyCode will:
 1. Read the file
 2. Identify the root cause
 3. Apply the fix
@@ -248,14 +248,14 @@ Work on a long-running project across multiple sessions:
 
 ```bash
 # Day 1: Start working
-cheetahclaws
+pycode
 [project] » Let's refactor the authentication module. Start by analyzing 
              the current auth flow...
 # ... work happens ...
 # Ctrl+D to exit (auto-saves)
 
 # Day 2: Resume where you left off
-cheetahclaws
+pycode
 [project] » /resume
 # Your full conversation context is restored
 [project] » Continue with the auth refactor. What's left?
@@ -280,7 +280,7 @@ Schedule: daily
 Notification: --telegram
 ```
 
-Every day, CheetahClaws will:
+Every day, PyCode will:
 - Fetch the latest papers from arXiv
 - Summarize the most relevant ones
 - Send you a digest via Telegram
@@ -296,11 +296,11 @@ Start a new project with AI-readable context:
 ```bash
 mkdir my-new-project && cd my-new-project
 git init
-cheetahclaws
+pycode
 [my-new-project] » /init
 ```
 
-This creates a `CLAUDE.md` file that CheetahClaws reads on every startup — containing project conventions, tech stack, and guidelines that shape all future interactions.
+This creates a `CLAUDE.md` file that PyCode reads on every startup — containing project conventions, tech stack, and guidelines that shape all future interactions.
 
 ---
 
@@ -354,7 +354,7 @@ The AI will use `WebBrowse` to render the page with headless Chromium and extrac
 
 ```bash
 # First, configure email (one time)
-cheetahclaws
+pycode
 /config email_address=you@gmail.com
 /config email_password=your-app-password
 /config email_imap_host=imap.gmail.com

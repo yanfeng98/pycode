@@ -1,4 +1,4 @@
-# Example CheetahClaws Plugin
+# Example PyCode Plugin
 
 A minimal, working plugin template. Copy this directory to start building your own plugin.
 
@@ -6,14 +6,14 @@ A minimal, working plugin template. Copy this directory to start building your o
 
 ```bash
 # Copy to your plugins directory
-cp -r examples/example-plugin ~/.cheetahclaws/plugins/my-plugin
+cp -r examples/example-plugin ~/.pycode/plugins/my-plugin
 
 # Edit plugin.json — change name, description, etc.
 # Edit tools.py — add your tool logic
 # Edit cmd.py — add your slash commands
 
-# Restart cheetahclaws and verify
-cheetahclaws
+# Restart pycode and verify
+pycode
 /plugin              # should show your plugin
 /example status      # test the example command
 ```

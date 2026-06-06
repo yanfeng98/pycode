@@ -1,7 +1,7 @@
 
-# CheetahClaws Roadmap (v3, 2026-04-26)
+# PyCode Roadmap (v3, 2026-04-26)
 
-> **CheetahClaws is becoming a secure, multi-model agent runtime that engineering and research teams trust to actually run on their CI, repos, and experiments.**
+> **PyCode is becoming a secure, multi-model agent runtime that engineering and research teams trust to actually run on their CI, repos, and experiments.**
 
 
 
@@ -13,7 +13,7 @@
 |---|---|---|
 | **Now**   | 2026-Q2 (next ~9 weeks) | Two flagship workflows running on at least one real repo end-to-end, with a structured trace anyone can read. |
 | **Next**  | 2026-Q3 (Jul–Sep)       | Permission/approval system, audit log, and replay-from-checkpoint. The runtime is safe enough for a small team to point at their own CI. |
-| **Later** | 2026-Q4 → 2027-Q1       | Local-deploy package (Docker), model tier guarantees, and the first paid / sponsored team using CheetahClaws on real engineering work. |
+| **Later** | 2026-Q4 → 2027-Q1       | Local-deploy package (Docker), model tier guarantees, and the first paid / sponsored team using PyCode on real engineering work. |
 | **North Star** | 2027-H2+         | An industrial product: secure agent runtime for engineering and research automation, deployable in customer infrastructure, with audit, approval, and ROI metrics. |
 
 The path to industrial product **is not** "build an enterprise feature checklist now." It is "ship two workflows that solve real pain, instrument them so customers can audit what happened, then customers will tell us which enterprise features they actually need."
@@ -24,7 +24,7 @@ The path to industrial product **is not** "build an enterprise feature checklist
 
 We solve **specific** problems. Not "improving developer productivity in general."
 
-| User | Pain today | What CheetahClaws delivers | How we measure it |
+| User | Pain today | What PyCode delivers | How we measure it |
 |---|---|---|---|
 | Backend developer | A flaky CI run blocks a PR; takes 30–90 min to triage logs, reproduce locally, and patch. | `cheetah investigate-ci <run-url>` returns: failure summary, suspected files, proposed patch, local reproduction command, test command. | Median time from CI failure → PR review request. Target: < 10 min on the supported repo set. |
 | Maintainer of a small library | Inbox of "easy" GitHub issues never gets cleared because each one needs context loading. | `cheetah solve-issue <url>` produces a draft PR with diff + tests + summary, awaiting human approval. | Issues triaged-to-PR per week. Target: 5/week per maintainer with < 30% rejection. |
@@ -148,7 +148,7 @@ Anti-deliverables for Q2 (we will say **no** to these):
 | Q3-5 | **HTML trace report** | `cheetah trace export <run-id> --format html` produces a self-contained file with model calls, file diffs, tool timeline. |
 | Q3-6 | **Secret redaction in trace + logs** | Run with `OPENAI_API_KEY` set; redacted in all written artifacts. |
 
-Phase exit criterion: a small team (3–10 engineers) can point CheetahClaws at their CI, run it in `approve-bash` mode, and feel safe leaving it on overnight.
+Phase exit criterion: a small team (3–10 engineers) can point PyCode at their CI, run it in `approve-bash` mode, and feel safe leaving it on overnight.
 
 ---
 
@@ -162,7 +162,7 @@ The "pre-product" phase. Goal: one or two design partner teams using us on real 
 | L2 | **Local model gateway** for vLLM/Ollama/LM Studio behind a single OpenAI-compatible URL | Workflow YAML routes "local-qwen" through the gateway with no code changes. |
 | L3 | **Multi-model benchmark harness** (wedge 4.3 graduates here) | `cheetah benchmark --suite ci-failures --models claude-sonnet,gpt,qwen-vllm` produces a comparable report. |
 | L4 | **Workflow YAML format v1** | `investigate-ci` and `solve-issue` are both expressible as a YAML task graph (not only Python). |
-| L5 | **Design-partner program** | At least 1 team is running CheetahClaws weekly on their own repo and giving us trace data + bug reports. |
+| L5 | **Design-partner program** | At least 1 team is running PyCode weekly on their own repo and giving us trace data + bug reports. |
 
 Phase exit criterion: a design partner says "we'd pay for this if it had X, Y, Z" — and X, Y, Z are concrete enterprise features (RBAC, SSO, on-prem support), not core capability gaps. That's the signal we've earned the right to build §8.
 
@@ -229,7 +229,7 @@ We commit to metrics that someone can run a command and read a number. No vanity
 - Zero unredacted secrets in traces (verified by redaction unit tests + a CI grep)
 
 **Q4 2026 + 2027-Q1 (Later)**
-- ≥ 1 design partner running CheetahClaws weekly
+- ≥ 1 design partner running PyCode weekly
 - Reproducible benchmark report from a single YAML across ≥ 3 providers
 - Runtime starts cleanly via `docker compose up` on a fresh Ubuntu 22.04 VM
 
@@ -279,4 +279,4 @@ If a deliverable slips two consecutive quarter reviews, it gets cut or rescoped 
 
 ## North Star (one paragraph)
 
-> CheetahClaws will be the open-source agent runtime that engineering and research teams trust to run on their CI, repos, and experiments — because every action it takes is gated by explicit permission, recorded in an auditable trace, and reproducible from a checkpoint. The industrial product is the secure, governed, deployable wrapper that customers buy after their engineers have already adopted the OSS runtime.
+> PyCode will be the open-source agent runtime that engineering and research teams trust to run on their CI, repos, and experiments — because every action it takes is gated by explicit permission, recorded in an auditable trace, and reproducible from a checkpoint. The industrial product is the secure, governed, deployable wrapper that customers buy after their engineers have already adopted the OSS runtime.

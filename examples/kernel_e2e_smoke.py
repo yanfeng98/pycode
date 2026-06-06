@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""kernel_e2e_smoke.py — end-to-end smoke for the cheetahclaws kernel.
+"""kernel_e2e_smoke.py — end-to-end smoke for the pycode kernel.
 
 Demonstrates the full chain wired together:
 

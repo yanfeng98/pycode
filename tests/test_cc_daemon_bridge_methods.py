@@ -55,9 +55,9 @@ class _BridgeMethodsBase(unittest.TestCase):
 
         self._saved_env = {
             k: os.environ.pop(k, None)
-            for k in ("CHEETAHCLAWS_ENABLE_F6",
-                      "CHEETAHCLAWS_ENABLE_F7",
-                      "CHEETAHCLAWS_ENABLE_F8")
+            for k in ("PYCODE_ENABLE_F6",
+                      "PYCODE_ENABLE_F7",
+                      "PYCODE_ENABLE_F8")
         }
         with bs._handles_lock:
             for h in list(bs._handles.values()):
@@ -150,10 +150,10 @@ class TestStartStopRoundTrip(_BridgeMethodsBase):
             "config": {"telegram_token": "t", "telegram_chat_id": 1},
         })
         self.assertIsNotNone(err)
-        self.assertIn("CHEETAHCLAWS_ENABLE_F6", err["message"])
+        self.assertIn("PYCODE_ENABLE_F6", err["message"])
 
     def test_start_list_stop_with_flag_on(self):
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         ev = threading.Event()
         with patch("bridges.telegram._tg_supervisor",
@@ -205,7 +205,7 @@ class TestSendOutbound(_BridgeMethodsBase):
 
     def test_send_with_running_bridge_calls_sender(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         ev = threading.Event()
         with patch("bridges.telegram._tg_supervisor",

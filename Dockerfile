@@ -1,10 +1,10 @@
-# CheetahClaws — server image (Web UI + bridges)
+# PyCode — server image (Web UI + bridges)
 #
 # Targets headless deployments: home server, cloud VM, container hosts.
 # Default CMD launches the web UI on 0.0.0.0:8080; configured Telegram /
 # WeChat / Slack bridges auto-start in the same process.
 #
-# Build:    docker build -t cheetahclaws:latest .
+# Build:    docker build -t pycode:latest .
 # Compose:  see docker-compose.yml
 
 FROM python:3.13-slim AS runtime
@@ -23,22 +23,22 @@ RUN apt-get update \
 # Non-root user. UID 1000 matches the typical first Linux user; override at
 # runtime with `--user "${UID}:${GID}"` when host UIDs differ so files
 # written into mounted /workspace remain owner-readable on the host.
-RUN useradd --create-home --uid 1000 --shell /bin/bash cheetah
+RUN useradd --create-home --uid 1000 --shell /bin/bash pycode
 
-WORKDIR /opt/cheetahclaws
-COPY --chown=cheetah:cheetah pyproject.toml requirements.txt ./
-COPY --chown=cheetah:cheetah . .
+WORKDIR /opt/pycode
+COPY --chown=pycode:pycode pyproject.toml requirements.txt ./
+COPY --chown=pycode:pycode . .
 
 # Install with the [web] extra so chat-UI deps (sqlalchemy, bcrypt, PyJWT)
 # are present. Use editable install so version metadata + entry point match
 # the source tree.
 RUN pip install --no-cache-dir -e '.[web]'
 
-USER cheetah
+USER pycode
 
 # Persist config, sessions, history. Mount this in compose to survive
 # container recreation.
-VOLUME ["/home/cheetah/.cheetahclaws"]
+VOLUME ["/home/pycode/.pycode"]
 
 # Workspace where the agent reads/writes files. Mount your project from
 # the host onto this path.
@@ -52,5 +52,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/api/config', timeout=3).status == 200 else 1)" \
   || exit 1
 
-ENTRYPOINT ["/usr/bin/tini", "--", "cheetahclaws"]
+ENTRYPOINT ["/usr/bin/tini", "--", "pycode"]
 CMD ["--web", "--host", "0.0.0.0", "--port", "8080"]

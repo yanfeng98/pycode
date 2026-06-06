@@ -1,6 +1,6 @@
 """Asciinema v2 cast: code review workflow.
 
-Scenario: ask CheetahClaws to find a performance bug in a Python script,
+Scenario: ask PyCode to find a performance bug in a Python script,
 switch to a local Ollama model, then apply the fix.
 
 Run: python3 gen_code_review.py > code_review.cast
@@ -16,7 +16,7 @@ HEADER = {
     "height": 28,
     "timestamp": 1747262400,
     "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"},
-    "title": "CheetahClaws — find a perf bug, switch to local Ollama, apply the fix",
+    "title": "PyCode — find a perf bug, switch to local Ollama, apply the fix",
     "idle_time_limit": 1.2,
 }
 
@@ -49,9 +49,9 @@ def type_string(s, base=0.04, jitter=0.02):
 # Scene 1 — launch
 out(0.0, f"{GREEN}~/projects/parser{RST} {CYAN}❯{RST} ")
 out(0.7, "")
-type_string("cheetahclaws")
+type_string("pycode")
 out(0.4, "\r\n")
-out(0.3, f"{DIM}[CheetahClaws v3.05.79 · claude-sonnet-4-6 · auto mode]{RST}\r\n")
+out(0.3, f"{DIM}[PyCode v3.05.79 · claude-sonnet-4-6 · auto mode]{RST}\r\n")
 out(0.2, f"{DIM}Type /help for commands, /model to switch, !cmd for shell, Ctrl+C to quit{RST}\r\n\r\n")
 out(0.2, f"{BOLD}{CYAN}[project] »{RST} ")
 

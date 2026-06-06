@@ -6,7 +6,7 @@ Implements the MCP Authorization spec:
   - Dynamic client registration (RFC 7591) — used when no client_id configured
   - Authorization code + PKCE (S256) flow
   - Token refresh
-  - Token persistence to ~/.cheetahclaws/mcp_oauth.json
+  - Token persistence to ~/.pycode/mcp_oauth.json
 
 Usage (from HttpTransport):
     from cc_mcp.oauth import OAuthSession
@@ -29,7 +29,7 @@ import webbrowser
 from pathlib import Path
 from typing import Optional
 
-_TOKEN_STORE = Path.home() / ".cheetahclaws" / "mcp_oauth.json"
+_TOKEN_STORE = Path.home() / ".pycode" / "mcp_oauth.json"
 
 
 # ── Token persistence ─────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ def _register_client(registration_endpoint: str, server_name: str, redirect_uri:
     """Register a new OAuth client and return the client_id."""
     import httpx
     payload = {
-        "client_name": f"cheetahclaws-{server_name}",
+        "client_name": f"pycode-{server_name}",
         "redirect_uris": [redirect_uri],
         "grant_types": ["authorization_code", "refresh_token"],
         "response_types": ["code"],

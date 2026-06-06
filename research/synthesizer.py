@@ -1,4 +1,4 @@
-"""Brief synthesizer — uses the active cheetahclaws model to distill results.
+"""Brief synthesizer — uses the active pycode model to distill results.
 
 Takes the top N ranked results, groups by domain, and asks the model for:
   1. A 3-5 bullet TL;DR

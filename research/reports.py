@@ -1,4 +1,4 @@
-"""Saved research reports — auto-save to `~/.cheetahclaws/research_reports/`,
+"""Saved research reports — auto-save to `~/.pycode/research_reports/`,
 list/load/export from there.
 
 Each run writes two sibling files:
@@ -24,7 +24,7 @@ from .types import Brief
 
 
 def _reports_dir() -> Path:
-    d = Path.home() / ".cheetahclaws" / "research_reports"
+    d = Path.home() / ".pycode" / "research_reports"
     d.mkdir(parents=True, exist_ok=True)
     return d
 

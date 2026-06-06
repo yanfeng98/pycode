@@ -18,7 +18,7 @@ from typing import Iterator
 from .base import BrokerBackend, OrderResult, Position, AccountSummary
 
 
-_DEFAULT_DB = Path.home() / ".cheetahclaws" / "trading" / "managed_portfolios.db"
+_DEFAULT_DB = Path.home() / ".pycode" / "trading" / "managed_portfolios.db"
 _LOCK = threading.Lock()
 
 

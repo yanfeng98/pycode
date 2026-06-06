@@ -1,4 +1,4 @@
-"""Tool plugin registry for cheetahclaws.
+"""Tool plugin registry for pycode.
 
 Provides a central registry for tool definitions, lookup, schema export,
 dispatch with output truncation, and result caching for read-only tools.

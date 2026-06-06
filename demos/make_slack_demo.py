@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws Slack Bridge.
+Generate animated GIF demo of pycode Slack Bridge.
 Shows: auto-start → status → incoming message → tool call →
        in-place reply update → /cost passthrough → /stop from Slack
 """
@@ -103,8 +103,8 @@ def draw_slack(img, messages):
 
     # Channel name
     d.text((main_x + 12, py + 8), "#", font=FONT_B, fill=(30, 30, 30))
-    d.text((main_x + 24, py + 8), "cheetahclaws", font=FONT_B, fill=(30, 30, 30))
-    d.text((main_x + 12, py + 26), "cheetahclaws bot channel", font=FONT_XS, fill=(100, 100, 100))
+    d.text((main_x + 24, py + 8), "pycode", font=FONT_B, fill=(30, 30, 30))
+    d.text((main_x + 12, py + 26), "pycode bot channel", font=FONT_XS, fill=(100, 100, 100))
 
     # Messages area
     msg_y = py + header_h + 8
@@ -156,7 +156,7 @@ def draw_slack(img, messages):
     d.line([(main_x, input_y - 1), (px + pw, input_y - 1)], fill=(221, 221, 221), width=1)
     d.rounded_rectangle([main_x + 10, input_y + 4, px + pw - 10, py + ph - 8],
                          radius=6, fill=(255, 255, 255), outline=(221, 221, 221))
-    d.text((main_x + 20, input_y + 12), "Message #cheetahclaws", font=FONT_SM, fill=(180, 180, 180))
+    d.text((main_x + 20, input_y + 12), "Message #pycode", font=FONT_SM, fill=(180, 180, 180))
 
     # Divider between terminal and Slack panel
     d.line([(PHONE_X - 12, PHONE_Y), (PHONE_X - 12, PHONE_Y + PHONE_H)],
@@ -184,7 +184,7 @@ def draw_frame(lines_segments, slack_messages=None):
 SL_COLOR = (100, 180, 230)  # terminal Slack accent
 
 BANNER_SL = [
-    [seg("╭─ CheetahClaws ─────────────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode ─────────────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-opus-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW, True),
      seg("  flags: [", SUBTEXT), seg("slack", SL_COLOR, True), seg("]", SUBTEXT)],
@@ -195,7 +195,7 @@ BANNER_SL = [
 
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
-    return [seg("[cheetahclaws] ", SUBTEXT), seg("» ", CYAN, True), seg(text + cur, TEXT)]
+    return [seg("[pycode] ", SUBTEXT), seg("» ", CYAN, True), seg(text + cur, TEXT)]
 
 def ok_line(t):
     return [seg("  ✓ ", GREEN, True), seg(t, TEXT)]
@@ -231,7 +231,7 @@ def sl_sent(preview):
 
 SPINNER = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]
 
-BOT_NAME  = "cheetahclaws"
+BOT_NAME  = "pycode"
 USER_NAME = "alex"
 
 
@@ -274,7 +274,7 @@ def build_scenes():
 
     # Bot posts online notification
     slack_init = [
-        (BOT_NAME, "🟢 cheetahclaws is online. Send me a message and I'll process it.", True, False),
+        (BOT_NAME, "🟢 pycode is online. Send me a message and I'll process it.", True, False),
     ]
     add(base + [prompt_line(cursor=True)], 800, slack=slack_init)
 
@@ -320,7 +320,7 @@ def build_scenes():
     resp1_lines = [
         "Here are the files in this project:",
         "",
-        "  cheetahclaws.py   — Main REPL + slash commands",
+        "  pycode.py   — Main REPL + slash commands",
         "  agent.py          — Core agent loop",
         "  tools.py          — Built-in tools (Read/Write/Edit/Bash…)",
         "  providers.py      — API provider abstraction",
@@ -349,7 +349,7 @@ def build_scenes():
 
     # ── 4: Placeholder updated with real response ─────────────────────────
     slack_r1 = slack_q1 + [
-        (BOT_NAME, "Here are the files: cheetahclaws.py, agent.py, tools.py, providers.py, config.py …", True, False),
+        (BOT_NAME, "Here are the files: pycode.py, agent.py, tools.py, providers.py, config.py …", True, False),
     ]
 
     after_r1 = sl_base + [
@@ -428,9 +428,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
     ], 700, slack=slack_think3)
 
@@ -448,9 +448,9 @@ def build_scenes():
             None,
             claude_header(),
             tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-            tool_ok("Found in cheetahclaws.py:480"),
+            tool_ok("Found in pycode.py:480"),
             None,
-            tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+            tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
             tool_ok("71 lines read"),
             None,
             [seg("│ ", SUBTEXT)],
@@ -466,9 +466,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
         None,
         [seg("│ ", SUBTEXT)],
@@ -482,16 +482,16 @@ def build_scenes():
 
     # ── 7: /stop from Slack ───────────────────────────────────────────────
     slack_stop    = slack_r3 + [(USER_NAME, "/stop", False, False)]
-    slack_stopped = slack_stop + [(BOT_NAME, "🔴 cheetahclaws bridge stopped.", True, False)]
+    slack_stopped = slack_stop + [(BOT_NAME, "🔴 pycode bridge stopped.", True, False)]
 
     stop_base = q3_base + [
         [seg("  ✓ ", GREEN), seg("placeholder posted to Slack", SUBTEXT)],
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
         None,
         [seg("│ ", SUBTEXT)],

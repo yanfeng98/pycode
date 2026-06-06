@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws WeChat Bridge.
+Generate animated GIF demo of pycode WeChat Bridge.
 Shows: auto-start → QR login → incoming Chinese message → tool call →
        response → slash command passthrough → /stop from WeChat
 """
@@ -84,7 +84,7 @@ def draw_phone(img, chat_messages):
     d.text((av_x + 4, av_y + 2), "🤖", font=FONT_SM, fill=(255, 255, 255))
 
     # Contact name
-    d.text((px + 52, py + 10), "CheetahClaws Bot", font=FONT_B, fill=title_color)
+    d.text((px + 52, py + 10), "PyCode Bot", font=FONT_B, fill=title_color)
     d.text((px + 52, py + 30), "WeixinClawBot", font=FONT_SM, fill=(120, 120, 120))
 
     # Thin separator under header
@@ -171,7 +171,7 @@ def draw_frame(lines_segments, chat_messages=None):
 WX_COLOR = (100, 220, 120)   # terminal WeChat green accent
 
 BANNER_WX = [
-    [seg("╭─ CheetahClaws ─────────────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode ─────────────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-opus-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW, True),
      seg("  flags: [", SUBTEXT), seg("wechat", WX_COLOR, True), seg("]", SUBTEXT)],
@@ -182,7 +182,7 @@ BANNER_WX = [
 
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
-    return [seg("[cheetahclaws] ", SUBTEXT), seg("» ", CYAN, True), seg(text + cur, TEXT)]
+    return [seg("[pycode] ", SUBTEXT), seg("» ", CYAN, True), seg(text + cur, TEXT)]
 
 def ok_line(t):
     return [seg("  ✓ ", GREEN, True), seg(t, TEXT)]
@@ -257,7 +257,7 @@ def build_scenes():
 
     # Phone shows bot ready
     phone_init = [
-        ("bot", "CheetahClaws is ready. Send me a message!", WX_COLOR),
+        ("bot", "PyCode is ready. Send me a message!", WX_COLOR),
     ]
     add(base + [prompt_line(cursor=True)], 800, chat=phone_init)
 
@@ -302,7 +302,7 @@ def build_scenes():
     resp1_lines = [
         "Here are the files in this project:",
         "",
-        "  cheetahclaws.py   — Main REPL + slash commands",
+        "  pycode.py   — Main REPL + slash commands",
         "  agent.py          — Core agent loop",
         "  tools.py          — Built-in tools (Read/Write/Edit/Bash…)",
         "  providers.py      — API provider abstraction",
@@ -329,7 +329,7 @@ def build_scenes():
     add(tool_done + [text_line(l, 2) if l else None for l in resp1_lines] + [claude_sep()], 500, chat=phone_q1)
 
     # ── 4: Response sent ─────────────────────────────────────────────────
-    phone_r1 = phone_q1 + [("bot", "Here are the files: cheetahclaws.py, agent.py, tools.py, providers.py …", (30, 30, 30))]
+    phone_r1 = phone_q1 + [("bot", "Here are the files: pycode.py, agent.py, tools.py, providers.py …", (30, 30, 30))]
 
     after_r1 = wx_base + [
         [seg("  ✓ ", GREEN), seg("typing indicator sent", SUBTEXT)],
@@ -395,9 +395,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
     ], 700, chat=phone_q3)
 
@@ -415,9 +415,9 @@ def build_scenes():
             None,
             claude_header(),
             tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-            tool_ok("Found in cheetahclaws.py:480"),
+            tool_ok("Found in pycode.py:480"),
             None,
-            tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+            tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
             tool_ok("71 lines read"),
             None,
             [seg("│ ", SUBTEXT)],
@@ -431,9 +431,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
         None,
         [seg("│ ", SUBTEXT)],
@@ -454,9 +454,9 @@ def build_scenes():
         None,
         claude_header(),
         tool_line("⚙", "Grep", "def cmd_brainstorm", MAUVE),
-        tool_ok("Found in cheetahclaws.py:480"),
+        tool_ok("Found in pycode.py:480"),
         None,
-        tool_line("⚙", "Read", "cheetahclaws.py:480-550", CYAN),
+        tool_line("⚙", "Read", "pycode.py:480-550", CYAN),
         tool_ok("71 lines read"),
         None,
         [seg("│ ", SUBTEXT)],

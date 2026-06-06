@@ -46,7 +46,7 @@ def tmp_file():
     fd, path = tempfile.mkstemp(prefix="tgtest_", suffix=".txt")
     try:
         with os.fdopen(fd, "wb") as fh:
-            fh.write(b"hello cheetahclaws\n")
+            fh.write(b"hello pycode\n")
         yield path
     finally:
         try:
@@ -125,7 +125,7 @@ class TestTgSendDocument:
         fname = os.path.basename(tmp_file).encode()
         assert b'name="document"; filename="' + fname + b'"' in body
         # File contents are embedded
-        assert b"hello cheetahclaws" in body
+        assert b"hello pycode" in body
 
     def test_missing_file_returns_false_and_warns(self):
         with patch.object(tg, "_tg_send") as warn:
@@ -682,7 +682,7 @@ class TestSlashRunnerCapturesPrintOutput:
         """A simple command that prints a multi-line menu (think /help)
         must surface that menu in the chat — not the bare ack string."""
         def fake_help_cmd(text):
-            print("CheetahClaws Commands:")
+            print("PyCode Commands:")
             print("  /help    show help")
             print("  /status  show status")
             return "simple"
@@ -693,7 +693,7 @@ class TestSlashRunnerCapturesPrintOutput:
 
         assert len(sent) == 1
         body = sent[0]
-        assert "CheetahClaws Commands" in body
+        assert "PyCode Commands" in body
         assert "/help" in body
         assert "/status" in body
         # The bare ack string must NOT replace the real menu.

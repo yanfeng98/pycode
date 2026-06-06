@@ -1,4 +1,4 @@
-"""Tests for cheetahclaws._make_bridge_slash_handler.
+"""Tests for pycode._make_bridge_slash_handler.
 
 Issue #84 follow-up: in headless deployments (Docker, --web), bridges'
 slash-command path silently dropped /<cmd> messages because
@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import cheetahclaws
+import pycode
 
 
 def _make_handler(handle_slash_return, run_query_calls):
@@ -25,9 +25,9 @@ def _make_handler(handle_slash_return, run_query_calls):
     state = object()        # opaque — only handle_slash inspects it
     config = {}             # opaque — same
     run_query = lambda prompt, *a, **kw: run_query_calls.append(prompt)
-    with patch.object(cheetahclaws, "handle_slash",
+    with patch.object(pycode, "handle_slash",
                       return_value=handle_slash_return):
-        return cheetahclaws._make_bridge_slash_handler(state, config,
+        return pycode._make_bridge_slash_handler(state, config,
                                                         run_query), state, config
 
 
@@ -36,8 +36,8 @@ def test_simple_command_returns_simple_and_does_not_invoke_run_query():
     (typically True/False); the handler should report "simple" and not
     spawn a background agent run."""
     calls: list[str] = []
-    with patch.object(cheetahclaws, "handle_slash", return_value=True):
-        handler = cheetahclaws._make_bridge_slash_handler(
+    with patch.object(pycode, "handle_slash", return_value=True):
+        handler = pycode._make_bridge_slash_handler(
             object(), {}, lambda p, *a, **kw: calls.append(p)
         )
         assert handler("/status") == "simple"
@@ -53,8 +53,8 @@ def test_brainstorm_sentinel_dispatches_payload_through_run_query(tmp_path):
     out_file = tmp_path / "brainstorm" / "out.md"
     sentinel = ("__brainstorm__", "PAYLOAD_GOES_HERE", str(out_file))
     calls: list[str] = []
-    with patch.object(cheetahclaws, "handle_slash", return_value=sentinel):
-        handler = cheetahclaws._make_bridge_slash_handler(
+    with patch.object(pycode, "handle_slash", return_value=sentinel):
+        handler = pycode._make_bridge_slash_handler(
             object(), {}, lambda p, *a, **kw: calls.append(p)
         )
         assert handler("/brainstorm") == "query"
@@ -77,8 +77,8 @@ def test_worker_sentinel_dispatches_one_run_query_per_task():
     ]
     sentinel = ("__worker__", tasks)
     calls: list[str] = []
-    with patch.object(cheetahclaws, "handle_slash", return_value=sentinel):
-        handler = cheetahclaws._make_bridge_slash_handler(
+    with patch.object(pycode, "handle_slash", return_value=sentinel):
+        handler = pycode._make_bridge_slash_handler(
             object(), {}, lambda p, *a, **kw: calls.append(p)
         )
         assert handler("/worker") == "query"
@@ -92,8 +92,8 @@ def test_unknown_sentinel_still_returns_query_without_running():
     here; until then they're a no-op rather than a hard error."""
     sentinel = ("__some_future_sentinel__", "ignored")
     calls: list[str] = []
-    with patch.object(cheetahclaws, "handle_slash", return_value=sentinel):
-        handler = cheetahclaws._make_bridge_slash_handler(
+    with patch.object(pycode, "handle_slash", return_value=sentinel):
+        handler = pycode._make_bridge_slash_handler(
             object(), {}, lambda p, *a, **kw: calls.append(p)
         )
         assert handler("/whatever") == "query"
@@ -112,7 +112,7 @@ def test_handler_is_assigned_in_headless_bridges_bootstrap(monkeypatch):
         "telegram_chat_id": 12345,
     }
     # Stub the actual bridge thread spawn so we don't make HTTP calls.
-    import cheetahclaws as cc
+    import pycode as cc
     monkeypatch.setattr(cc._btg, "_telegram_thread", None)
 
     class _NoopThread:
@@ -134,7 +134,7 @@ def test_headless_bootstrap_wires_tg_send(monkeypatch):
     session_ctx.tg_send is non-None.  Headless bootstrap previously left it
     unset, so inline-keyboard approval prompts never reached the user — the
     bridge silently fell through to terminal input()."""
-    import runtime, cheetahclaws as cc
+    import runtime, pycode as cc
     sid = "test-headless-tgsend-wire"
     config = {
         "_session_id": sid,
@@ -161,7 +161,7 @@ def test_headless_run_query_handles_permission_request(monkeypatch):
     PermissionRequest event for sensitive tools.  Pre-fix that event was
     dropped, leaving event.granted=False, so every approval-required tool
     silently denied without ever asking the user."""
-    import runtime, cheetahclaws as cc
+    import runtime, pycode as cc
     from agent import PermissionRequest
 
     sid = "test-headless-permission-event"
@@ -206,7 +206,7 @@ def test_headless_run_query_promotes_telegram_incoming(monkeypatch):
     must promote that to in_telegram_turn so _is_in_tg_turn() returns True
     while ask_input_interactive routes the prompt — otherwise prompts fall
     through to terminal input()."""
-    import runtime, cheetahclaws as cc
+    import runtime, pycode as cc
 
     sid = "test-headless-turn-promotion"
     config = {

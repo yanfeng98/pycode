@@ -47,9 +47,9 @@ class _BridgeTestBase(unittest.TestCase):
         # Save + clear env flags.
         self._saved_env = {
             k: os.environ.pop(k, None)
-            for k in ("CHEETAHCLAWS_ENABLE_F6",
-                      "CHEETAHCLAWS_ENABLE_F7",
-                      "CHEETAHCLAWS_ENABLE_F8")
+            for k in ("PYCODE_ENABLE_F6",
+                      "PYCODE_ENABLE_F7",
+                      "PYCODE_ENABLE_F8")
         }
 
         # Wipe live handles.
@@ -110,7 +110,7 @@ class TestFeatureFlag(_BridgeTestBase):
 
     def test_enabled_via_env(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
         self.assertTrue(bs.enabled("telegram"))
         # F-7 and F-8 stay off — flags are per-bridge.
         self.assertFalse(bs.enabled("slack"))
@@ -119,10 +119,10 @@ class TestFeatureFlag(_BridgeTestBase):
     def test_truthy_values(self):
         from cc_daemon import bridge_supervisor as bs
         for v in ("1", "true", "TRUE", "yes", "on", " 1 "):
-            os.environ["CHEETAHCLAWS_ENABLE_F6"] = v
+            os.environ["PYCODE_ENABLE_F6"] = v
             self.assertTrue(bs.enabled("telegram"), v)
         for v in ("0", "false", "no", "", "junk"):
-            os.environ["CHEETAHCLAWS_ENABLE_F6"] = v
+            os.environ["PYCODE_ENABLE_F6"] = v
             self.assertFalse(bs.enabled("telegram"), v)
 
 
@@ -142,7 +142,7 @@ class TestLifecycle(_BridgeTestBase):
         from cc_daemon import bridge_supervisor as bs
         with self.assertRaises(RuntimeError) as ctx:
             bs.start("telegram", {"telegram_token": "x", "telegram_chat_id": 1})
-        self.assertIn("CHEETAHCLAWS_ENABLE_F6", str(ctx.exception))
+        self.assertIn("PYCODE_ENABLE_F6", str(ctx.exception))
 
     def test_start_unsupported_kind_raises(self):
         from cc_daemon import bridge_supervisor as bs
@@ -151,14 +151,14 @@ class TestLifecycle(_BridgeTestBase):
 
     def test_start_slack_without_telegram_flag_raises(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F7"] = "1"
+        os.environ["PYCODE_ENABLE_F7"] = "1"
         with self.assertRaises(RuntimeError) as ctx:
             bs.start("slack", {"slack_token": "x", "slack_channel": "c"})
         self.assertIn("depends on F-6", str(ctx.exception))
 
     def test_start_and_stop_telegram(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         # Patch the inner supervisor so we don't actually hit Telegram.
         with patch("bridges.telegram._tg_supervisor",
@@ -188,7 +188,7 @@ class TestLifecycle(_BridgeTestBase):
 
     def test_double_start_raises(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         ev = threading.Event()
         with patch("bridges.telegram._tg_supervisor",
@@ -219,7 +219,7 @@ class TestNotify(_BridgeTestBase):
 
     def test_notify_calls_sender(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         sent: list[tuple[dict, str]] = []
         def fake_sender(cfg, text):
@@ -244,8 +244,8 @@ class TestNotify(_BridgeTestBase):
 
     def test_notify_broadcast_delivers_to_every_live_bridge(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
-        os.environ["CHEETAHCLAWS_ENABLE_F7"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F7"] = "1"
 
         seen: dict[str, list[str]] = {"telegram": [], "slack": []}
 
@@ -279,7 +279,7 @@ class TestSqlitePersistence(_BridgeTestBase):
 
     def test_list_persisted_after_stop(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         ev = threading.Event()
         with patch("bridges.telegram._tg_supervisor",
@@ -367,7 +367,7 @@ class TestSlackWorker(_BridgeTestBase):
 
     def test_slack_requires_f6_flag_too(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F7"] = "1"
+        os.environ["PYCODE_ENABLE_F7"] = "1"
         # No F-6 flag → bridge_supervisor.start refuses.
         with self.assertRaises(RuntimeError) as ctx:
             bs.start("slack", {"slack_token": "x", "slack_channel": "c"})
@@ -375,8 +375,8 @@ class TestSlackWorker(_BridgeTestBase):
 
     def test_slack_worker_calls_slack_supervisor(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
-        os.environ["CHEETAHCLAWS_ENABLE_F7"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F7"] = "1"
 
         called: list[tuple] = []
         ev = threading.Event()
@@ -396,8 +396,8 @@ class TestSlackWorker(_BridgeTestBase):
 
     def test_slack_sender_dispatches_outbound(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
-        os.environ["CHEETAHCLAWS_ENABLE_F7"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F7"] = "1"
 
         sent: list[tuple] = []
         ev = threading.Event()
@@ -426,15 +426,15 @@ class TestWechatWorker(_BridgeTestBase):
 
     def test_wechat_requires_f6_flag_too(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F8"] = "1"
+        os.environ["PYCODE_ENABLE_F8"] = "1"
         with self.assertRaises(RuntimeError) as ctx:
             bs.start("wechat", {"wechat_token": "x", "wechat_base_url": "u"})
         self.assertIn("F-6", str(ctx.exception))
 
     def test_wechat_worker_calls_wx_supervisor(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
-        os.environ["CHEETAHCLAWS_ENABLE_F8"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F8"] = "1"
 
         called: list[tuple] = []
         ev = threading.Event()
@@ -458,8 +458,8 @@ class TestWechatWorker(_BridgeTestBase):
         exits cleanly with a clear last_error rather than blowing up
         deep inside _wx_supervisor's first HTTP call."""
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
-        os.environ["CHEETAHCLAWS_ENABLE_F8"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F8"] = "1"
 
         # Don't patch _wx_supervisor — the worker should never reach it.
         handle = bs.start("wechat", {})    # both fields missing
@@ -474,8 +474,8 @@ class TestWechatWorker(_BridgeTestBase):
 
     def test_wechat_sender_dispatches_outbound(self):
         from cc_daemon import bridge_supervisor as bs
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
-        os.environ["CHEETAHCLAWS_ENABLE_F8"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F8"] = "1"
 
         sent: list = []
         ev = threading.Event()

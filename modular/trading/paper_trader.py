@@ -12,7 +12,7 @@ Schema:
   paper_trade_snapshots     — periodic price snapshots for open trades
   trading_watchlist         — symbols the user wants /trading scan to cover
 
-All paths and DB are scoped to ~/.cheetahclaws/trading/paper_trades.db.
+All paths and DB are scoped to ~/.pycode/trading/paper_trades.db.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-_DB_PATH = Path.home() / ".cheetahclaws" / "trading" / "paper_trades.db"
+_DB_PATH = Path.home() / ".pycode" / "trading" / "paper_trades.db"
 _DB_LOCK = threading.Lock()
 
 

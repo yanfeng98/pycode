@@ -1,5 +1,5 @@
 """
-runtime.py — Live session context for CheetahClaws.
+runtime.py — Live session context for PyCode.
 
 Each REPL session (and each bridge connection) gets its own RuntimeContext
 keyed by session_id.  This prevents concurrent sessions from corrupting

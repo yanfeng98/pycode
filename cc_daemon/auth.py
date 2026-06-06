@@ -4,7 +4,7 @@ Defaults per RFC §3 (with the audit-log default-on flip we asked for in the rev
 
 - Unix socket: peer-credential check; same-UID accepted, different-UID rejected.
   Uses SO_PEERCRED on Linux and getpeereid() on macOS/BSD.
-- TCP: 32-byte random token at ~/.cheetahclaws/daemon_token (mode 0600).
+- TCP: 32-byte random token at ~/.pycode/daemon_token (mode 0600).
 - Audit log default ON for both transports.
 - Brute-force throttle: 3 fails / 10s from one peer → 60s lockout.
 """

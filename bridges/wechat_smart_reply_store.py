@@ -1,7 +1,7 @@
 """WeChat smart-reply persistent storage.
 
 Three concerns share a single SQLite file at
-``~/.cheetahclaws/wx_smart_reply.db`` so a bridge restart doesn't drop
+``~/.pycode/wx_smart_reply.db`` so a bridge restart doesn't drop
 panels mid-conversation, and so style mimicking has past replies to
 draw from after a daemon recycle:
 
@@ -11,7 +11,7 @@ draw from after a daemon recycle:
 - ``wx_reply_history``    — every confirmed send; smart-reply prompt
                              reads the last N rows as style examples.
 - ``wx_contacts``         — per-uid relationship/notes; mirrored from
-                             ``~/.cheetahclaws/wx_contacts.json`` (JSON
+                             ``~/.pycode/wx_contacts.json`` (JSON
                              stays the source of truth because it's
                              user-edited; the SQLite mirror is just a
                              cache for fast lookup).
@@ -36,8 +36,8 @@ from typing import Iterable, Iterator, Optional
 
 # ── Constants ──────────────────────────────────────────────────────────────
 
-DEFAULT_DB_PATH = Path.home() / ".cheetahclaws" / "wx_smart_reply.db"
-DEFAULT_CONTACTS_JSON = Path.home() / ".cheetahclaws" / "wx_contacts.json"
+DEFAULT_DB_PATH = Path.home() / ".pycode" / "wx_smart_reply.db"
+DEFAULT_CONTACTS_JSON = Path.home() / ".pycode" / "wx_contacts.json"
 DEFAULT_TIMEOUT_S = 5 * 60
 JANITOR_TICK_S = 30.0
 HISTORY_KEEP_DAYS = 30  # rows older than this are pruned by the janitor
@@ -493,7 +493,7 @@ def _row_to_panel(row) -> PendingPanel:
 
 
 class ContactsStore:
-    """Thin loader/saver for ``~/.cheetahclaws/wx_contacts.json``.
+    """Thin loader/saver for ``~/.pycode/wx_contacts.json``.
 
     Schema::
 

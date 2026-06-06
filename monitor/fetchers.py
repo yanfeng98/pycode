@@ -26,7 +26,7 @@ from typing import Any
 
 def _get(url: str, headers: dict | None = None, timeout: int = 15) -> str | None:
     req = urllib.request.Request(url, headers={
-        "User-Agent": "CheetahClaws-Monitor/1.0",
+        "User-Agent": "PyCode-Monitor/1.0",
         **(headers or {}),
     })
     try:

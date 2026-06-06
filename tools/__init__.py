@@ -1,4 +1,4 @@
-"""Tool definitions and implementations for CheetahClaws.
+"""Tool definitions and implementations for PyCode.
 
 Implementations live in focused sub-modules:
   tools.security     _check_path_allowed, _is_safe_bash
@@ -254,7 +254,7 @@ TOOL_SCHEMAS = [
                 "auto_save": {
                     "type": "boolean",
                     "description": (
-                        "Auto-save to ~/.cheetahclaws/research_reports/ "
+                        "Auto-save to ~/.pycode/research_reports/ "
                         "(default true)."
                     ),
                 },

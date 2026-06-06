@@ -16,7 +16,7 @@ HEADER = {
     "height": 32,
     "timestamp": 1747262400,
     "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"},
-    "title": "CheetahClaws /brainstorm — 5 personas debate event sourcing",
+    "title": "PyCode /brainstorm — 5 personas debate event sourcing",
     "idle_time_limit": 1.5,
 }
 
@@ -48,8 +48,8 @@ def type_string(s, base=0.04, jitter=0.02):
 
 
 # Scene 1 — launch + /brainstorm
-out(0.0, f"{GREEN}~/projects/checkout{RST} {CYAN}❯{RST} cheetahclaws\r\n")
-out(0.3, f"{DIM}[CheetahClaws v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
+out(0.0, f"{GREEN}~/projects/checkout{RST} {CYAN}❯{RST} pycode\r\n")
+out(0.3, f"{DIM}[PyCode v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
 out(0.2, f"{BOLD}{CYAN}[checkout] »{RST} ")
 out(0.5, "")
 type_string("/brainstorm \"Should we migrate the order service from CRUD to event sourcing?\"")

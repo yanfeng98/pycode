@@ -1,5 +1,5 @@
 """
-Example plugin tools for CheetahClaws.
+Example plugin tools for PyCode.
 
 This file demonstrates how to define tools that the AI can call.
 Export your tools as a TOOL_DEFS list — do NOT call register_tool() directly.

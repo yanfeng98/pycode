@@ -4,7 +4,7 @@ Three sources that LLM analysis can actually add value on (vs. classical
 quant factors which are already priced in):
 
   - insider:  SEC EDGAR Form 4 filings (officer/director buys & sells)
-  - sentiment: LLM-scored news headlines (uses cheetahclaws's existing model)
+  - sentiment: LLM-scored news headlines (uses pycode's existing model)
   - trends:   Google Trends search volume (requires `pytrends`)
 
 All three soft-fail to empty strings if the data isn't available, so the

@@ -54,7 +54,7 @@ jobs:
 
           # Top-level modules from pyproject.toml py-modules
           modules = [
-              'cheetahclaws', 'agent', 'agent_runner', 'bootstrap',
+              'pycode', 'agent', 'agent_runner', 'bootstrap',
               'circuit_breaker', 'cloudsave', 'compaction', 'cc_config',
               'context', 'health', 'jobs', 'logging_utils', 'memory',
               'providers', 'quota', 'runtime', 'skills', 'subagent',
@@ -88,4 +88,4 @@ jobs:
           "
 
       - name: Smoke test — CLI entry point exists
-        run: python -c "from cheetahclaws import main; print('Entry point OK')"
+        run: python -c "from pycode import main; print('Entry point OK')"

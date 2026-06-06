@@ -99,7 +99,7 @@ def fetch_sp500_dynamic() -> list[str]:
         import re
         url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
         req = urllib.request.Request(
-            url, headers={"User-Agent": "cheetahclaws-trading/3.0"},
+            url, headers={"User-Agent": "pycode-trading/3.0"},
         )
         with urllib.request.urlopen(req, timeout=10) as r:
             html = r.read().decode("utf-8", errors="ignore")

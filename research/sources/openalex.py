@@ -1,7 +1,7 @@
 """OpenAlex — fully open academic graph, 250M+ works.
 
 Free up to 100k req/day (polite pool). Provides a `mailto=` polite
-identifier via OPENALEX_EMAIL or the cheetahclaws config `research_email`;
+identifier via OPENALEX_EMAIL or the pycode config `research_email`;
 this grants higher rate limits. No hard auth required.
 """
 from __future__ import annotations

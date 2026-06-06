@@ -1,4 +1,4 @@
-"""daemon — reference scaffolding for the cheetahclaws daemon foundation.
+"""daemon — reference scaffolding for the pycode daemon foundation.
 
 Validates the contract proposed in docs/RFC/0001-daemon-design-note.md.
 This is a SPIKE: it covers transport, auth, originator routing, and event

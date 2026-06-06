@@ -1,1 +1,1 @@
-"""Slash command modules for CheetahClaws."""
+"""Slash command modules for PyCode."""

@@ -1,7 +1,7 @@
 # Architecture Guide
 
 This document is for contributors who want to understand, modify, or
-extend CheetahClaws — the *why* and *how* behind the code, not the PR
+extend PyCode — the *why* and *how* behind the code, not the PR
 checklist.  For the quick-start flow, pointers on where to add things,
 and the PR checklist, see [CONTRIBUTING.md](../CONTRIBUTING.md).  For
 the user-facing surface (CLI flags, slash commands, provider setup),
@@ -11,7 +11,7 @@ see [README.md](../README.md).
 
 ## Overview
 
-CheetahClaws is a Python-native terminal AI coding assistant that
+PyCode is a Python-native terminal AI coding assistant that
 speaks to any LLM provider (Anthropic, OpenAI, Gemini, Kimi, Qwen,
 Zhipu, DeepSeek, MiniMax, Ollama, LM Studio, any OpenAI-compatible
 endpoint).  It started as a ~900-line single-file script and has grown
@@ -26,7 +26,7 @@ The high-level shape:
                             │
                             ▼
    ┌───────────────────────────────────────────────────────────┐
-   │  cheetahclaws.py  —  REPL, slash dispatch, permission UI   │
+   │  pycode.py  —  REPL, slash dispatch, permission UI   │
    └────┬──────────────────────────────┬───────────────────────┘
         │                              │
         │    ┌─────────────────────────┴──────────────┐
@@ -61,7 +61,7 @@ The high-level shape:
 ```
 
 **Dependencies flow downward**: nothing in `tools/` or feature packages
-imports from `cheetahclaws.py` or `agent.py` at module load time.
+imports from `pycode.py` or `agent.py` at module load time.
 Circular references are broken with lazy imports inside functions
 (`multi_agent.subagent` calls back into `agent` this way).
 
@@ -78,7 +78,7 @@ responsibility.
 
 | Module | Role |
 |---|---|
-| [`cheetahclaws.py`](../cheetahclaws.py) | REPL shell, `COMMANDS` dispatch, permission prompt UI, streaming render, entry point (`main()`) |
+| [`pycode.py`](../pycode.py) | REPL shell, `COMMANDS` dispatch, permission prompt UI, streaming render, entry point (`main()`) |
 | [`bootstrap.py`](../bootstrap.py) | Explicit startup sequence — configure logging, import `tools` (triggers registrations), optionally start health HTTP server.  Idempotent. |
 | [`agent.py`](../agent.py) | Multi-turn agent loop (generator yielding typed events), permission gating, parallel tool execution, retry-with-backoff on API errors |
 | [`agent_runner.py`](../agent_runner.py) | Autonomous loop runner — runs a Markdown agent template (`agent_templates/*.md`) in a background thread, with iteration logging and bridge notifications |
@@ -87,7 +87,7 @@ responsibility.
 | [`providers.py`](../providers.py) | Provider registry (`PROVIDERS` dict), auto-detection by model prefix, streaming adapters for Anthropic native + OpenAI-compatible APIs |
 | [`tool_registry.py`](../tool_registry.py) | Central `ToolDef` registry, dispatch, output truncation |
 | [`runtime.py`](../runtime.py) | `RuntimeContext` — per-session live state (callbacks, bridge flags, plan-mode state, streaming hooks). **Not** persisted. |
-| [`cc_config.py`](../cc_config.py) | Defaults + `~/.cheetahclaws/config.json` load/save.  Strips `_`-prefixed keys on save. |
+| [`cc_config.py`](../cc_config.py) | Defaults + `~/.pycode/config.json` load/save.  Strips `_`-prefixed keys on save. |
 | [`quota.py`](../quota.py) | Per-session and daily token/cost budgets.  Checked before every API call. |
 | [`circuit_breaker.py`](../circuit_breaker.py) | Trip-open-after-N-failures protection around provider calls. |
 | [`error_classifier.py`](../error_classifier.py) | Categorize API errors (rate limit / context-too-long / network / transient) so `agent.run()` can pick the right retry strategy. |
@@ -516,11 +516,11 @@ to keep the interactive CLI quiet.
 
 `session_store.py` writes on `/exit`, `/quit`, Ctrl+C, and Ctrl+D:
 
-- `~/.cheetahclaws/sessions/daily/YYYY-MM-DD/session_<ts>.json`
+- `~/.pycode/sessions/daily/YYYY-MM-DD/session_<ts>.json`
   (capped by `session_daily_limit`).
-- `~/.cheetahclaws/sessions/history.json` (capped by
+- `~/.pycode/sessions/history.json` (capped by
   `session_history_limit`).
-- `~/.cheetahclaws/sessions/mr_sessions/session_latest.json` for
+- `~/.pycode/sessions/mr_sessions/session_latest.json` for
   `/resume`.
 
 The web UI (`web/`) uses its own SQLite store (`web/db.py`) for
@@ -530,7 +530,7 @@ multi-user history; the two don't share state today.
 
 ## REPL and slash commands
 
-`cheetahclaws.py::main()` runs the CLI, parses args, calls
+`pycode.py::main()` runs the CLI, parses args, calls
 `bootstrap(config)`, then enters `repl(config, initial_prompt)`.
 
 The REPL loop:
@@ -545,7 +545,7 @@ The REPL loop:
    stuck I/O).
 
 `COMMANDS` is a flat `{name: callable}` dict built in
-`cheetahclaws.py` by importing every `cmd_*` from `commands/*.py`.
+`pycode.py` by importing every `cmd_*` from `commands/*.py`.
 Plugins and `modular/` modules can contribute additional entries via
 `_load_external_commands_into(COMMANDS)`.
 
@@ -570,7 +570,7 @@ Depth is bounded at 3 (`max_agent_depth`) and checked at `spawn` time;
 the model gets an error string rather than a silently-removed tool so
 it can adjust strategy.
 
-Agent *types* are loaded from `~/.cheetahclaws/agents/<name>.md`
+Agent *types* are loaded from `~/.pycode/agents/<name>.md`
 (Markdown with YAML frontmatter: `model`, `tools`, extra system
 prompt).  Five built-ins: `general-purpose`, `coder`, `reviewer`,
 `researcher`, `tester`.
@@ -608,8 +608,8 @@ post-registration.
 
 Dual-scope file-based store:
 
-- User scope — `~/.cheetahclaws/memory/<slug>.md` (shared).
-- Project scope — `.cheetahclaws/memory/<slug>.md` (per cwd).
+- User scope — `~/.pycode/memory/<slug>.md` (shared).
+- Project scope — `.pycode/memory/<slug>.md` (per cwd).
 
 Each memory is a Markdown file with YAML frontmatter (`name`,
 `description`, `type` ∈ `{user, feedback, project, reference}`,
@@ -627,7 +627,7 @@ entries.
 
 Standard MCP client.  Supports stdio (subprocess), SSE, and
 streamable HTTP transports.  `.mcp.json` in the project root or
-`~/.cheetahclaws/mcp.json` (user scope) lists servers; `/mcp reload`
+`~/.pycode/mcp.json` (user scope) lists servers; `/mcp reload`
 reconnects.  Every discovered remote tool is registered as
 `mcp__<server>__<tool>` and participates in the normal permission /
 execution flow.
@@ -641,9 +641,9 @@ Python's stdlib namespace and the `modelcontextprotocol` package.
 Structured in-session task list with a dependency graph.
 `TaskCreate` / `TaskUpdate` support `add_blocks` / `add_blocked_by`
 edges; `TaskList` formats remaining blockers for each open task.
-Persisted to `.cheetahclaws/tasks.json` per cwd.
+Persisted to `.pycode/tasks.json` per cwd.
 
-Distinct from `TodoWrite` in other coding agents — CheetahClaws
+Distinct from `TodoWrite` in other coding agents — PyCode
 tasks have **IDs, statuses (`pending / in_progress / completed /
 cancelled / deleted`), owners, metadata, and dependencies**, not a
 flat checkbox list.
@@ -653,7 +653,7 @@ flat checkbox list.
 Markdown-with-frontmatter prompt templates.  `Skill(name, args)`
 loads the file, substitutes `$ARGUMENTS`, and either runs the prompt
 inline in the current session or forks a sub-agent.  Precedence:
-project `.cheetahclaws/skills/` → user `~/.cheetahclaws/skills/` →
+project `.pycode/skills/` → user `~/.pycode/skills/` →
 built-in (`skill/builtin.py`).  Two built-ins ship: `/commit` and
 `/review`.
 
@@ -665,8 +665,8 @@ registers declared `tools` / `skills` / `commands` / `mcp_servers`.
 **Plugins export `TOOL_DEFS` / `COMMAND_DEFS` lists — they do not
 call `register_tool()` directly.**
 
-Scopes: user (`~/.cheetahclaws/plugins/`) and project
-(`.cheetahclaws/plugins/`).  `/plugin recommend [context]` scores the
+Scopes: user (`~/.pycode/plugins/`) and project
+(`.pycode/plugins/`).  `/plugin recommend [context]` scores the
 built-in marketplace by tag/keyword match.
 
 ### Monitoring (`monitor/`)
@@ -707,7 +707,7 @@ synchronous-input events (`tg_input_event` / `slack_input_event` /
 `/agent start <template> [args]` launches an autonomous loop that
 repeatedly calls `agent.run()` on a Markdown task program (from
 [`agent_templates/`](../agent_templates) or
-`~/.cheetahclaws/agent_templates/`).  Built-in templates:
+`~/.pycode/agent_templates/`).  Built-in templates:
 `auto_bug_fixer`, `auto_coder`, `paper_writer`, `research_assistant`,
 plus `modular/trading/agent_templates/trading_agent.md`.
 
@@ -717,12 +717,12 @@ Per-iteration behavior:
 - Emits a ≤500-char summary via `send_fn` (bridge or stdout) after
   each iteration.
 - Persists iteration records to
-  `~/.cheetahclaws/agents/<name>/log.jsonl`.
+  `~/.pycode/agents/<name>/log.jsonl`.
 - Wakes up on `stop_event.wait(interval)` — set `interval` small for
   active monitoring, large for batch work.
 
 **F-4 execution mode (subprocess, opt-in).** On POSIX, setting
-`CHEETAHCLAWS_ENABLE_F4=1` or `agent_runner_subprocess: true` flips
+`PYCODE_ENABLE_F4=1` or `agent_runner_subprocess: true` flips
 `start_runner` from threading to subprocess-per-runner. Each runner
 becomes a `python -m agent_runner --pipe` child supervised by
 `cc_daemon.runner_supervisor`; iteration boundaries and crashes are
@@ -735,7 +735,7 @@ for the wire protocol and lifecycle.
 This is the closest thing the project has to a "7 × 24 agent"
 runtime today; see CONTRIBUTING.md for the current production-
 readiness gaps (daemon mode, SQLite session store, cost guardrails).
-The daemon-mode work is tracked in [issue #68](https://github.com/SafeRL-Lab/cheetahclaws/issues/68);
+The daemon-mode work is tracked in [issue #68](https://github.com/yanfeng98/pycode/issues/68);
 the IPC / permission-routing / local-auth contract is captured in
 [RFC 0001](RFC/0001-daemon-design-note.md) and validated end-to-end by
 the `cc_daemon/` reference scaffolding ([spike notes](RFC/0001-spike-notes.md)).
@@ -771,9 +771,9 @@ today it stands alone.
 
 ### Daemon (`cc_daemon/` + `commands/daemon_cmd.py`)
 
-The headless `cheetahclaws serve` runtime — foundation for the
+The headless `pycode serve` runtime — foundation for the
 "long-running services survive REPL exit" work tracked in
-[issue #68](https://github.com/SafeRL-Lab/cheetahclaws/issues/68).
+[issue #68](https://github.com/yanfeng98/pycode/issues/68).
 Designed in [RFC 0001](RFC/0001-daemon-design-note.md);
 implementation phasing in
 [RFC 0002](RFC/0002-daemon-foundation-roadmap.md).
@@ -797,7 +797,7 @@ Pulled in unchanged from the spike (these encode the wire contract):
   TODO), bearer-token auth for TCP, per-peer brute-force throttle,
   audit-log default-on for both transports.
 - `cc_daemon/originator.py` — `client_id` mint / persist
-  (`~/.cheetahclaws/clients/<kind>.id`) / resume so disconnect-and-
+  (`~/.pycode/clients/<kind>.id`) / resume so disconnect-and-
   reconnect keeps the originator identity stable.
 - `cc_daemon/rpc.py` — JSON-RPC 2.0 dispatcher.  Application errors
   `-32001` (`not_originator`) and `-32002` (`unknown_request`) carry
@@ -818,10 +818,10 @@ Pulled in unchanged from the spike (these encode the wire contract):
 Added by the F-1 foundation:
 
 - `cc_daemon/discovery.py` — atomic write/read of
-  `~/.cheetahclaws/daemon.json` (pid, transport, address, started_at,
+  `~/.pycode/daemon.json` (pid, transport, address, started_at,
   schema version, plus an optional `token_path` recorded only when
   `serve --token-path` overrides the default location) so REPL / Web /
-  bridge clients — and `cheetahclaws daemon {status, stop, rotate-token}`
+  bridge clients — and `pycode daemon {status, stop, rotate-token}`
   themselves — can locate the daemon and the token file it's actually
   using.  Auto-clears stale files when the recorded pid is no longer
   alive.
@@ -835,7 +835,7 @@ Added by the F-1 foundation:
   threads loaded config + `--unauthenticated-metrics` through
   `DaemonState`, writes the discovery file on bind, watches the
   shutdown event, and clears discovery on exit.
-- `commands/daemon_cmd.py` — `cheetahclaws daemon {status, stop, logs,
+- `commands/daemon_cmd.py` — `pycode daemon {status, stop, logs,
   rotate-token}`.  All actions read the discovery file.  `stop` prefers
   the `system.shutdown` RPC and falls back to SIGTERM /
   TerminateProcess.  Sends the `Cheetahclaws-Api-Version: 0` header on
@@ -872,7 +872,7 @@ Added by the F-4 skeleton (subprocess-per-agent — branch `daemon/f-4`,
   (`_pipe_main` + `_PipeAgentRunner` subclass that swaps
   `send_fn` / `_persist_record` to write IPC instead of in-process
   callbacks). `start_runner` / `stop_runner` / `stop_all` dispatch on
-  `agent_runner_subprocess` config key (or `CHEETAHCLAWS_ENABLE_F4=1`
+  `agent_runner_subprocess` config key (or `PYCODE_ENABLE_F4=1`
   env var); default off — REPL stays threaded.
 
 **Wire surface (HTTP/1.1 over UDS or TCP).**
@@ -885,21 +885,21 @@ Added by the F-4 skeleton (subprocess-per-agent — branch `daemon/f-4`,
 
 **Auth.** Single-user, single-host threat model — see RFC 0001 §3.
 Unix socket relies on file mode `0600` + `SO_PEERCRED`.  TCP requires
-`Authorization: Bearer <token>` against `~/.cheetahclaws/daemon_token`
+`Authorization: Bearer <token>` against `~/.pycode/daemon_token`
 (mode `0600`, generated lazily on first `serve --listen tcp://...`).
 Both transports have audit log default-on; per-peer brute-force
 throttle returns `429` after sustained bad attempts.
 
 **Lifecycle.**
-- `cheetahclaws serve [--listen unix://path | tcp://host:port]
+- `pycode serve [--listen unix://path | tcp://host:port]
   [--unauthenticated-metrics] [--no-audit] [--print-token]`
-- `cheetahclaws daemon status` — pid, transport, address, uptime,
+- `pycode daemon status` — pid, transport, address, uptime,
   ping check.
-- `cheetahclaws daemon stop` — graceful via RPC, OS signal as fallback.
-- `cheetahclaws daemon logs [-n N]` — tail
-  `~/.cheetahclaws/logs/daemon.log` (the `serve` entrypoint pins
+- `pycode daemon stop` — graceful via RPC, OS signal as fallback.
+- `pycode daemon logs [-n N]` — tail
+  `~/.pycode/logs/daemon.log` (the `serve` entrypoint pins
   `log_file` to that path when not overridden in config).
-- `cheetahclaws daemon rotate-token` — regenerate token; existing TCP
+- `pycode daemon rotate-token` — regenerate token; existing TCP
   clients receive `401` until they re-read the file.
 
 **RPC surface (as of all F-1 through F-9 landings).**  The daemon
@@ -917,8 +917,8 @@ driver (REPL/Web/automation) and the transport (bridges) decouple.
 
 #### Persistence (F-2)
 
-`cheetahclaws serve` now initialises a daemon-owned schema in the
-existing ``~/.cheetahclaws/sessions.db`` (shared with `session_store`).
+`pycode serve` now initialises a daemon-owned schema in the
+existing ``~/.pycode/sessions.db`` (shared with `session_store`).
 Seven additive tables — the `sessions` table from `session_store` is
 left untouched:
 
@@ -933,7 +933,7 @@ left untouched:
   `stopped` / `crashed` / `paused_budget` after F-9), one row per
   iteration in `agent_iterations` (status, duration, tokens, cost,
   ≤400-char summary).
-- `jobs` — replaces `~/.cheetahclaws/jobs.json`.  `jobs.py` migrates
+- `jobs` — replaces `~/.pycode/jobs.json`.  `jobs.py` migrates
   the legacy file once on first call (tracked via
   `schema_meta.jobs_migrated_from_json`).  Migration is **one-way**:
   after the marker is set, edits to the JSON file are no longer read
@@ -961,13 +961,13 @@ their event timeline across daemon restarts.
 
 #### Monitor in daemon (F-3)
 
-`monitor/scheduler.py` is now daemon-owned.  When `cheetahclaws serve`
+`monitor/scheduler.py` is now daemon-owned.  When `pycode serve`
 starts, it kicks the scheduler loop **after the listener has bound and
 the discovery file is on disk** — so a misconfigured fetch/summarize
 chain cannot fail before external clients can see the daemon.
 Subscriptions and generated reports live in the SQLite
 `monitor_subscriptions` and `monitor_reports` tables (migrated once
-from `~/.cheetahclaws/monitor_subscriptions.json` on first daemon run,
+from `~/.pycode/monitor_subscriptions.json` on first daemon run,
 tracked via `schema_meta.monitor_migrated_from_json`).  Migration is
 **one-way**: edits to the JSON file are not picked up after the
 marker is set; SQLite is the source of truth.  The JSON file is left
@@ -1041,7 +1041,7 @@ the remaining acceptance gaps (RFC 0002 §F-4 #1/#2/#3):
 
 #### Proactive watcher in daemon (F-5)
 
-`_proactive_watcher_loop` from `cheetahclaws.py` is now daemon-owned.
+`_proactive_watcher_loop` from `pycode.py` is now daemon-owned.
 `cc_daemon/proactive_state.py` persists `proactive.enabled` /
 `proactive.interval_s` / `proactive.last_tick_at` in the F-2
 `schema_meta` table (so the setting survives daemon restarts); a
@@ -1061,9 +1061,9 @@ behaviour is byte-for-byte unchanged until the user opts in:
 
 | Env var                          | Effect                          |
 |----------------------------------|---------------------------------|
-| `CHEETAHCLAWS_ENABLE_F6`         | Telegram-in-daemon allowed.     |
-| `CHEETAHCLAWS_ENABLE_F7`         | Slack-in-daemon (requires F-6). |
-| `CHEETAHCLAWS_ENABLE_F8`         | WeChat-in-daemon (requires F-6).|
+| `PYCODE_ENABLE_F6`         | Telegram-in-daemon allowed.     |
+| `PYCODE_ENABLE_F7`         | Slack-in-daemon (requires F-6). |
+| `PYCODE_ENABLE_F8`         | WeChat-in-daemon (requires F-6).|
 
 Two modes per bridge:
 
@@ -1118,7 +1118,7 @@ outbound chunk; that gives a clean separation between transport
 
 #### Cost guardrails + quota-pause (F-9)
 
-Headless `cheetahclaws serve` runs unattended for hours; an unbounded
+Headless `pycode serve` runs unattended for hours; an unbounded
 agent can quietly compound costs while no one is watching. F-9 flips
 the four budget keys to conservative defaults under `serve` mode:
 
@@ -1137,7 +1137,7 @@ only fires in `cmd_serve`'s startup via `_apply_serve_defaults`.
 Three RPC surfaces around it:
 
 - **`system.status`** — returns `{budgets: {…four keys…}, runners,
-  bridges}`. `cheetahclaws daemon status` prints this so operators
+  bridges}`. `pycode daemon status` prints this so operators
   can confirm the defaults are in effect.
 - **`agent.resume(budget_overrides, name?)`** — merges
   `budget_overrides` into `daemon_state.config`; when `name` is
@@ -1159,13 +1159,13 @@ Per-runner quota-pause hook:
 ### Agent OS kernel (`cc_kernel/`)
 
 Layer above the daemon and below the user-facing CLI/REPL/bridges.
-Turns cheetahclaws into a true single-node agent operating system:
+Turns pycode into a true single-node agent operating system:
 process table, capability model, quota ledger, scheduler, mailbox/
 registry, virtual filesystem, observability, and a frozen 58-method
 JSON-RPC contract — backed by a single SQLite WAL-mode database
 (`kernel.db`).
 
-Activated at runtime by `cheetahclaws serve --enable-kernel`.
+Activated at runtime by `pycode serve --enable-kernel`.
 Without that flag the kernel code is dormant and the legacy
 single-process REPL/bridge path is byte-for-byte unchanged. Full
 overview at [`docs/agent-os.md`](agent-os.md).
@@ -1200,7 +1200,7 @@ overview at [`docs/agent-os.md`](agent-os.md).
   registry; CI drift guard fails the build if a registered
   RPC method isn't classified `stable`/`experimental`/
   `deprecated`.
-- `cc_kernel/cli.py` — `cheetahclaws kernel <action>` subcommand
+- `cc_kernel/cli.py` — `pycode kernel <action>` subcommand
   for read-only inspection over the daemon's RPC: `summary`,
   `info`, `agents`, `proc <pid>`, `events`, `queue`, `registry`,
   `methods`, `prometheus`.
@@ -1244,13 +1244,13 @@ can't break the wait loop.
 
 **Backwards compatibility.** All surface in `cc_kernel/` is
 isolated; the only edits outside the package are one-line opt-in
-hooks in `cheetahclaws.py` (the `cheetahclaws kernel ...`
+hooks in `pycode.py` (the `pycode kernel ...`
 subcommand dispatcher). Schema is forward-only — old `kernel.db`
 files upgrade in place. The 58-method contract is frozen at
 v1.0 with CI drift guard.
 
 **Where to next.** Two RFCs remain explicitly parked: **RFC 0014
-multi-tenant** (only worth doing if cheetahclaws is deployed as
+multi-tenant** (only worth doing if pycode is deployed as
 team SaaS) and **RFC 0015 cluster** (only worth doing once a
 single host saturates). Higher-ROI follow-ups: tag a v1.x release
 + CHANGELOG, integration performance tests under real LLM
@@ -1261,7 +1261,7 @@ workload, operator documentation for `--enable-kernel` deployment.
 Autonomous multi-agent research engine — `/lab start <topic>` (CLI)
 or `POST /api/lab/runs` (web) drives 9 specialised agents through 9
 stages until an arXiv-grade Markdown preprint lands at
-`~/.cheetahclaws/research_papers/<run_id>/report.md`.
+`~/.pycode/research_papers/<run_id>/report.md`.
 
 Full user-facing guide:
 [`docs/guides/research-lab.md`](guides/research-lab.md).
@@ -1276,7 +1276,7 @@ Full user-facing guide:
   to avoid infinite loops), and budget tracking.  Cancellation is
   cooperative via a per-run `cancel_check` callable.
 - `research/lab/storage.py` — SQLite at
-  `~/.cheetahclaws/research_lab.db` (separate file from the daemon's
+  `~/.pycode/research_lab.db` (separate file from the daemon's
   `sessions.db` so neither interferes with the other).  Five additive
   tables: `lab_runs`, `lab_stages`, `lab_messages`, `lab_artifacts`,
   `lab_budget`, `lab_experiments`.
@@ -1286,7 +1286,7 @@ Full user-facing guide:
   producing a heavy script; **not** a hostile-code boundary —
   Docker is Phase 2.5).  Captures stdout/stderr, collects PNG/CSV/
   JSON artifacts, and persists them under
-  `~/.cheetahclaws/research_papers/<run_id>/workspace/`.
+  `~/.pycode/research_papers/<run_id>/workspace/`.
 - `research/lab/verifier.py` — citation existence check against
   three free APIs in priority order (arXiv → Semantic Scholar →
   CrossRef).  Jaccard title similarity ≥ 0.55 + surname-overlap
@@ -1362,7 +1362,7 @@ them is always a bug.
 ### 1. `config` dict vs `RuntimeContext`
 
 `config` is a **serializable** dict loaded from
-`~/.cheetahclaws/config.json`.  It holds user settings (model,
+`~/.pycode/config.json`.  It holds user settings (model,
 permission mode, API keys, budgets, log level).  `save_config()`
 strips any key starting with `_` before writing.
 
@@ -1425,7 +1425,7 @@ User types `Read cc_config.py and change session_daily_limit to 20`
 with Claude as the active model.
 
 ```
- 1. cheetahclaws.py            reads line via ui.input
+ 1. pycode.py            reads line via ui.input
  2. repl()                     dispatches to agent.run()
  3. agent.run()                appends user message; config["_depth"]=0
  4. maybe_compact()            messages well under 70% limit — no-op
@@ -1443,7 +1443,7 @@ with Claude as the active model.
                               + tool_call[Edit(file_path=..., old="10", new="20")]
 15. agent._check_permission    Edit is not read_only, permission_mode=auto
                               → PermissionRequest yielded
-16. cheetahclaws.py renders    prompt [y/N/a]; user types y → req.granted=True
+16. pycode.py renders    prompt [y/N/a]; user types y → req.granted=True
 17. checkpoint hook fires      captures pre-edit file copy in snapshot dir
 18. tool_registry.execute_tool Edit runs, returns unified diff
 19. ui.render                  shows the diff in red/green
@@ -1489,8 +1489,8 @@ A collection of non-obvious traps; most bit someone at some point.
 - **Renamed modules**: `config.py` → `cc_config.py`; `mcp/` → `cc_mcp/`.
   Rename was forced by stdlib / package namespace collisions.  Always
   `import cc_config` / `from cc_mcp import ...`.
-- **`.nano_claude/plans/` vs `~/.cheetahclaws/`**: runtime state is
-  under `~/.cheetahclaws/` (underscore), but plan mode writes to
+- **`.nano_claude/plans/` vs `~/.pycode/`**: runtime state is
+  under `~/.pycode/` (underscore), but plan mode writes to
   `.nano_claude/plans/<session>.md` in cwd.  The `.nano_claude` path
   is historical (pre-rename) and intentional; don't "fix" it without
   updating plan-mode code.

@@ -1,7 +1,7 @@
 """PTY smoke test for the prompt_toolkit input layer.
 
 Exercises `ui/input.read_line` end-to-end through a pseudo-terminal without
-spinning up the full CheetahClaws REPL. Gated on prompt_toolkit availability.
+spinning up the full PyCode REPL. Gated on prompt_toolkit availability.
 """
 
 from __future__ import annotations

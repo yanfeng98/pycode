@@ -1,7 +1,7 @@
 """
 sentiment.py — LLM-based news sentiment for the analyze prompt.
 
-We don't ship a transformer model. Instead we ride on cheetahclaws's
+We don't ship a transformer model. Instead we ride on pycode's
 existing auxiliary-model infrastructure: the trading agent calls a
 cheap model (e.g. gpt-5-nano, claude-haiku) with a tight 5-line prompt
 asking for a -10..+10 score per headline, then aggregates.

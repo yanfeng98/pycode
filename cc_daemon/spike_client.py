@@ -30,7 +30,7 @@ DEFAULT_KIND = "spike-cli"
 
 
 def _client_id_path(kind: str) -> Path:
-    return Path.home() / ".cheetahclaws" / "clients" / f"{kind}.id"
+    return Path.home() / ".pycode" / "clients" / f"{kind}.id"
 
 
 def _load_client_id(kind: str) -> Optional[str]:
@@ -178,10 +178,10 @@ def cmd_watch(args) -> int:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="spike-client")
-    p.add_argument("--target", default=f"unix://{Path.home()}/.cheetahclaws/run/daemon.sock")
+    p.add_argument("--target", default=f"unix://{Path.home()}/.pycode/run/daemon.sock")
     p.add_argument("--kind", default=DEFAULT_KIND)
     p.add_argument("--token", default=None,
-                   help="Bearer token for TCP targets (or read $CHEETAHCLAWS_TOKEN)")
+                   help="Bearer token for TCP targets (or read $PYCODE_TOKEN)")
     p.add_argument("--since", type=int, default=0)
 
     sp = p.add_subparsers(dest="cmd", required=True)
@@ -209,7 +209,7 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
     if args.token is None:
         import os as _os
-        args.token = _os.environ.get("CHEETAHCLAWS_TOKEN")
+        args.token = _os.environ.get("PYCODE_TOKEN")
     return args.func(args)
 
 

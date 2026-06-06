@@ -1,6 +1,6 @@
-# CheetahClaws — Update Notes
+# PyCode — Update Notes
 
-This document describes three major feature additions to cheetahclaws:
+This document describes three major feature additions to pycode:
 **Multi-Agent**, **Memory**, and **Skill**. Each feature is organized as a
 self-contained Python package, follows the same architectural pattern, and
 includes a backward-compatibility shim so existing code continues to work.
@@ -65,8 +65,8 @@ class AgentDefinition:
 **Built-in agent types**: `general-purpose`, `coder`, `reviewer`, `researcher`, `tester`
 
 **Custom agent definitions** — place a `.md` file with YAML frontmatter in:
-- `~/.cheetahclaws/agents/<name>.md` (user-level)
-- `.cheetahclaws/agents/<name>.md` (project-level, takes priority)
+- `~/.pycode/agents/<name>.md` (user-level)
+- `.pycode/agents/<name>.md` (project-level, takes priority)
 
 Frontmatter format:
 ```markdown
@@ -131,7 +131,7 @@ Agent(
    ```
 4. `context.py` system prompt template lists Agent, SendMessage, etc. under
    `## Multi-Agent`.
-5. `cheetahclaws.py` `/agents` command calls `get_agent_manager().list_tasks()`
+5. `pycode.py` `/agents` command calls `get_agent_manager().list_tasks()`
    and prints status/worktree info. A `_print_background_notifications()` function
    checks for newly completed background agents before each user prompt.
 
@@ -146,7 +146,7 @@ Agent(
 | `agent.py` | Inject `_system_prompt` into config |
 | `tools.py` | Pass config to registry; import `multi_agent.tools` |
 | `context.py` | Add Multi-Agent section to system prompt |
-| `cheetahclaws.py` | `/agents` command; background notification; `_tool_desc()` |
+| `pycode.py` | `/agents` command; background notification; `_tool_desc()` |
 | `tests/test_subagent.py` | Update imports to `multi_agent.subagent` |
 
 ---
@@ -157,7 +157,7 @@ Agent(
 
 Provides persistent, file-based memory across sessions. Memories are stored as
 markdown files with YAML frontmatter. There are two scopes — **user** (global,
-`~/.cheetahclaws/memory/`) and **project** (per-repo, `.cheetahclaws/memory/`).
+`~/.pycode/memory/`) and **project** (per-repo, `.pycode/memory/`).
 A `MEMORY.md` index is auto-rebuilt after every save/delete and injected into
 the system prompt so Claude knows what memories exist.
 
@@ -188,13 +188,13 @@ Defined in `memory/types.py`, mirrors the four types from Claude Code:
 ### Storage layout
 
 ```
-~/.cheetahclaws/memory/
+~/.pycode/memory/
   MEMORY.md          ← auto-generated index (<=200 lines, <=25 KB)
   my_note.md
   feedback_testing.md
   ...
 
-.cheetahclaws/memory/   ← project-local (relative to cwd)
+.pycode/memory/   ← project-local (relative to cwd)
   MEMORY.md
   ...
 ```
@@ -275,7 +275,7 @@ The `MEMORY.md` index is truncated before being injected into the system prompt:
    from memory.store import MemoryEntry, save_memory, ...
    from memory.context import get_memory_context
    ```
-5. `cheetahclaws.py` `/memory` command uses `scan_all_memories()` to display a
+5. `pycode.py` `/memory` command uses `scan_all_memories()` to display a
    mtime-sorted list with freshness warnings.
 
 ### Files changed
@@ -291,7 +291,7 @@ The `MEMORY.md` index is truncated before being injected into the system prompt:
 | `memory.py` | Converted to backward-compat shim |
 | `tools.py` | Import `memory.tools` |
 | `context.py` | Call `get_memory_context()` in `build_system_prompt()` |
-| `cheetahclaws.py` | `/memory` command uses `scan_all_memories()` |
+| `pycode.py` | `/memory` command uses `scan_all_memories()` |
 | `tests/test_memory.py` | Completely rewritten (101 tests total) |
 
 ---
@@ -321,8 +321,8 @@ skills.py       — backward-compat shim
 ### Skill file format
 
 Place `.md` files in:
-- `~/.cheetahclaws/skills/<name>.md` (user-level)
-- `.cheetahclaws/skills/<name>.md` (project-level, takes priority)
+- `~/.pycode/skills/<name>.md` (user-level)
+- `.pycode/skills/<name>.md` (project-level, takes priority)
 
 ```markdown
 ---
@@ -406,7 +406,7 @@ Project-level skill files with the same name override built-ins.
 When multiple skill sources define the same name, the highest priority wins:
 
 ```
-builtin  <  user (~/.cheetahclaws/skills/)  <  project (.cheetahclaws/skills/)
+builtin  <  user (~/.pycode/skills/)  <  project (.pycode/skills/)
 ```
 
 ### REPL usage
@@ -431,7 +431,7 @@ and the first 80 chars of `when_to_use` per skill.
    ```
 3. `skills.py` (top-level) becomes a shim re-exporting from `skill/`.
 4. `context.py` adds a `## Skills` section listing `Skill` and `SkillList`.
-5. `cheetahclaws.py`:
+5. `pycode.py`:
    - `cmd_skills` imports from `skill`, shows `when_to_use` and source label
    - `handle_slash` imports `find_skill` from `skill`; returns `(skill, args)` tuple
    - REPL loop calls `substitute_arguments` before building the injected message
@@ -448,7 +448,7 @@ and the first 80 chars of `when_to_use` per skill.
 | `skills.py` | Converted to backward-compat shim |
 | `tools.py` | Import `skill.tools` |
 | `context.py` | Add Skills section to system prompt |
-| `cheetahclaws.py` | `cmd_skills`, `handle_slash`, REPL loop updated |
+| `pycode.py` | `cmd_skills`, `handle_slash`, REPL loop updated |
 | `tests/test_skills.py` | Rewritten (22 tests; patches `skill.loader`) |
 
 ---
@@ -457,7 +457,7 @@ and the first 80 chars of `when_to_use` per skill.
 
 ### Custom agent type
 
-Create `~/.cheetahclaws/agents/myagent.md`:
+Create `~/.pycode/agents/myagent.md`:
 ```markdown
 ---
 name: myagent
@@ -473,7 +473,7 @@ Then use: `Agent(prompt="...", subagent_type="myagent")`
 ### Custom memory
 
 Use the REPL `MemorySave` tool or write a file directly to
-`~/.cheetahclaws/memory/my_note.md` with frontmatter:
+`~/.pycode/memory/my_note.md` with frontmatter:
 ```markdown
 ---
 name: my note
@@ -486,8 +486,8 @@ Memory content here.
 
 ### Custom skill
 
-Create `~/.cheetahclaws/skills/myskill.md` (user-level) or
-`.cheetahclaws/skills/myskill.md` (project-level):
+Create `~/.pycode/skills/myskill.md` (user-level) or
+`.pycode/skills/myskill.md` (project-level):
 ```markdown
 ---
 name: myskill
@@ -510,7 +510,7 @@ Then invoke with `/myskill some-target`.
 ## Running tests
 
 ```bash
-cd cheetahclaws
+cd pycode
 
 # All tests
 python -m pytest tests/ -v
@@ -522,5 +522,5 @@ python -m pytest tests/test_skills.py   -v   # skills
 ```
 
 Total: **101 tests**, all passing. Each feature's tests use `monkeypatch` to
-redirect file system paths to `tmp_path` so no real `~/.cheetahclaws/`
+redirect file system paths to `tmp_path` so no real `~/.pycode/`
 directories are touched during testing.

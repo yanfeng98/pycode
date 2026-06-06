@@ -1,4 +1,4 @@
-"""Multi-agent package for cheetahclaws.
+"""Multi-agent package for pycode.
 
 Provides:
   - AgentDefinition  — typed agent definition (name, system_prompt, model, tools)

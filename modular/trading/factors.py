@@ -9,7 +9,7 @@ Per-ticker factors (all in [0, 1] after normalisation, higher = better):
   - composite       : weighted blend (default = momentum + quality)
 
 Implementation notes:
-  - 24h disk cache at ~/.cheetahclaws/trading/factors_cache.json
+  - 24h disk cache at ~/.pycode/trading/factors_cache.json
   - Fundamentals via yfinance .info; gracefully degrades to NaN
   - Concurrent fetch via ThreadPoolExecutor (workers=4) to keep scan
     time on S&P 100 under ~90s
@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 
-_CACHE_PATH = Path.home() / ".cheetahclaws" / "trading" / "factors_cache.json"
+_CACHE_PATH = Path.home() / ".pycode" / "trading" / "factors_cache.json"
 _CACHE_TTL_SEC = 24 * 3600  # 24 hours
 
 

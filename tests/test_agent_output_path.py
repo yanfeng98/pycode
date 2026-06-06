@@ -2,8 +2,8 @@
 
 Behavior under test: when a user launches an autonomous agent via the /agent
 wizard and supplies a *relative* output filename (e.g. `research_notes.md`),
-the path is rewritten to live under `~/.cheetahclaws/agents/<name>/output/`
-instead of the cheetahclaws CWD. Absolute paths pass through unchanged.
+the path is rewritten to live under `~/.pycode/agents/<name>/output/`
+instead of the pycode CWD. Absolute paths pass through unchanged.
 
 Also validates AgentRunner exposes `output_dir` and creates it on init.
 """
@@ -22,12 +22,12 @@ from commands.agent_cmd import _resolve_output_path
 # ── _resolve_output_path ─────────────────────────────────────────────────
 
 class TestResolveOutputPath:
-    def test_relative_filename_lands_under_dot_cheetahclaws(self, tmp_path, monkeypatch):
+    def test_relative_filename_lands_under_dot_pycode(self, tmp_path, monkeypatch):
         # Force HOME to a tmp dir so the test doesn't pollute the real
-        # ~/.cheetahclaws/agents/.
+        # ~/.pycode/agents/.
         monkeypatch.setenv("HOME", str(tmp_path))
         p = _resolve_output_path("research_notes.md", "research")
-        assert p == tmp_path / ".cheetahclaws" / "agents" / "research" / "output" / "research_notes.md"
+        assert p == tmp_path / ".pycode" / "agents" / "research" / "output" / "research_notes.md"
 
     def test_absolute_path_pass_through(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HOME", str(tmp_path))
@@ -39,7 +39,7 @@ class TestResolveOutputPath:
         monkeypatch.setenv("HOME", str(tmp_path))
         p = _resolve_output_path("~/notes.md", "research")
         # ~/notes.md is technically absolute after expansion, so it lands
-        # at HOME/notes.md (NOT under ~/.cheetahclaws/agents/.../output).
+        # at HOME/notes.md (NOT under ~/.pycode/agents/.../output).
         assert p == tmp_path / "notes.md"
 
     def test_subdirectory_relative_path(self, tmp_path, monkeypatch):
@@ -48,7 +48,7 @@ class TestResolveOutputPath:
         monkeypatch.setenv("HOME", str(tmp_path))
         p = _resolve_output_path("subdir/notes.md", "research")
         assert p == (
-            tmp_path / ".cheetahclaws" / "agents" / "research" / "output" /
+            tmp_path / ".pycode" / "agents" / "research" / "output" /
             "subdir" / "notes.md"
         )
 

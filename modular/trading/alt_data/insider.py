@@ -8,7 +8,7 @@ timescale we operate on.
 
 Implementation notes:
   - SEC requires a User-Agent identifying the requester (their stated
-    fair-use policy). We send a generic "cheetahclaws/<email>" string.
+    fair-use policy). We send a generic "pycode/<email>" string.
   - Rate-limited to 10 requests/sec by SEC; we add a small sleep buffer.
   - Output is normalised to a few fields per filing rather than
     surfacing the full XBRL — the LLM only needs net direction + size.
@@ -23,7 +23,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 # SEC asks for a User-Agent header identifying the requester.
-_USER_AGENT = "cheetahclaws-trading-research research@cheetahclaws.invalid"
+_USER_AGENT = "pycode-trading-research research@pycode.invalid"
 _SEC_BASE = "https://www.sec.gov"
 _SUBMISSIONS_BASE = "https://data.sec.gov/submissions"
 _REQ_TIMEOUT = 8

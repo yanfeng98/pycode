@@ -13,7 +13,7 @@ That means they exercise:
     persistence helpers in :mod:`cc_daemon.schema`
 
 To stay hermetic — no LLM provider, no network — the runner subprocess
-swaps in a scripted ``agent.run`` when ``CHEETAHCLAWS_E2E_FAKE_AGENT=1``
+swaps in a scripted ``agent.run`` when ``PYCODE_E2E_FAKE_AGENT=1``
 is set in its env. The hook lives in
 ``agent_runner._pipe_main`` and is gated by an env var so production
 paths cannot reach it.
@@ -99,16 +99,16 @@ class TestF4EndToEndRealRunner(unittest.TestCase):
         self._prev_env = {
             k: os.environ.get(k)
             for k in (
-                "CHEETAHCLAWS_ENABLE_F4",
-                "CHEETAHCLAWS_E2E_FAKE_AGENT",
-                "CHEETAHCLAWS_E2E_FAKE_PERMISSION",
+                "PYCODE_ENABLE_F4",
+                "PYCODE_E2E_FAKE_AGENT",
+                "PYCODE_E2E_FAKE_PERMISSION",
             )
         }
-        os.environ["CHEETAHCLAWS_ENABLE_F4"] = "1"
-        os.environ["CHEETAHCLAWS_E2E_FAKE_AGENT"] = "1"
+        os.environ["PYCODE_ENABLE_F4"] = "1"
+        os.environ["PYCODE_E2E_FAKE_AGENT"] = "1"
         # Default off for permission emission — the perm-routing test
         # opts in.
-        os.environ.pop("CHEETAHCLAWS_E2E_FAKE_PERMISSION", None)
+        os.environ.pop("PYCODE_E2E_FAKE_PERMISSION", None)
         self._template = _make_template(self._tmp_path)
 
     def tearDown(self):
@@ -256,7 +256,7 @@ class TestF4EndToEndRealRunner(unittest.TestCase):
         """auto_approve=False + a real PermissionStore + stubbed
         PermissionRequest from the agent. Originator's answer flows
         back to the runner via real IPC; the runner advances past it."""
-        os.environ["CHEETAHCLAWS_E2E_FAKE_PERMISSION"] = "1"
+        os.environ["PYCODE_E2E_FAKE_PERMISSION"] = "1"
         from cc_daemon import permission, runner_supervisor as rs
 
         store = permission.PermissionStore()

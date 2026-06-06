@@ -1,18 +1,18 @@
-# Design Note: cheetahclaws daemon — IPC, permission routing, local auth
+# Design Note: pycode daemon — IPC, permission routing, local auth
 
 - **Status:** Draft for review
-- **Tracking issue:** [#68](https://github.com/SafeRL-Lab/cheetahclaws/issues/68)
+- **Tracking issue:** [#68](https://github.com/yanfeng98/pycode/issues/68)
 - **Author:** @mxh1999
 - **Last updated:** 2026-04-29
 
-This note covers the three items requested in [#68](https://github.com/SafeRL-Lab/cheetahclaws/issues/68): IPC + transport, permission routing, and local auth. Scope is intentionally narrow — these are the contract the foundation PR will commit to. Service inventory, phasing, persistence, and cost guardrail defaults were settled in the issue thread and are not re-litigated here.
+This note covers the three items requested in [#68](https://github.com/yanfeng98/pycode/issues/68): IPC + transport, permission routing, and local auth. Scope is intentionally narrow — these are the contract the foundation PR will commit to. Service inventory, phasing, persistence, and cost guardrail defaults were settled in the issue thread and are not re-litigated here.
 
 ## 1. IPC: transport and protocol
 
 ### Transport
 
-- **Default — Unix domain socket** at `$XDG_RUNTIME_DIR/cheetahclaws/daemon.sock`, file mode `0600`. Falls back to `~/.cheetahclaws/run/daemon.sock` if `$XDG_RUNTIME_DIR` is unset.
-- **Optional — TCP** via `cheetahclaws serve --listen tcp://127.0.0.1:8765` (or any host:port). Bearer-token auth required (see §3).
+- **Default — Unix domain socket** at `$XDG_RUNTIME_DIR/pycode/daemon.sock`, file mode `0600`. Falls back to `~/.pycode/run/daemon.sock` if `$XDG_RUNTIME_DIR` is unset.
+- **Optional — TCP** via `pycode serve --listen tcp://127.0.0.1:8765` (or any host:port). Bearer-token auth required (see §3).
 - **Windows** — TCP loopback only. Default address `127.0.0.1:8765`. (Standard-library Unix-socket support on Windows is partial and inconsistent across versions; not worth the complexity for v1.)
 
 A given daemon binds exactly one address. Switching transport requires restart.
@@ -116,7 +116,7 @@ This is a **security boundary, not a multi-user feature.** No RBAC, accounts, or
 
 ### Unix socket
 
-- Path: `$XDG_RUNTIME_DIR/cheetahclaws/daemon.sock` (fallback `~/.cheetahclaws/run/daemon.sock`).
+- Path: `$XDG_RUNTIME_DIR/pycode/daemon.sock` (fallback `~/.pycode/run/daemon.sock`).
 - Created with mode `0600`, owned by the daemon's effective UID.
 - Containing directory: mode `0700`.
 - Daemon refuses to bind if either path is world- or group-readable.
@@ -127,10 +127,10 @@ No bearer token on the Unix socket — filesystem permissions and peer credentia
 ### TCP
 
 - Required: `Authorization: Bearer <token>`.
-- Token: 32 random bytes, base64url. Generated on first `serve --listen tcp://…` start. Stored at `~/.cheetahclaws/daemon_token`, mode `0600`. `cheetahclaws daemon rotate-token` regenerates and forces reconnect.
+- Token: 32 random bytes, base64url. Generated on first `serve --listen tcp://…` start. Stored at `~/.pycode/daemon_token`, mode `0600`. `pycode daemon rotate-token` regenerates and forces reconnect.
 - No token → `401`. Wrong token → `401` (same response, no leakage of "exists vs wrong"). Three failures from one peer in 10 s → 60 s connection-level cooldown.
 - Token never logged. Never appears in `/metrics`, `/events`, or error messages.
-- `/healthz` `/readyz` `/metrics` are token-protected by default. `cheetahclaws serve --unauthenticated-metrics` opts out for Prometheus scraping (off by default; documented as a deliberate weakening with a one-line warning at startup).
+- `/healthz` `/readyz` `/metrics` are token-protected by default. `pycode serve --unauthenticated-metrics` opts out for Prometheus scraping (off by default; documented as a deliberate weakening with a one-line warning at startup).
 
 ### TLS
 
@@ -142,7 +142,7 @@ Web UI uses `Authorization` headers, not cookies — CSRF does not apply at v1. 
 
 ### Audit log
 
-Every authentication event (outcome, transport, peer info where available) lands in `~/.cheetahclaws/logs/auth.jsonl` (rotated). Off by default for the Unix socket (peer-cred-checked, low-noise). On by default for TCP.
+Every authentication event (outcome, transport, peer info where available) lands in `~/.pycode/logs/auth.jsonl` (rotated). Off by default for the Unix socket (peer-cred-checked, low-noise). On by default for TCP.
 
 ## Related decisions (settled, listed for context)
 
@@ -161,4 +161,4 @@ Not part of this note's scope but referenced above:
 
 ---
 
-Once the choices in this note are accepted, the foundation PR follows: stdlib HTTP server skeleton, auth (Unix-socket peer-cred + TCP token), SQLite schema additions, `cheetahclaws daemon {status, stop, logs, rotate-token}` subcommands, and the bridges-into-daemon scope agreed in #68.
+Once the choices in this note are accepted, the foundation PR follows: stdlib HTTP server skeleton, auth (Unix-socket peer-cred + TCP token), SQLite schema additions, `pycode daemon {status, stop, logs, rotate-token}` subcommands, and the bridges-into-daemon scope agreed in #68.

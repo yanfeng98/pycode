@@ -1,5 +1,5 @@
 """
-bridges/slack.py — Slack Web API bridge for CheetahClaws.
+bridges/slack.py — Slack Web API bridge for PyCode.
 
 Setup:
   1. Create a Slack App at https://api.slack.com/apps
@@ -81,7 +81,7 @@ def _slack_poll_loop(token: str, channel: str, config: dict) -> str:
     run_query_cb = session_ctx.run_query
 
     session_ctx.slack_send = lambda ch, txt: _slack_send(token, ch, txt)
-    _slack_send(token, channel, "🟢 cheetahclaws is online. Send me a message and I'll process it.")
+    _slack_send(token, channel, "🟢 pycode is online. Send me a message and I'll process it.")
 
     import time as _time
     oldest = str(_time.time())
@@ -240,12 +240,12 @@ def _slack_poll_loop(token: str, channel: str, config: dict) -> str:
                     continue
 
                 if text.strip().lower() in ("/stop", "/off"):
-                    _slack_send(token, channel, "🔴 cheetahclaws bridge stopped.")
+                    _slack_send(token, channel, "🔴 pycode bridge stopped.")
                     _slack_stop.set()
                     break
 
                 if text.strip().lower() == "/start":
-                    _slack_send(token, channel, "🟢 cheetahclaws bridge is active. Send me anything.")
+                    _slack_send(token, channel, "🟢 pycode bridge is active. Send me anything.")
                     continue
 
                 if text.strip().startswith("/"):

@@ -17,7 +17,7 @@ import quota as _quota
 from circuit_breaker import CircuitOpenError as _CircuitOpenError
 import runtime
 
-# ── Re-export event types (used by cheetahclaws.py) ────────────────────────
+# ── Re-export event types (used by pycode.py) ────────────────────────
 __all__ = [
     "AgentState", "run",
     "TextChunk", "ThinkingChunk",

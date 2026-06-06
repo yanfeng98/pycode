@@ -1,6 +1,6 @@
 # Research Lab — autonomous multi-agent paper writing
 
-`/lab` (CLI) and `/lab` (web UI) are CheetahClaws's autonomous research
+`/lab` (CLI) and `/lab` (web UI) are PyCode's autonomous research
 engine. Give it a topic; it drives 9 specialised agents through 9
 stages — questioning, literature survey, outline, code drafting,
 sandboxed experiment execution, analysis, paper drafting with
@@ -23,7 +23,7 @@ the output before posting.
 ### CLI
 
 ```bash
-cheetahclaws
+pycode
 # in the REPL:
 /lab start "Compare logistic regression and random forest on the iris
             dataset, report test accuracy with cross-validation"
@@ -38,7 +38,7 @@ cheetahclaws
 When it finishes, the report lands at:
 
 ```
-~/.cheetahclaws/research_papers/<run_id>/
+~/.pycode/research_papers/<run_id>/
 ├── report.md                   ← main deliverable
 ├── references.bib              ← verified citations
 ├── citations_verified.json     ← per-citation verification log
@@ -54,7 +54,7 @@ When it finishes, the report lands at:
 ### Web UI
 
 ```bash
-cheetahclaws --web --port 8080
+pycode --web --port 8080
 # browser → http://127.0.0.1:8080/lab
 ```
 
@@ -164,7 +164,7 @@ FINALIZATION with whatever's been drafted.
 The experiment sandbox in `research/lab/sandbox.py` runs the
 Engineer's Python script in a subprocess with:
 
-- A **dedicated workspace directory** (`~/.cheetahclaws/research_papers/<run_id>/workspace/`)
+- A **dedicated workspace directory** (`~/.pycode/research_papers/<run_id>/workspace/`)
   pinned as `cwd`; relative paths can't escape.
 - A **180 s wall-clock timeout** (configurable); SIGKILL on expiry.
 - **`RLIMIT_CPU = 240 s`** and **`RLIMIT_AS = 2 GB`** soft caps via
@@ -300,14 +300,14 @@ Then bump the budget so the run isn't choked off mid-paper:
 
 Set this once via `/config lab_role_override={...}` (the patched
 `/config` parser handles the JSON object) — it persists in
-`~/.cheetahclaws/config.json`.
+`~/.pycode/config.json`.
 
 ---
 
 ## Web API surface
 
-Mounted at `/api/lab/*` on the existing CheetahClaws web server (the
-one started by `cheetahclaws --web`):
+Mounted at `/api/lab/*` on the existing PyCode web server (the
+one started by `pycode --web`):
 
 | Method + path | Purpose |
 |---|---|
@@ -410,7 +410,7 @@ The daemon picks the highest-priority pending item, runs `/lab start`,
 optionally runs `/lab iterate` (if the item was queued with
 `--iterate`), then claims the next one. State survives a daemon crash:
 items left in `running` are reset to `pending` on next `daemon start`.
-A previous run's reports stay in `~/.cheetahclaws/research_papers/`.
+A previous run's reports stay in `~/.pycode/research_papers/`.
 
 `/lab daemon stop` lets the in-flight run finish its current stage and
 then halts; it does **not** kill mid-stage. Use `/lab abort <run_id>`
@@ -422,7 +422,7 @@ Reports save to a **human-readable directory** instead of the cryptic
 `lab_<hex>/` form:
 
 ```
-~/.cheetahclaws/research_papers/
+~/.pycode/research_papers/
    2026-05-08_14-30_post-transformer-architectures-comparative_b16036de/
        report.md
        references.bib
@@ -594,5 +594,5 @@ many times we replay the loop.
 
 ## Related docs
 
-- [`docs/architecture.md`](../architecture.md#research-lab) — how the lab integrates with the rest of CheetahClaws
+- [`docs/architecture.md`](../architecture.md#research-lab) — how the lab integrates with the rest of PyCode
 - `docs/news.md` — release timeline (this lab landed in `feature/research-lab`)

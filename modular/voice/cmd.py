@@ -1,14 +1,14 @@
 """
-Voice slash-command for CheetahClaws.
+Voice slash-command for PyCode.
 
-Extracted from cheetahclaws.py so the voice module is self-contained.
+Extracted from pycode.py so the voice module is self-contained.
 Exposes COMMAND_DEFS — the same plug-in interface used by video/cmd.py.
 """
 from __future__ import annotations
 
 import sys
 
-# ── Minimal ANSI helpers (self-contained, no import from cheetahclaws) ────────
+# ── Minimal ANSI helpers (self-contained, no import from pycode) ────────
 _C = {
     "cyan": "\033[36m", "green": "\033[32m", "yellow": "\033[33m",
     "red":  "\033[31m", "bold":  "\033[1m",  "dim":    "\033[2m",
@@ -34,7 +34,7 @@ def _ask(prompt: str, config) -> str:
 
 
 # Module-level language setting — persists across calls in a session.
-# Stored here so it survives cheetahclaws.py extraction.
+# Stored here so it survives pycode.py extraction.
 _voice_language: str = "auto"
 
 

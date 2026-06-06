@@ -1,5 +1,5 @@
 """
-Example plugin commands for CheetahClaws.
+Example plugin commands for PyCode.
 
 This file demonstrates how to define slash commands that users type in the REPL.
 Export your commands as a COMMAND_DEFS dict.

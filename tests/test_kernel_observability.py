@@ -229,13 +229,13 @@ def test_prometheus_text_format(stores):
     text = obs.prometheus_text()
 
     # Required header for each metric.
-    assert "# HELP cheetahclaws_kernel_schema_version" in text
-    assert "# TYPE cheetahclaws_kernel_schema_version gauge" in text
+    assert "# HELP pycode_kernel_schema_version" in text
+    assert "# TYPE pycode_kernel_schema_version gauge" in text
 
     # Metric values present.
-    assert "cheetahclaws_kernel_schema_version 5" in text
-    assert 'cheetahclaws_kernel_agents{state="RUNNING"} 1' in text
-    assert 'cheetahclaws_kernel_agents{state="READY"} 0' in text
+    assert "pycode_kernel_schema_version 5" in text
+    assert 'pycode_kernel_agents{state="RUNNING"} 1' in text
+    assert 'pycode_kernel_agents{state="READY"} 0' in text
 
     # Final newline.
     assert text.endswith("\n")

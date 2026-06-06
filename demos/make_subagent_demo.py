@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws sub-agents (parallel multi-agent) using PIL.
+Generate animated GIF demo of pycode sub-agents (parallel multi-agent) using PIL.
 Simulates: user asks to review a PR → AI spawns coder agent + reviewer agent in parallel
 → agents work simultaneously → results merged → summary presented.
 """
@@ -76,7 +76,7 @@ def draw_frame(lines_segments):
 # ── Reusable line builders ────────────────────────────────────────────────
 
 BANNER = [
-    [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW)],
     [seg("│  Type /help for commands, Ctrl+C to cancel                  │", SUBTEXT)],
@@ -88,7 +88,7 @@ BANNER = [
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg(text + cur, TEXT),
     ]
@@ -104,7 +104,7 @@ def info_line(msg):
 
 def claude_header():
     return [
-        seg("╭─ CheetahClaws ", SUBTEXT),
+        seg("╭─ PyCode ", SUBTEXT),
         seg("●", GREEN),
         seg(" ─────────────────────────────────────────────", SUBTEXT),
     ]

@@ -118,7 +118,7 @@ Generating diverse perspectives...
 ╰──────────────────────────────────────────────
 
   ⚡ SSJ » 1
-  Topic (Enter for general): cheetahclaws plugin system
+  Topic (Enter for general): pycode plugin system
 
   # → Brainstorm spins up, saves to brainstorm_outputs/, generates todo_list.txt
   # → Menu re-opens automatically after each action
@@ -140,7 +140,7 @@ Any `/command` typed at the `⚡ SSJ »` prompt is passed through to the REPL:
   # → switches model, then re-opens SSJ menu
 
   ⚡ SSJ » /exit
-  # → exits cheetahclaws immediately
+  # → exits pycode immediately
 ```
 
 ### Worker command
@@ -185,11 +185,11 @@ SSJ option 4 runs a structured multi-round expert debate on any file:
 
   Files in brainstorm_outputs/:
     1. brainstorm_20260406_143022.md
-    2. cheetahclaws.py
+    2. pycode.py
 
   File to debate #: 2
   Number of debate agents (Enter for 2): 3
-  ℹ Debate result will be saved to: cheetahclaws_debate_143055.md
+  ℹ Debate result will be saved to: pycode_debate_143055.md
 
 ⚔️  Assembling expert panel...
   Expert 1: 🏗️ Architecture Lead — focus: system design & modularity
@@ -205,7 +205,7 @@ SSJ option 4 runs a structured multi-round expert debate on any file:
 
 📜  Drafting final consensus...
   [model writes consensus + saves transcript]
-✓ Debate complete. Saved to cheetahclaws_debate_143055.md
+✓ Debate complete. Saved to pycode_debate_143055.md
 ```
 
 - Agent count is configurable (minimum 2, default 2). Rounds are set to `agents × 2 − 1` for a full open-close structure.
@@ -224,7 +224,7 @@ SSJ option 4 runs a structured multi-round expert debate on any file:
 <center style="color:#000000;text-decoration:underline">Tmux Integration: AI splits panes, sends commands, captures output across sessions</center>
 </div>
 
-CheetahClaws gives the AI model **direct control over tmux** — create sessions, split panes, send commands, and capture output. This is auto-detected at startup: tmux tools are only registered when a compatible binary (`tmux` on Linux/macOS, `psmux` on Windows) is found in PATH. If tmux is not installed, everything else works as normal.
+PyCode gives the AI model **direct control over tmux** — create sessions, split panes, send commands, and capture output. This is auto-detected at startup: tmux tools are only registered when a compatible binary (`tmux` on Linux/macOS, `psmux` on Windows) is found in PATH. If tmux is not installed, everything else works as normal.
 
 ### Why tmux tools
 
@@ -250,25 +250,25 @@ The `Bash` tool has a hard timeout (~30–120 s). Long-running tasks — trainin
 
 **Run a training script in a visible window:**
 ```
-[cheetahclaws] » Open a new tmux window and run python train.py so I can watch the output
+[pycode] » Open a new tmux window and run python train.py so I can watch the output
 ```
 The AI will call `TmuxNewWindow` → `TmuxSendKeys("python train.py")`. A new tab opens immediately and you watch the output live.
 
 **Check training progress:**
 ```
-[cheetahclaws] » Check what the training window is printing now — has the loss gone down?
+[pycode] » Check what the training window is printing now — has the loss gone down?
 ```
 The AI calls `TmuxListPanes` to locate the pane, then `TmuxCapture` to read the last 50 lines and summarise.
 
 **Split screen: server on the left, tests on the right:**
 ```
-[cheetahclaws] » Run uvicorn main:app on the left and pytest on the right, split screen
+[pycode] » Run uvicorn main:app on the left and pytest on the right, split screen
 ```
 The AI calls `TmuxSplitWindow(direction=horizontal)`, then `TmuxSendKeys` to each pane.
 
 **Launch vLLM in a detached background session:**
 ```
-[cheetahclaws] » Start a background tmux session running vLLM, don't take over this terminal
+[pycode] » Start a background tmux session running vLLM, don't take over this terminal
 ```
 The AI calls `TmuxNewSession(detached=true)` then sends the vLLM launch command to that session.
 
@@ -297,27 +297,27 @@ The AI calls `TmuxNewSession(detached=true)` then sends the vLLM launch command 
 Type `!` followed by any shell command to execute it directly without the AI intercepting:
 
 ```
-[cheetahclaws] » !git status
+[pycode] » !git status
   $ git status
 On branch main
 ...
 
-[cheetahclaws] » !ls -la
+[pycode] » !ls -la
   $ ls -la
 ...
 
-[cheetahclaws] » !python --version
+[pycode] » !python --version
   $ python --version
 Python 3.11.7
 ```
 
-Output prints inline and control returns to the CheetahClaws prompt immediately. Any valid shell expression works, including pipes: `!cat log.txt | tail -20`.
+Output prints inline and control returns to the PyCode prompt immediately. Any valid shell expression works, including pipes: `!cat log.txt | tail -20`.
 
 ---
 
 ## Proactive Background Monitoring
 
-CheetahClaws v3.05.2 adds a **sentinel daemon** that automatically wakes the agent after a configurable period of inactivity — no user prompt required. This enables use cases like continuous log monitoring, market script polling, or scheduled code checks.
+PyCode v3.05.2 adds a **sentinel daemon** that automatically wakes the agent after a configurable period of inactivity — no user prompt required. This enables use cases like continuous log monitoring, market script polling, or scheduled code checks.
 
 ### Quick start
 
@@ -376,7 +376,7 @@ Duration suffix: `s` = seconds, `m` = minutes, `h` = hours. Plain integer = seco
 <center style="color:#000000;text-decoration:underline">Checkpoint / Rewind: AI breaks tests → /checkpoint list → rewind → files restored</center>
 </div>
 
-CheetahClaws automatically snapshots your conversation and any edited files after every turn, so you can always rewind to an earlier state.
+PyCode automatically snapshots your conversation and any edited files after every turn, so you can always rewind to an earlier state.
 
 ### How it works
 
@@ -534,7 +534,7 @@ Green lines = added, red lines = removed. New file creations show a summary inst
 
 ## CLAUDE.md Support
 
-Place a `CLAUDE.md` file in your project to give the model persistent context about your codebase. CheetahClaws automatically finds and injects it into the system prompt.
+Place a `CLAUDE.md` file in your project to give the model persistent context about your codebase. PyCode automatically finds and injects it into the system prompt.
 
 ```
 ~/.claude/CLAUDE.md          # Global — applies to all projects
@@ -570,7 +570,7 @@ Place a `CLAUDE.md` file in your project to give the model persistent context ab
 Every exit automatically saves to three places:
 
 ```
-~/.cheetahclaws/sessions/
+~/.pycode/sessions/
 ├── history.json                          ← master: all sessions ever (capped)
 ├── mr_sessions/
 │   └── session_latest.json              ← always the most recent (/resume)
@@ -598,8 +598,8 @@ Each session file includes metadata:
 Every time you exit — via `/exit`, `/quit`, `Ctrl+C`, or `Ctrl+D` — the session is saved automatically:
 
 ```
-✓ Session saved → /home/.../.cheetahclaws/sessions/mr_sessions/session_latest.json
-✓              → /home/.../.cheetahclaws/sessions/daily/2026-04-05/session_110523_a3f9.json  (id: a3f9c1b2)
+✓ Session saved → /home/.../.pycode/sessions/mr_sessions/session_latest.json
+✓              → /home/.../.pycode/sessions/daily/2026-04-05/session_110523_a3f9.json  (id: a3f9c1b2)
 ✓   history.json: 12 sessions / 87 total turns
 ```
 
@@ -608,7 +608,7 @@ Every time you exit — via `/exit`, `/quit`, `Ctrl+C`, or `Ctrl+D` — the sess
 To continue where you left off:
 
 ```bash
-cheetahclaws
+pycode
 [myproject] ❯ /resume
 ✓  Session loaded from …/mr_sessions/session_latest.json (42 messages)
 ```
@@ -624,7 +624,7 @@ Resume a specific file:
 
 ```bash
 /save                          # save with auto-name (session_TIMESTAMP_ID.json)
-/save debug_auth_bug           # named save to ~/.cheetahclaws/sessions/
+/save debug_auth_bug           # named save to ~/.pycode/sessions/
 
 /load                          # interactive list grouped by date
 /load debug_auth_bug           # load by filename
@@ -641,7 +641,7 @@ Resume a specific file:
   [ 3] 22:18:00  id:3b4c5d6e  turns:15  session_221800_3b4c.json
 
   ── Complete History ──
-  [ H] Load ALL history  (3 sessions / 26 total turns)  /home/.../.cheetahclaws/sessions/history.json
+  [ H] Load ALL history  (3 sessions / 26 total turns)  /home/.../.pycode/sessions/history.json
 
   Enter number(s) (e.g. 1 or 1,2,3), H for full history, or Enter to cancel >
 ```
@@ -687,7 +687,7 @@ Resume a specific file:
 <center style="color:#000000;text-decoration:underline">Cloud Sync: /cloudsave on desktop → encrypted upload → /cloudload on laptop → full session restored</center>
 </div>
 
-CheetahClaws v3.05.3 adds optional cloud backup of conversation sessions via **GitHub Gist**. Sessions are stored as private Gists (JSON), browsable in the GitHub UI. No extra dependencies — uses Python's stdlib `urllib`.
+PyCode v3.05.3 adds optional cloud backup of conversation sessions via **GitHub Gist**. Sessions are stored as private Gists (JSON), browsable in the GitHub UI. No extra dependencies — uses Python's stdlib `urllib`.
 
 ### Setup (one-time)
 
@@ -744,7 +744,7 @@ From that point on, every `/exit` or `/quit` automatically uploads the session b
 | `/cloudsave` | Upload current session to a new or existing Gist |
 | `/cloudsave push [desc]` | Upload with optional description |
 | `/cloudsave auto on\|off` | Toggle auto-upload on exit |
-| `/cloudsave list` | List all cheetahclaws Gists |
+| `/cloudsave list` | List all pycode Gists |
 | `/cloudsave load <gist_id>` | Download and restore a session |
 
 ---
@@ -752,8 +752,8 @@ From that point on, every `/exit` or `/quit` automatically uploads the session b
 ## Project Structure
 
 ```
-cheetahclaws/
-├── cheetahclaws.py        # Entry point: REPL loop, readline setup, diff rendering, Rich Live streaming, proactive sentinel daemon, auto-start bridge wiring
+pycode/
+├── pycode.py        # Entry point: REPL loop, readline setup, diff rendering, Rich Live streaming, proactive sentinel daemon, auto-start bridge wiring
 ├── runtime.py             # RuntimeContext singleton — live session references (run_query, handle_slash, agent_state, tg/slack/wx send + input events) shared across all modules without polluting the config dict
 ├── agent.py              # Agent loop: streaming, tool dispatch, compaction
 ├── providers.py          # Multi-provider: Anthropic, OpenAI-compat streaming
@@ -806,7 +806,7 @@ cheetahclaws/
 │   ├── __init__.py       # Re-exports
 │   ├── types.py          # MCPServerConfig, MCPTool, MCPServerState, JSON-RPC helpers
 │   ├── client.py         # StdioTransport, HttpTransport, MCPClient, MCPManager
-│   ├── config.py         # Load .mcp.json (project) + ~/.cheetahclaws/mcp.json (user)
+│   ├── config.py         # Load .mcp.json (project) + ~/.pycode/mcp.json (user)
 │   └── tools.py          # Auto-discover + register MCP tools into tool_registry
 │
 ├── voice/                # Voice input package (v3.05) — backward-compat shim → modular/voice/

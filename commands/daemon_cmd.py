@@ -1,8 +1,8 @@
-"""commands/daemon_cmd.py — `cheetahclaws daemon {status, stop, logs, rotate-token}`.
+"""commands/daemon_cmd.py — `pycode daemon {status, stop, logs, rotate-token}`.
 
-Dispatched from :func:`cheetahclaws.main` when the first positional argv
+Dispatched from :func:`pycode.main` when the first positional argv
 is ``daemon``.  All actions read the discovery file written by
-``cheetahclaws serve``; absence of that file means "no daemon running".
+``pycode serve``; absence of that file means "no daemon running".
 
 Auth + token storage live in :mod:`cc_daemon.auth`; discovery in
 :mod:`cc_daemon.discovery`.
@@ -54,7 +54,7 @@ def _resolve_token_path(info: Optional[dict]) -> Path:
 
 def dispatch(argv: list[str]) -> int:
     if not argv:
-        print("usage: cheetahclaws daemon {status|stop|logs|rotate-token} [options]",
+        print("usage: pycode daemon {status|stop|logs|rotate-token} [options]",
               file=sys.stderr)
         return 2
     cmd, rest = argv[0], argv[1:]
@@ -75,7 +75,7 @@ def dispatch(argv: list[str]) -> int:
 def _status(argv: list[str]) -> int:
     info = _discovery.locate()
     if info is None:
-        print("cheetahclaws daemon: not running", file=sys.stderr)
+        print("pycode daemon: not running", file=sys.stderr)
         return 1
     started = info.get("started_at", "?")
     uptime_s = _seconds_since(started)
@@ -127,7 +127,7 @@ def _status(argv: list[str]) -> int:
 def _stop(argv: list[str]) -> int:
     info = _discovery.locate()
     if info is None:
-        print("cheetahclaws daemon: not running", file=sys.stderr)
+        print("pycode daemon: not running", file=sys.stderr)
         return 0  # already in the desired state
 
     pid = info.get("pid")
@@ -148,18 +148,18 @@ def _stop(argv: list[str]) -> int:
     deadline = time.monotonic() + STOP_WAIT_S
     while time.monotonic() < deadline:
         if _discovery.locate() is None:
-            print("cheetahclaws daemon: stopped")
+            print("pycode daemon: stopped")
             return 0
         time.sleep(0.1)
 
-    print("cheetahclaws daemon: did not stop within timeout", file=sys.stderr)
+    print("pycode daemon: did not stop within timeout", file=sys.stderr)
     return 1
 
 
 # ── logs ───────────────────────────────────────────────────────────────────
 
 def _logs(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="cheetahclaws daemon logs",
+    parser = argparse.ArgumentParser(prog="pycode daemon logs",
                                       description="Print recent daemon log lines.")
     parser.add_argument("-n", "--lines", type=int, default=DEFAULT_TAIL_LINES,
                         help=f"Number of trailing lines to print (default {DEFAULT_TAIL_LINES}).")
@@ -167,7 +167,7 @@ def _logs(argv: list[str]) -> int:
 
     path = _log_path()
     if not path.exists():
-        print(f"cheetahclaws daemon: no log file at {path}", file=sys.stderr)
+        print(f"pycode daemon: no log file at {path}", file=sys.stderr)
         return 0
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
@@ -186,7 +186,7 @@ def _rotate_token(argv: list[str]) -> int:
     info = _discovery.locate()
     token_path = _resolve_token_path(info)
     _auth.rotate_token(token_path)
-    print(f"cheetahclaws: rotated token at {token_path}")
+    print(f"pycode: rotated token at {token_path}")
     if info and info.get("transport") == "tcp":
         print("note: existing TCP clients will receive 401 on next request "
               "until they re-read the token file.")

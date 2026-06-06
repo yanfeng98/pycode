@@ -26,7 +26,7 @@ day one as it will be once the real ``agent.run`` integration lands.
                           (``session_token_budget`` /
                           ``session_cost_budget`` /
                           ``daily_token_budget`` / ``daily_cost_budget``)
-                          so ``cheetahclaws daemon status`` can confirm
+                          so ``pycode daemon status`` can confirm
                           the serve-mode defaults are in effect.  Also
                           surfaces the running runner / bridge counts
                           for quick triage.
@@ -59,7 +59,7 @@ def register(registry: RpcRegistry, daemon_state: "DaemonState") -> None:
 
     def system_status(_params, _ctx):
         """Return budgets + live runner / bridge counts. Used by
-        ``cheetahclaws daemon status`` to confirm serve-mode defaults
+        ``pycode daemon status`` to confirm serve-mode defaults
         are in effect."""
         cfg = daemon_state.config or {}
         budgets = {k: cfg.get(k) for k in _BUDGET_KEYS}

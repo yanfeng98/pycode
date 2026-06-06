@@ -466,7 +466,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 class TestRegistration:
     def test_litellm_is_optional_dependency(self):
         """litellm must live under [project.optional-dependencies]
-        (extra 'litellm'), NOT in core deps — installing cheetahclaws
+        (extra 'litellm'), NOT in core deps — installing pycode
         should not force-pull litellm's transitive chain."""
         toml = (_REPO_ROOT / "pyproject.toml").read_text()
         core_block = toml.split("[project.optional-dependencies]")[0]
@@ -475,7 +475,7 @@ class TestRegistration:
             "under [project.optional-dependencies] so installs stay slim"
         )
         # And the extra itself must exist so `pip install
-        # cheetahclaws[litellm]` resolves.
+        # pycode[litellm]` resolves.
         assert 'litellm     = ["litellm' in toml or 'litellm = ["litellm' in toml
         # And it must be reachable via the `all` extra too.
         all_block = toml.split('all         = [')[1].split("]")[0]

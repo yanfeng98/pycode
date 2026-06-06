@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws multi-model switching using PIL.
+Generate animated GIF demo of pycode multi-model switching using PIL.
 Simulates: start with Claude → /model gpt-4o → query → /model ollama/qwen2.5
 → query → /model claude-sonnet-4-6 → back. Shows same session, different models.
 """
@@ -94,7 +94,7 @@ def model_color(name):
 def make_banner(model, provider):
     col = model_color(model)
     return [
-        [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+        [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
         [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg(model, col, True),
          seg(f"  ({provider})", SUBTEXT)],
         [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW)],
@@ -107,7 +107,7 @@ def make_banner(model, provider):
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg(text + cur, TEXT),
     ]
@@ -124,7 +124,7 @@ def info_line(msg):
 def claude_header(model):
     col = model_color(model)
     return [
-        seg("╭─ CheetahClaws ", SUBTEXT),
+        seg("╭─ PyCode ", SUBTEXT),
         seg("●", col),
         seg(" ─────────────────────────────────────────────", SUBTEXT),
     ]

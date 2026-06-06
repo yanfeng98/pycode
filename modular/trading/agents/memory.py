@@ -224,7 +224,7 @@ def _tokenize(text: str) -> list[str]:
 
 # ── Memory Manager (singleton-like) ───────────────────────────────────────
 
-_MEMORY_DIR = Path.home() / ".cheetahclaws" / "trading" / "memory"
+_MEMORY_DIR = Path.home() / ".pycode" / "trading" / "memory"
 
 
 def get_memory(component: str) -> TradingMemory:

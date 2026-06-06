@@ -1,5 +1,5 @@
 """
-Multi-provider support for CheetahClaws.
+Multi-provider support for PyCode.
 
 Supported providers:
   anthropic  — Claude (claude-opus-4-6, claude-sonnet-4-6, ...)
@@ -169,7 +169,7 @@ PROVIDERS: dict[str, dict] = {
     # OpenAI-compatible. Get a key at https://build.nvidia.com (free signup).
     # Model IDs use the upstream <vendor>/<name> form, so callers must use
     # the double-prefixed `nim/<vendor>/<model>` invocation, e.g.
-    #   cheetahclaws --model nim/meta/llama-3.3-70b-instruct
+    #   pycode --model nim/meta/llama-3.3-70b-instruct
     # The catalog evolves — this list is a curated 2026-vintage starting set;
     # any model the catalog still serves works regardless of presence here.
     "nim": {
@@ -1405,7 +1405,7 @@ def stream_ollama(
         tool_calls.append({"id": v["id"], "name": v["name"], "input": v["input"]})
 
     # Ollama doesn't return exact token counts via livestream easily until "done",
-    # but we can do a rough estimate or 0, cheetahclaws handles zero gracefully
+    # but we can do a rough estimate or 0, pycode handles zero gracefully
     yield AssistantTurn(text, tool_calls, 0, 0, 0, 0)
 
 

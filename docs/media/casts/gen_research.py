@@ -17,7 +17,7 @@ HEADER = {
     "height": 32,
     "timestamp": 1747262400,
     "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"},
-    "title": "CheetahClaws /research — parallel fan-out across 20 sources",
+    "title": "PyCode /research — parallel fan-out across 20 sources",
     "idle_time_limit": 1.5,
 }
 
@@ -51,9 +51,9 @@ def type_string(s, base=0.04, jitter=0.02):
 # Scene 1 — launch + /research
 out(0.0, f"{GREEN}~{RST} {CYAN}❯{RST} ")
 out(0.6, "")
-type_string("cheetahclaws")
+type_string("pycode")
 out(0.4, "\r\n")
-out(0.3, f"{DIM}[CheetahClaws v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
+out(0.3, f"{DIM}[PyCode v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
 out(0.2, f"{BOLD}{CYAN}[~] »{RST} ")
 out(0.5, "")
 type_string("/research \"LLM agents 2026 trends\" --range 6m --expand")
@@ -124,7 +124,7 @@ out(0.5, f"{DIM}● Verifying citations against arXiv / Semantic Scholar / Cross
 out(0.4, f"  {GREEN}✓{RST}  47 papers, {GREEN}45 verified{RST}, {RED}2 flagged for hallucination{RST}\r\n\r\n")
 
 # Scene 6 — report saved
-out(0.4, f"{GREEN}✓{RST}  Brief saved → {CYAN}~/.cheetahclaws/research_reports/llm-agents-2026-trends-{t:.0f}.md{RST}\r\n")
+out(0.4, f"{GREEN}✓{RST}  Brief saved → {CYAN}~/.pycode/research_reports/llm-agents-2026-trends-{t:.0f}.md{RST}\r\n")
 out(0.2, f"   {DIM}3,124 words · 47 citations · cross-platform heat table · 12-month trend sparkline{RST}\r\n\r\n")
 
 # Scene 7 — follow-up

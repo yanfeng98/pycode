@@ -1,5 +1,5 @@
 """
-commands/theme_cmd.py - /theme slash command for CheetahClaws.
+commands/theme_cmd.py - /theme slash command for PyCode.
 
 Usage:
   /theme              List available themes (current marked with *)

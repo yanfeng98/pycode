@@ -1,5 +1,5 @@
 """
-bridges/wechat.py — WeChat (iLink Bot API) bridge for CheetahClaws.
+bridges/wechat.py — WeChat (iLink Bot API) bridge for PyCode.
 
 Uses Tencent's iLink Bot API to receive/send WeChat messages.
 Authentication via QR code scan.
@@ -61,15 +61,15 @@ _wx_seen_msgids: set = set()
 
 
 # ── Single-instance lock ──────────────────────────────────────────────────
-# Two cheetahclaws processes sharing the same WeChat session both poll the
+# Two pycode processes sharing the same WeChat session both poll the
 # same inbound messages → each one independently dispatches a job → user
 # sees double replies. The fix is a process-level pid lock under
-# ``~/.cheetahclaws/wechat.lock`` so only one bridge runs per host. The
+# ``~/.pycode/wechat.lock`` so only one bridge runs per host. The
 # second instance still works as a REPL — just without WeChat.
 
 import os as _os_lock
 
-_WX_LOCK_PATH = _os_lock.path.expanduser("~/.cheetahclaws/wechat.lock")
+_WX_LOCK_PATH = _os_lock.path.expanduser("~/.pycode/wechat.lock")
 _wx_lock_acquired = False
 
 
@@ -93,7 +93,7 @@ def _wx_acquire_lock() -> tuple[bool, int]:
 
     Returns ``(acquired, holder_pid)``. ``acquired=True`` means we now own
     the lock and should start the bridge; ``False`` means another live
-    cheetahclaws process owns it (``holder_pid`` is its pid). A stale
+    pycode process owns it (``holder_pid`` is its pid). A stale
     lock (holder process dead) is silently reaped and re-acquired.
     """
     global _wx_lock_acquired
@@ -603,12 +603,12 @@ def _wx_poll_loop(token: str, base_url: str, config: dict) -> str:
                     continue
 
                 if text.strip().lower() in ("/stop", "/off"):
-                    _wx_send(from_uid, "🔴 cheetahclaws bridge stopped.", config)
+                    _wx_send(from_uid, "🔴 pycode bridge stopped.", config)
                     _wechat_stop.set()
                     break
 
                 if text.strip().lower() == "/start":
-                    _wx_send(from_uid, "🟢 cheetahclaws bridge is active. Send me anything.", config)
+                    _wx_send(from_uid, "🟢 pycode bridge is active. Send me anything.", config)
                     continue
 
                 if text.strip().startswith("/"):

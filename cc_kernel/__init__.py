@@ -1,8 +1,8 @@
-"""cc_kernel — Phase-1 agent OS kernel for cheetahclaws.
+"""cc_kernel — Phase-1 agent OS kernel for pycode.
 
 Implements RFC 0003 (AgentProcess + EventLog WAL). Opt-in only: this
 package is imported and activated exclusively from
-``cc_daemon/cli.py`` when ``cheetahclaws serve --enable-kernel`` is
+``cc_daemon/cli.py`` when ``pycode serve --enable-kernel`` is
 passed. With the flag absent, this package is never touched and the
 daemon behaves byte-for-byte identically to the pre-RFC build.
 

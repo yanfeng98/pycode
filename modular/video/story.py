@@ -1,6 +1,6 @@
 """
 Story generation for video pipeline.
-Uses CheetahClaws' active provider (stream()) — no separate litellm dependency.
+Uses PyCode' active provider (stream()) — no separate litellm dependency.
 """
 
 import re

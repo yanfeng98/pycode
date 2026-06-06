@@ -1,5 +1,5 @@
 """
-circuit_breaker.py — Per-provider circuit breaker for CheetahClaws API calls.
+circuit_breaker.py — Per-provider circuit breaker for PyCode API calls.
 
 States:
   CLOSED    — normal, tracking failures in a rolling window

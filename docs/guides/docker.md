@@ -1,10 +1,10 @@
 # Docker / Home Server Guide
 
-Run CheetahClaws in a container as a long-running home-server service: Web UI in the browser, Telegram bridge for your phone, all backed by an Ollama instance on the host.
+Run PyCode in a container as a long-running home-server service: Web UI in the browser, Telegram bridge for your phone, all backed by an Ollama instance on the host.
 
 This guide targets a Linux host (Ubuntu / DGX-Spark) running Docker 20.10+ and a local Ollama install. The same compose file works on macOS or Windows with minor tweaks called out inline.
 
-> CheetahClaws also runs perfectly well as a normal `pip install`. Use Docker when you want a long-running service, network-accessible UI, or process isolation. For local CLI use against your own files, native install is usually smoother.
+> PyCode also runs perfectly well as a normal `pip install`. Use Docker when you want a long-running service, network-accessible UI, or process isolation. For local CLI use against your own files, native install is usually smoother.
 
 ## Prerequisites
 
@@ -20,8 +20,8 @@ This guide targets a Linux host (Ubuntu / DGX-Spark) running Docker 20.10+ and a
 ## 1. Get the source
 
 ```bash
-git clone https://github.com/SafeRL-Lab/cheetahclaws.git
-cd cheetahclaws
+git clone https://github.com/yanfeng98/pycode.git
+cd pycode
 ```
 
 ## 2. Configure the environment
@@ -44,19 +44,19 @@ mkdir -p ./workspace ./data
 ```
 
 - `./workspace` — the agent's working directory. Mount whatever you want it to read/edit. **Share this folder over Samba** to access it from your phone or other PCs.
-- `./data` — persists `~/.cheetahclaws` (config, session history, snapshots).
+- `./data` — persists `~/.pycode` (config, session history, snapshots).
 
 ## 4. Bring the stack up
 
 ```bash
 docker compose up -d --build
-docker compose logs -f cheetahclaws
+docker compose logs -f pycode
 ```
 
 You should see:
 
 ```
-CheetahClaws Web Terminal
+PyCode Web Terminal
 ────────────────────────────────────────
 Terminal: http://localhost:8080
 Chat UI:  http://localhost:8080/chat
@@ -95,8 +95,8 @@ If your Ollama is bound only to `127.0.0.1` on the host, you'll need to either:
 ```bash
 sudo apt install samba
 sudo tee -a /etc/samba/smb.conf <<'EOF'
-[cheetahclaws]
-   path = /home/<you>/cheetahclaws/workspace
+[pycode]
+   path = /home/<you>/pycode/workspace
    browseable = yes
    writable = yes
    guest ok = no
@@ -106,24 +106,24 @@ sudo smbpasswd -a <you>
 sudo systemctl restart smbd
 ```
 
-From your other PC / phone, connect to `smb://<host-ip>/cheetahclaws`. Files you drop in show up at `/workspace` inside the container immediately.
+From your other PC / phone, connect to `smb://<host-ip>/pycode`. Files you drop in show up at `/workspace` inside the container immediately.
 
 ## Common operations
 
 | Task | Command |
 |---|---|
-| Tail logs | `docker compose logs -f cheetahclaws` |
+| Tail logs | `docker compose logs -f pycode` |
 | Restart | `docker compose restart` |
 | Update to latest source | `git pull && docker compose up -d --build` |
-| Shell into the container | `docker compose exec cheetahclaws bash` |
-| Run the CLI directly | `docker compose exec cheetahclaws cheetahclaws` |
+| Shell into the container | `docker compose exec pycode bash` |
+| Run the CLI directly | `docker compose exec pycode pycode` |
 | Reset config | `rm -rf ./data && docker compose restart` |
 
 ## Troubleshooting
 
 **"Cannot connect to Ollama"** — the container can't reach `host.docker.internal:11434`. Verify:
 ```bash
-docker compose exec cheetahclaws curl -s http://host.docker.internal:11434/api/tags
+docker compose exec pycode curl -s http://host.docker.internal:11434/api/tags
 ```
 If this fails, your Ollama is bound to localhost only. Set `OLLAMA_HOST=0.0.0.0:11434` and restart it.
 
@@ -131,7 +131,7 @@ If this fails, your Ollama is bound to localhost only. Set `OLLAMA_HOST=0.0.0.0:
 
 **Web UI not reachable from phone** — check the host firewall (`sudo ufw allow 8080/tcp`) and confirm `--host 0.0.0.0` is in the logs.
 
-**Telegram bridge not responding** — check `docker compose logs cheetahclaws | grep -i telegram`. Token/chat-id are loaded from `~/.cheetahclaws/config.json` (i.e., `./data/config.json` on the host). Validate they're set, then restart the container.
+**Telegram bridge not responding** — check `docker compose logs pycode | grep -i telegram`. Token/chat-id are loaded from `~/.pycode/config.json` (i.e., `./data/config.json` on the host). Validate they're set, then restart the container.
 
 **Chat UI loads but every JS/CSS asset is 404** (`/marked.min.js`, `/static/js/chat.js`, …) — the running server is reading static files from a `web/` directory that doesn't actually contain them. This almost always means a custom Dockerfile used a non-editable install (`pip install .[all]`) without bundling package data, so `web/` in `site-packages/` is missing the `static/js/` subtree. Two ways out:
 
@@ -152,7 +152,7 @@ If you're rolling your own image instead of the one in this repo, keep these in 
 - **Don't `WORKDIR` away before `pip install`.** The install must run with the project's `pyproject.toml` at the build context root so setuptools can resolve `[tool.setuptools.package-data]`.
 - **`COPY` the full source tree, not just `pyproject.toml` + a few `.py` files.** The chat UI ships HTML/JS/CSS that lives outside the Python source — leaving them out is the most common reason `/chat` loads but assets 404.
 - **Match Python ≥ 3.10.** The server uses `Path.is_relative_to`, `match`/`case`, and other 3.10+ features.
-- **Run `cheetahclaws --web --host 0.0.0.0`.** Without `--host 0.0.0.0` the server only binds to `127.0.0.1` inside the container, which Docker's port mapping cannot reach from the host.
+- **Run `pycode --web --host 0.0.0.0`.** Without `--host 0.0.0.0` the server only binds to `127.0.0.1` inside the container, which Docker's port mapping cannot reach from the host.
 
 ## Security notes
 

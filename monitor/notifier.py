@@ -3,7 +3,7 @@ monitor/notifier.py — Deliver reports via configured channels.
 
 Channels: telegram, slack, console (always)
 
-Config keys (in ~/.cheetahclaws/config.json):
+Config keys (in ~/.pycode/config.json):
   monitor_telegram_token   — Telegram bot token
   monitor_telegram_chat_id — Telegram chat ID (int or str)
   monitor_slack_token      — Slack bot token

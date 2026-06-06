@@ -1,9 +1,9 @@
-"""Configuration management for CheetahClaws (multi-provider)."""
+"""Configuration management for PyCode (multi-provider)."""
 import os
 import json
 from pathlib import Path
 
-CONFIG_DIR        = Path.home() / ".cheetahclaws"
+CONFIG_DIR        = Path.home() / ".pycode"
 CONFIG_FILE       = CONFIG_DIR  / "config.json"
 HISTORY_FILE      = CONFIG_DIR  / "input_history.txt"
 SESSIONS_DIR      = CONFIG_DIR  / "sessions"
@@ -87,7 +87,7 @@ DEFAULTS = {
     # RFC 0002 F-4: run agent_runner as a subprocess under cc_daemon
     # supervision instead of an in-process thread. Off by default so
     # REPL behaviour is unchanged; daemon code paths can opt in
-    # explicitly. The CHEETAHCLAWS_ENABLE_F4 env var also enables it.
+    # explicitly. The PYCODE_ENABLE_F4 env var also enables it.
     "agent_runner_subprocess":              False,
     # Per-provider API keys (optional; env vars take priority)
     # "anthropic_api_key": "sk-ant-..."

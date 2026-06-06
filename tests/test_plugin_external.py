@@ -23,7 +23,7 @@ from plugin.types import PluginScope
 
 @pytest.fixture(autouse=True)
 def _isolate_user_cfg(tmp_path, monkeypatch):
-    """Redirect the user-level config so tests don't touch ~/.cheetahclaws."""
+    """Redirect the user-level config so tests don't touch ~/.pycode."""
     fake_cfg = tmp_path / "user-plugins.json"
     monkeypatch.setattr(store, "USER_PLUGIN_CFG", fake_cfg)
     yield

@@ -11,7 +11,7 @@ This RFC introduces **AgentFS** — a kernel-managed key-value object
 store with hierarchical paths. It is the missing unified state plane:
 today the codebase scatters durable agent state across `memory/`,
 `checkpoint/`, `skill/`, `task/`, and `prompts/` directories under
-`~/.cheetahclaws/`, each with its own format, naming, and lifecycle.
+`~/.pycode/`, each with its own format, naming, and lifecycle.
 The supervisor and tools have to know about each layout. AgentFS
 collapses them all into one path-keyed object table that the kernel
 owns.

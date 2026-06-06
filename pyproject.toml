@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cheetahclaws"
+name = "pycode"
 version = "3.05.82"
-description = "CheetahClaws: An Extensible, Python-Native Agent System for Autonomous Multi-Model Workflows"
+description = "PyCode: An Extensible, Python-Native Agent System for Autonomous Multi-Model Workflows"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -31,7 +31,7 @@ qq          = ["qq-botpy>=1.2.1"]
 all         = ["sounddevice", "Pillow", "prompt_toolkit>=3.0.43", "playwright", "pymupdf", "openpyxl", "pytesseract", "yfinance>=0.2.30", "rank-bm25>=0.2.2", "sqlalchemy>=2.0", "bcrypt>=4.0", "PyJWT>=2.8.0", "litellm>=1.60.0,<2.0.0", "qq-botpy>=1.2.1"]
 
 [project.scripts]
-cheetahclaws = "cheetahclaws:main"
+pycode = "pycode:main"
 
 [tool.setuptools]
 # Top-level single-file modules. NOTE: never list a name here that also
@@ -39,7 +39,7 @@ cheetahclaws = "cheetahclaws:main"
 # to build or silently drop unrelated packages on some platforms (Windows
 # + Python 3.13 + setuptools ≥ 75 reported in #97).
 py-modules = [
-    "cheetahclaws",
+    "pycode",
     "agent",
     "agent_runner",
     "auxiliary",

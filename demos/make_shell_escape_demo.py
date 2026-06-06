@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws shell escape (!command) using PIL.
+Generate animated GIF demo of pycode shell escape (!command) using PIL.
 Shows several ! commands interspersed with normal AI queries to highlight
 the contrast: ! = direct shell, no AI; normal input = AI response.
 """
@@ -75,7 +75,7 @@ def draw_frame(lines_segments):
 # ── Reusable line builders ────────────────────────────────────────────────
 
 BANNER = [
-    [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+    [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
     [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True)],
     [seg("│  ", SUBTEXT), seg("Permissions: ", SUBTEXT), seg("auto", YELLOW)],
     [seg("│  Type /help for commands, Ctrl+C to cancel                  │", SUBTEXT)],
@@ -87,7 +87,7 @@ BANNER = [
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg(text + cur, TEXT),
     ]
@@ -96,7 +96,7 @@ def prompt_line(text="", cursor=False):
 def shell_prompt(cmd):
     """Prompt line with ! highlighted in yellow."""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg("!", YELLOW, True),
         seg(cmd, TEXT),
@@ -114,7 +114,7 @@ def shell_cmd_line(cmd):
 
 def claude_header():
     return [
-        seg("╭─ CheetahClaws ", SUBTEXT),
+        seg("╭─ PyCode ", SUBTEXT),
         seg("●", GREEN),
         seg(" ─────────────────────────────────────────────", SUBTEXT),
     ]
@@ -140,14 +140,14 @@ def type_cmd(scenes_list, prefix_lines, full_cmd, hold_ms=500, char_ms=65, is_sh
         chunk = full_cmd[:i]
         if is_shell:
             line = [
-                seg("[cheetahclaws] ", SUBTEXT),
+                seg("[pycode] ", SUBTEXT),
                 seg("» ", CYAN, True),
                 seg("!", YELLOW, True),
                 seg(chunk + ("█" if i < len(full_cmd) else ""), TEXT),
             ]
         else:
             line = [
-                seg("[cheetahclaws] ", SUBTEXT),
+                seg("[pycode] ", SUBTEXT),
                 seg("» ", CYAN, True),
                 seg(chunk + ("█" if i < len(full_cmd) else ""), TEXT),
             ]

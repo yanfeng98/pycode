@@ -36,7 +36,7 @@ def _is_safe_bash(cmd: str) -> bool:
 
 # Path patterns that hold credentials or system secrets — never accessed by
 # default, even when no allowed_root is configured. Set
-# CHEETAHCLAWS_FS_NO_SANDBOX=1 to bypass (e.g. when intentionally auditing
+# PYCODE_FS_NO_SANDBOX=1 to bypass (e.g. when intentionally auditing
 # your own secrets).
 _HOME = Path.home()
 _SECRET_DIRS = (
@@ -90,7 +90,7 @@ def _check_path_allowed(file_path: str, config: dict) -> str | None:
          file_path must resolve inside that root.
       2. Independent of (1), a default credential denylist refuses paths
          like ~/.ssh/id_*, ~/.aws/credentials, /etc/shadow, etc.
-         Set CHEETAHCLAWS_FS_NO_SANDBOX=1 to disable layer (2).
+         Set PYCODE_FS_NO_SANDBOX=1 to disable layer (2).
     """
     try:
         resolved = Path(file_path).resolve()
@@ -110,11 +110,11 @@ def _check_path_allowed(file_path: str, config: dict) -> str | None:
         except Exception as e:
             return f"Error: path validation failed: {e}"
 
-    if os.environ.get("CHEETAHCLAWS_FS_NO_SANDBOX", "0") != "1":
+    if os.environ.get("PYCODE_FS_NO_SANDBOX", "0") != "1":
         if _is_secret_path(resolved):
             return (
                 f"Error: path '{file_path}' is on the credential denylist "
                 f"(SSH keys, ~/.aws, ~/.gnupg, /etc/shadow, etc.). "
-                f"Set CHEETAHCLAWS_FS_NO_SANDBOX=1 to override."
+                f"Set PYCODE_FS_NO_SANDBOX=1 to override."
             )
     return None

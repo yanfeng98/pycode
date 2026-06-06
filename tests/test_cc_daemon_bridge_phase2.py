@@ -76,9 +76,9 @@ class _Phase2Base(unittest.TestCase):
         _setup_isolated(Path(self._tmpdir.name))
         self._saved_env = {
             k: os.environ.pop(k, None)
-            for k in ("CHEETAHCLAWS_ENABLE_F6",
-                      "CHEETAHCLAWS_ENABLE_F7",
-                      "CHEETAHCLAWS_ENABLE_F8")
+            for k in ("PYCODE_ENABLE_F6",
+                      "PYCODE_ENABLE_F7",
+                      "PYCODE_ENABLE_F8")
         }
 
     def tearDown(self):
@@ -134,7 +134,7 @@ class TestPhase2OutboundDelivery(_Phase2Base):
     def test_session_reply_forwards_to_sender(self):
         from cc_daemon import bridge_supervisor as bs
         from cc_daemon import events as _events
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         sent: list[str] = []
 
@@ -174,7 +174,7 @@ class TestPhase2OutboundDelivery(_Phase2Base):
     def test_outbound_ignores_other_sessions(self):
         from cc_daemon import bridge_supervisor as bs
         from cc_daemon import events as _events
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         sent: list[str] = []
 
@@ -214,7 +214,7 @@ class TestPhase2InboundPublish(_Phase2Base):
     def test_telegram_inbound_publishes_event(self):
         from cc_daemon import bridge_supervisor as bs
         from cc_daemon import events as _events
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
 
         # First call to _tg_api is flush (offset=-1, returns latest).
         # Subsequent calls (offset > 0) return one message then empty.
@@ -276,7 +276,7 @@ class TestBridgeStartRpcPhase2(_Phase2Base):
 
     @unittest.skipIf(pytestmark_skipif_windows, "POSIX only")
     def test_rpc_passes_daemon_phase2_through(self):
-        os.environ["CHEETAHCLAWS_ENABLE_F6"] = "1"
+        os.environ["PYCODE_ENABLE_F6"] = "1"
         from cc_daemon.rpc import RpcRegistry, CallContext
         from cc_daemon import bridge_methods, bridge_supervisor as bs
 

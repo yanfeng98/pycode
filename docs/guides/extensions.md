@@ -17,8 +17,8 @@ Memories are stored as individual markdown files in two scopes:
 
 | Scope | Path | Visibility |
 |---|---|---|
-| **User** (default) | `~/.cheetahclaws/memory/` | Shared across all projects |
-| **Project** | `.cheetahclaws/memory/` in cwd | Local to the current repo |
+| **User** (default) | `~/.pycode/memory/` | Shared across all projects |
+| **Project** | `.pycode/memory/` in cwd | Local to the current repo |
 
 A `MEMORY.md` index (≤ 200 lines / 25 KB) is auto-rebuilt on every save or delete and injected into the system prompt so the model always has an overview of what's been remembered.
 
@@ -138,10 +138,10 @@ Skills are reusable prompt templates that give the model specialized capabilitie
 **Quick start — custom skill:**
 
 ```bash
-mkdir -p ~/.cheetahclaws/skills
+mkdir -p ~/.pycode/skills
 ```
 
-Create `~/.cheetahclaws/skills/deploy.md`:
+Create `~/.pycode/skills/deploy.md`:
 
 ```markdown
 ---
@@ -182,8 +182,8 @@ AI: [deploys version 2.1.0 to staging]
 **Skill search paths:**
 
 ```
-./.cheetahclaws/skills/     # project-level (overrides user-level)
-~/.cheetahclaws/skills/     # user-level
+./.pycode/skills/     # project-level (overrides user-level)
+~/.pycode/skills/     # user-level
 ```
 
 ---
@@ -230,7 +230,7 @@ Agent(prompt="refactor auth module", isolation="worktree")
 ```
 The worktree is auto-cleaned up if no changes were made; otherwise the branch name is reported.
 
-**Custom agent types** — create `~/.cheetahclaws/agents/myagent.md`:
+**Custom agent types** — create `~/.pycode/agents/myagent.md`:
 ```markdown
 ---
 name: myagent
@@ -261,7 +261,7 @@ MCP lets you connect any external tool server — local subprocess or remote HTT
 
 ### Configuration
 
-Place a `.mcp.json` file in your project directory **or** edit `~/.cheetahclaws/mcp.json` for user-wide servers.
+Place a `.mcp.json` file in your project directory **or** edit `~/.pycode/mcp.json` for user-wide servers.
 
 ```json
 {
@@ -293,7 +293,7 @@ Place a `.mcp.json` file in your project directory **or** edit `~/.cheetahclaws/
 }
 ```
 
-Config priority: `.mcp.json` (project) overrides `~/.cheetahclaws/mcp.json` (user) by server name.
+Config priority: `.mcp.json` (project) overrides `~/.pycode/mcp.json` (user) by server name.
 
 #### Environment variable expansion in headers
 
@@ -307,16 +307,16 @@ The variables are expanded once at config load time, after the `.env` loader run
 
 #### OAuth 2.0 (HTTP transport)
 
-For HTTP MCP servers that require OAuth (e.g. enterprise SAP/Jira), CheetahClaws speaks the full MCP Authorization spec:
+For HTTP MCP servers that require OAuth (e.g. enterprise SAP/Jira), PyCode speaks the full MCP Authorization spec:
 
 - Resource server metadata discovery (RFC 9728)
 - Authorization server metadata discovery (RFC 8414)
 - Dynamic client registration (RFC 7591) — used when no `client_id` is configured
 - Authorization Code + PKCE (S256) flow with browser redirect
 - Automatic refresh-token rotation
-- Token persistence to `~/.cheetahclaws/mcp_oauth.json` (mode `0600`)
+- Token persistence to `~/.pycode/mcp_oauth.json` (mode `0600`)
 
-You don't have to do anything beyond declaring the server URL: on the first `401` the client opens your browser, you sign in, and the resulting access token is cached and refreshed transparently. To force a re-auth, delete the relevant entry in `~/.cheetahclaws/mcp_oauth.json`.
+You don't have to do anything beyond declaring the server URL: on the first `401` the client opens your browser, you sign in, and the resulting access token is cached and refreshed transparently. To force a re-auth, delete the relevant entry in `~/.pycode/mcp_oauth.json`.
 
 ### Quick start
 
@@ -375,7 +375,7 @@ that are not alphanumeric or `_` are automatically replaced with `_`.
 
 ## Plugin System
 
-The `plugin/` package lets you extend cheetahclaws with additional tools, skills, and MCP servers from git repositories or local directories.
+The `plugin/` package lets you extend pycode with additional tools, skills, and MCP servers from git repositories or local directories.
 
 ### Install a plugin
 
@@ -427,8 +427,8 @@ Alternatively use YAML frontmatter in `PLUGIN.md`.
 
 | Scope | Location | Config |
 |-------|----------|--------|
-| user (default) | `~/.cheetahclaws/plugins/` | `~/.cheetahclaws/plugins.json` |
-| project | `.cheetahclaws/plugins/` | `.cheetahclaws/plugins.json` |
+| user (default) | `~/.pycode/plugins/` | `~/.pycode/plugins.json` |
+| project | `.pycode/plugins/` | `.pycode/plugins.json` |
 
 Use `--project` flag: `/plugin install name@url --project`
 
@@ -472,7 +472,7 @@ Your choice (number or text):
 
 ## Monitor — AI Subscriptions & Alerts
 
-`/monitor` turns cheetahclaws into a 24/7 AI research assistant that watches stocks, crypto, arxiv, world news, or any custom topic on a schedule and pushes AI-written reports to Telegram, Slack, or your terminal.
+`/monitor` turns pycode into a 24/7 AI research assistant that watches stocks, crypto, arxiv, world news, or any custom topic on a schedule and pushes AI-written reports to Telegram, Slack, or your terminal.
 
 ### Quick start — interactive wizard
 
@@ -588,22 +588,22 @@ The wizard walks you through topic → schedule → delivery channel → run now
   ─── Summary ───────────────────────────────────
   Template  : research_assistant
   Name      : research
-  Args      : ~/papers/ --output ~/.cheetahclaws/agents/research/output/research_notes.md
+  Args      : ~/papers/ --output ~/.pycode/agents/research/output/research_notes.md
   Interval  : 2.0s
   Auto-approve: True
-  Output    : ~/.cheetahclaws/agents/research/output/research_notes.md
+  Output    : ~/.pycode/agents/research/output/research_notes.md
 
   Start? [Y/n]: Y
 ✓ Agent 'research' is running.
-  Log    : ~/.cheetahclaws/agents/research/log.jsonl
-  Output : ~/.cheetahclaws/agents/research/output/research_notes.md
+  Log    : ~/.pycode/agents/research/log.jsonl
+  Output : ~/.pycode/agents/research/output/research_notes.md
   Progress → this terminal (iterations print here).
   Stop   : /agent stop research
 ```
 
 > **Where do outputs land?** When you give a *relative* output filename
 > (e.g. `research_notes.md`), the wizard rewrites it to an absolute path
-> under `~/.cheetahclaws/agents/<name>/output/` so generated artifacts
+> under `~/.pycode/agents/<name>/output/` so generated artifacts
 > stay out of your current working directory and your repo. Pass an
 > *absolute* path (e.g. `/tmp/notes.md` or `~/Desktop/notes.md`) to
 > override and save anywhere you want.
@@ -641,7 +641,7 @@ The wizard walks you through topic → schedule → delivery channel → run now
 
 ### Custom templates
 
-Drop any `.md` file into `~/.cheetahclaws/agent_templates/` following the program.md pattern:
+Drop any `.md` file into `~/.pycode/agent_templates/` following the program.md pattern:
 
 ```markdown
 # My Custom Agent
@@ -672,6 +672,6 @@ Agents push iteration summaries to the active bridge (Telegram/Slack/WeChat) aut
 !agent stop research  # stop the agent
 ```
 
-Iteration log is also persisted to `~/.cheetahclaws/agents/<name>/log.jsonl` for offline review.
+Iteration log is also persisted to `~/.pycode/agents/<name>/log.jsonl` for offline review.
 
 ---

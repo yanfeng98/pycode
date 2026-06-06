@@ -103,7 +103,7 @@ def extract_bash_block(text: str) -> Optional[str]:
 
 def make_workspace(run_id: str, *, root: Optional[Path] = None) -> Path:
     """Create (or reuse) a workspace directory for this run."""
-    base = root or (Path.home() / ".cheetahclaws" / "research_papers")
+    base = root or (Path.home() / ".pycode" / "research_papers")
     ws = base / run_id / "workspace"
     ws.mkdir(parents=True, exist_ok=True)
     return ws

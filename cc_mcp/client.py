@@ -26,13 +26,13 @@ _MCP_BLOCKED_ENV_KEYS = frozenset({
 def _sanitized_mcp_env(user_env: Optional[dict]) -> dict[str, str]:
     """Return os.environ updated with caller-supplied env, minus dangerous keys.
 
-    Set CHEETAHCLAWS_MCP_TRUST_ENV=1 to bypass (for power users wiring up
+    Set PYCODE_MCP_TRUST_ENV=1 to bypass (for power users wiring up
     a server that legitimately needs LD_LIBRARY_PATH etc.).
     """
     base = dict(os.environ)
     if not user_env:
         return base
-    trust = os.environ.get("CHEETAHCLAWS_MCP_TRUST_ENV", "0") == "1"
+    trust = os.environ.get("PYCODE_MCP_TRUST_ENV", "0") == "1"
     dropped: list[str] = []
     for k, v in user_env.items():
         if (not trust) and k in _MCP_BLOCKED_ENV_KEYS:
@@ -42,7 +42,7 @@ def _sanitized_mcp_env(user_env: Optional[dict]) -> dict[str, str]:
     if dropped:
         print(
             f"[mcp] Dropped potentially-dangerous env keys from server "
-            f"config: {sorted(dropped)}. Set CHEETAHCLAWS_MCP_TRUST_ENV=1 "
+            f"config: {sorted(dropped)}. Set PYCODE_MCP_TRUST_ENV=1 "
             f"to allow.",
             file=sys.stderr, flush=True,
         )

@@ -1,4 +1,4 @@
-"""Plugin system for cheetahclaws."""
+"""Plugin system for pycode."""
 from .types import PluginManifest, PluginEntry, PluginScope, parse_plugin_identifier
 from .store import (
     install_plugin, uninstall_plugin,

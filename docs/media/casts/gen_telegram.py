@@ -17,7 +17,7 @@ HEADER = {
     "height": 32,
     "timestamp": 1747262400,
     "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"},
-    "title": "CheetahClaws Telegram bridge — control the agent from your phone",
+    "title": "PyCode Telegram bridge — control the agent from your phone",
     "idle_time_limit": 1.4,
 }
 
@@ -49,8 +49,8 @@ def type_string(s, base=0.04, jitter=0.02):
 
 
 # Scene 1 — start the bridge
-out(0.0, f"{GREEN}~{RST} {CYAN}❯{RST} cheetahclaws\r\n")
-out(0.3, f"{DIM}[CheetahClaws v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
+out(0.0, f"{GREEN}~{RST} {CYAN}❯{RST} pycode\r\n")
+out(0.3, f"{DIM}[PyCode v3.05.79 · claude-sonnet-4-6]{RST}\r\n\r\n")
 out(0.2, f"{BOLD}{CYAN}[~] »{RST} ")
 out(0.5, "")
 type_string("/telegram 7890:AAEx_REDACTED 458291205")
@@ -92,7 +92,7 @@ out(0.3, f"{BLUE}└────────────────────
 # Scene 5 — job finishes, bot pushes notification
 out(0.6, f"{BLUE}┌─ Telegram ────────────────────────────────────────────────────────┐{RST}\r\n")
 out(0.3, f"{BLUE}│{RST}  {DIM}11:51{RST}  🐆 Job #2 done. {GREEN}Backup OK{RST} — 4.2 GB → s3://prod-backups/2026-05-10/\r\n")
-out(0.2, f"{BLUE}│{RST}         {DIM}Took 7m 51s. Logs at ~/.cheetahclaws/jobs/2/stdout.txt{RST}\r\n")
+out(0.2, f"{BLUE}│{RST}         {DIM}Took 7m 51s. Logs at ~/.pycode/jobs/2/stdout.txt{RST}\r\n")
 out(0.3, f"{BLUE}└───────────────────────────────────────────────────────────────────┘{RST}\r\n\r\n")
 
 out(0.4, f"{DIM}Also available: /wechat (微信), /slack — same job queue & passthrough.{RST}\r\n\r\n")

@@ -566,7 +566,7 @@ def _cmd_daemon(arg: str, config: dict) -> bool:
             ok("Lab daemon running. Pulls from /lab backlog continuously.")
             info(f"  started_at : {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(h.started_at))}")
             info(f"  pending    : {len(pending)} item(s) in queue")
-            info(f"  reports → ~/.cheetahclaws/research_papers/<run_id>/report.md")
+            info(f"  reports → ~/.pycode/research_papers/<run_id>/report.md")
             info(f"  watch live : stage transitions print here as the daemon runs")
             info(f"  poll       : /lab status   |   /lab status <run_id>")
             info(f"  abort run  : /lab abort <run_id>")

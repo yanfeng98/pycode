@@ -1,6 +1,6 @@
-"""cc_kernel/cli.py — `cheetahclaws kernel ...` subcommand.
+"""cc_kernel/cli.py — `pycode kernel ...` subcommand.
 
-Talks to a running daemon (started via ``cheetahclaws serve
+Talks to a running daemon (started via ``pycode serve
 --enable-kernel``) over the existing daemon RPC channel and pretty-
 prints kernel.* RPC results to the terminal. Read-only inspection
 verbs only — mutations (create / spawn / charge) belong on the
@@ -61,7 +61,7 @@ def dispatch(argv: list[str]) -> int:
 
 def _print_usage() -> None:
     print(
-        "usage: cheetahclaws kernel <action> [options]\n"
+        "usage: pycode kernel <action> [options]\n"
         "\n"
         "Actions:\n"
         "  summary             Show kernel-wide rollup (uptime, agents, queue, …)\n"
@@ -74,7 +74,7 @@ def _print_usage() -> None:
         "  methods [--tier T]  List documented kernel.* methods\n"
         "  prometheus          Print Prometheus exposition text\n"
         "\n"
-        "Daemon must be running with `cheetahclaws serve --enable-kernel`.",
+        "Daemon must be running with `pycode serve --enable-kernel`.",
         file=sys.stderr,
     )
 
@@ -83,7 +83,7 @@ def _print_usage() -> None:
 
 
 def _cmd_summary(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel summary",
+    p = argparse.ArgumentParser(prog="pycode kernel summary",
                                 add_help=True)
     p.add_argument("--json", action="store_true",
                    help="Print raw JSON instead of formatted text")
@@ -133,7 +133,7 @@ def _cmd_summary(argv: list[str]) -> int:
 
 
 def _cmd_info(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel info")
+    p = argparse.ArgumentParser(prog="pycode kernel info")
     p.add_argument("--json", action="store_true")
     args = p.parse_args(argv)
     ok, resp = _call_rpc("kernel.api.version_info", {})
@@ -159,7 +159,7 @@ def _cmd_info(argv: list[str]) -> int:
 
 
 def _cmd_agents(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel agents")
+    p = argparse.ArgumentParser(prog="pycode kernel agents")
     p.add_argument("--state", help="Filter by state (READY|RUNNING|...)")
     p.add_argument("--limit", type=int, default=100)
     p.add_argument("--json", action="store_true")
@@ -193,7 +193,7 @@ def _cmd_agents(argv: list[str]) -> int:
 
 
 def _cmd_proc(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel proc")
+    p = argparse.ArgumentParser(prog="pycode kernel proc")
     p.add_argument("pid", type=int)
     p.add_argument("--json", action="store_true")
     args = p.parse_args(argv)
@@ -272,7 +272,7 @@ def _cmd_proc(argv: list[str]) -> int:
 
 
 def _cmd_events(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel events")
+    p = argparse.ArgumentParser(prog="pycode kernel events")
     p.add_argument("--pid", type=int, default=None)
     p.add_argument("--kind", default=None)
     p.add_argument("--since", type=int, default=0)
@@ -306,7 +306,7 @@ def _cmd_events(argv: list[str]) -> int:
 
 
 def _cmd_queue(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel queue")
+    p = argparse.ArgumentParser(prog="pycode kernel queue")
     p.add_argument("--state",
                    help="queued|dispatched|completed|expired|cancelled")
     p.add_argument("--pid", type=int, default=None)
@@ -341,7 +341,7 @@ def _cmd_queue(argv: list[str]) -> int:
 
 
 def _cmd_registry(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel registry")
+    p = argparse.ArgumentParser(prog="pycode kernel registry")
     p.add_argument("--prefix", default=None)
     p.add_argument("--tag", default=None)
     p.add_argument("--limit", type=int, default=100)
@@ -375,7 +375,7 @@ def _cmd_registry(argv: list[str]) -> int:
 
 
 def _cmd_methods(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel methods")
+    p = argparse.ArgumentParser(prog="pycode kernel methods")
     p.add_argument("--tier",
                    choices=("stable", "experimental", "deprecated"))
     p.add_argument("--json", action="store_true")
@@ -403,7 +403,7 @@ def _cmd_methods(argv: list[str]) -> int:
 
 
 def _cmd_prometheus(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="cheetahclaws kernel prometheus")
+    p = argparse.ArgumentParser(prog="pycode kernel prometheus")
     p.parse_args(argv)
     ok, resp = _call_rpc("kernel.observe.prometheus", {})
     if not ok:
@@ -440,10 +440,10 @@ def _print_rpc_error(reason: Any) -> int:
     """Translate connection errors into a friendly stderr message and
     return exit code 1 for daemon-not-running, 2 for everything else."""
     msg = str(reason)
-    print(f"cheetahclaws kernel: {msg}", file=sys.stderr)
+    print(f"pycode kernel: {msg}", file=sys.stderr)
     if "not running" in msg or "Connection refused" in msg or \
        "No such file or directory" in msg:
-        print("hint: is `cheetahclaws serve --enable-kernel` running?",
+        print("hint: is `pycode serve --enable-kernel` running?",
               file=sys.stderr)
         return 1
     if "Method not found" in msg or "method_not_found" in msg \

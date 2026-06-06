@@ -1,5 +1,5 @@
 """
-commands/advanced.py — Advanced power commands for CheetahClaws.
+commands/advanced.py — Advanced power commands for PyCode.
 
 Commands: /brainstorm, /worker, /ssj, /memory, /agents, /skills,
           /mcp, /plugin, /tasks
@@ -1474,7 +1474,7 @@ def cmd_draft(args: str, _state, config) -> bool:
 
     The auxiliary cheap model (config.auxiliary_model) drafts 3 candidates.
     With @<uid_or_label>, contact relationship/notes from
-    ~/.cheetahclaws/wx_contacts.json are used to tune tone and language.
+    ~/.pycode/wx_contacts.json are used to tune tone and language.
     Past confirmed sends from the smart-reply history (if any) feed style
     mimicking automatically.
     """
@@ -1506,7 +1506,7 @@ def cmd_draft(args: str, _state, config) -> bool:
                     contact = c
                     sender_label = c.label or key
                 else:
-                    warn(f"No contact '{key}' in ~/.cheetahclaws/wx_contacts.json — using generic tone")
+                    warn(f"No contact '{key}' in ~/.pycode/wx_contacts.json — using generic tone")
                     sender_label = key
             except Exception as _e:
                 warn(f"Contact lookup failed ({_e}); using generic tone")
@@ -1804,7 +1804,7 @@ def _ssj_trading_submenu(config, state):
         if not watchlist:
             watchlist = "AAPL,MSFT,GOOGL,NVDA,BTC,ETH"
         return ("__ssj_query__",
-                f"You are the CheetahClaws Trading Agent. Analyze each symbol in this watchlist: {watchlist}. "
+                f"You are the PyCode Trading Agent. Analyze each symbol in this watchlist: {watchlist}. "
                 f"For each symbol:\n"
                 f"1. Use GetPrice and GetTechnicalIndicators to gather data\n"
                 f"2. Run the full multi-agent analysis pipeline:\n"
@@ -2322,7 +2322,7 @@ def cmd_mcp(args: str, _state, config) -> bool:
         configs = load_mcp_configs()
         if not configs:
             info("No MCP servers configured.")
-            info("Add servers in ~/.cheetahclaws/mcp.json or .mcp.json")
+            info("Add servers in ~/.pycode/mcp.json or .mcp.json")
             info("Example: /mcp add my-git uvx mcp-server-git")
         else:
             info("MCP servers configured but not yet connected. Run /mcp reload")

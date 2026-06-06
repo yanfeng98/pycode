@@ -170,8 +170,8 @@ register_tool(ToolDef(
                     "type": "string",
                     "enum": ["user", "project"],
                     "description": (
-                        "'user' (default) = ~/.cheetahclaws/memory/ shared across projects; "
-                        "'project' = .cheetahclaws/memory/ local to this project"
+                        "'user' (default) = ~/.pycode/memory/ shared across projects; "
+                        "'project' = .pycode/memory/ local to this project"
                     ),
                 },
                 "confidence": {

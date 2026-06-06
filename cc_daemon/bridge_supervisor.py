@@ -27,9 +27,9 @@ Scope of the **F-6/7/8 skeleton**:
 
 Feature-flag gating (RFC roadmap §"Bridge flag"):
 
-  * ``CHEETAHCLAWS_ENABLE_F6`` → Telegram bridge in daemon.
-  * ``CHEETAHCLAWS_ENABLE_F7`` → Slack bridge in daemon (depends on F-6).
-  * ``CHEETAHCLAWS_ENABLE_F8`` → WeChat bridge in daemon (depends on F-6).
+  * ``PYCODE_ENABLE_F6`` → Telegram bridge in daemon.
+  * ``PYCODE_ENABLE_F7`` → Slack bridge in daemon (depends on F-6).
+  * ``PYCODE_ENABLE_F8`` → WeChat bridge in daemon (depends on F-6).
 
 When the flag is off, ``enabled(kind)`` returns False and ``start(kind)``
 raises RuntimeError. The REPL ``/telegram`` / ``/slack`` / ``/wechat``
@@ -53,9 +53,9 @@ SUPPORTED_KINDS = ("telegram", "slack", "wechat")
 # Feature-flag env vars per bridge — set independently so a deployment
 # can run Telegram-in-daemon while Slack and WeChat still live in the REPL.
 _FLAG_ENV = {
-    "telegram": "CHEETAHCLAWS_ENABLE_F6",
-    "slack":    "CHEETAHCLAWS_ENABLE_F7",
-    "wechat":   "CHEETAHCLAWS_ENABLE_F8",
+    "telegram": "PYCODE_ENABLE_F6",
+    "slack":    "PYCODE_ENABLE_F7",
+    "wechat":   "PYCODE_ENABLE_F8",
 }
 
 
@@ -349,10 +349,10 @@ def start(kind: str, config: dict, *, daemon_phase2: bool = False) -> BridgeHand
         # F-7 depends on F-6 scaffolding; surface this as a clear error
         # rather than letting the import surprise the caller.
         raise RuntimeError("F-7 (slack) depends on F-6 (telegram); "
-                           "enable CHEETAHCLAWS_ENABLE_F6 first")
+                           "enable PYCODE_ENABLE_F6 first")
     if kind == "wechat" and not enabled("telegram"):
         raise RuntimeError("F-8 (wechat) depends on F-6 (telegram); "
-                           "enable CHEETAHCLAWS_ENABLE_F6 first")
+                           "enable PYCODE_ENABLE_F6 first")
 
     with _handles_lock:
         existing = _handles.get(kind)

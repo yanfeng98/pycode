@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate animated GIF demo of cheetahclaws Memory system using PIL.
+Generate animated GIF demo of pycode Memory system using PIL.
 Simulates: session 1 → user tells AI preferences + project context → AI saves memory
 → session 2 (new day) → AI recalls context automatically → continues seamlessly.
 """
@@ -76,7 +76,7 @@ def draw_frame(lines_segments):
 
 def banner(session_label, date_str):
     return [
-        [seg("╭─ CheetahClaws v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
+        [seg("╭─ PyCode v3.05.5 ──────────────────────────────────╮", SUBTEXT)],
         [seg("│  ", SUBTEXT), seg("Model: ", SUBTEXT), seg("claude-sonnet-4-6", CYAN, True),
          seg(f"   {session_label}", SUBTEXT)],
         [seg("│  ", SUBTEXT), seg("Session: ", SUBTEXT), seg(date_str, YELLOW)],
@@ -93,7 +93,7 @@ BANNER2 = banner("Session 2", "Tue Apr 08  — new session")
 def prompt_line(text="", cursor=False):
     cur = "█" if cursor else ""
     return [
-        seg("[cheetahclaws] ", SUBTEXT),
+        seg("[pycode] ", SUBTEXT),
         seg("» ", CYAN, True),
         seg(text + cur, TEXT),
     ]
@@ -109,7 +109,7 @@ def info_line(msg):
 
 def claude_header():
     return [
-        seg("╭─ CheetahClaws ", SUBTEXT),
+        seg("╭─ PyCode ", SUBTEXT),
         seg("●", GREEN),
         seg(" ─────────────────────────────────────────────", SUBTEXT),
     ]
@@ -163,19 +163,19 @@ def build_scenes():
     # SESSION 1
     # ════════════════════════════════════════════════════════════════════
     add(BANNER1 + [
-        divider("Session 1  —  first time using CheetahClaws"),
+        divider("Session 1  —  first time using PyCode"),
         None,
         prompt_line(cursor=True),
     ], 900)
 
-    base1 = BANNER1 + [divider("Session 1  —  first time using CheetahClaws"), None]
+    base1 = BANNER1 + [divider("Session 1  —  first time using PyCode"), None]
 
     # User sets preferences
     q1 = "I prefer pytest over unittest, and always use type hints"
     type_it(base1, q1)
 
     add(BANNER1 + [
-        divider("Session 1  —  first time using CheetahClaws"),
+        divider("Session 1  —  first time using PyCode"),
         None,
         prompt_line(q1), None, claude_header(),
         text_line("Got it — I'll default to pytest and add type hints", 2),
@@ -190,7 +190,7 @@ def build_scenes():
 
     # User shares project context
     after1 = BANNER1 + [
-        divider("Session 1  —  first time using CheetahClaws"),
+        divider("Session 1  —  first time using PyCode"),
         None,
         prompt_line(q1),
         mem_save_line("test_framework", "pytest"),
@@ -202,7 +202,7 @@ def build_scenes():
     type_it(after1, q2)
 
     add(BANNER1 + [
-        divider("Session 1  —  first time using CheetahClaws"),
+        divider("Session 1  —  first time using PyCode"),
         None,
         prompt_line(q1),
         mem_save_line("test_framework", "pytest"),
