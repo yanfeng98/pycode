@@ -23,6 +23,8 @@ import platform
 if platform.system() == "Windows":
     pytest.skip("Web API tests are not supported on Windows due to PTY requirements", allow_module_level=True)
 
+pytest.importorskip("sqlalchemy", reason="sqlalchemy not installed (uv sync --extra web)")
+
 # Make the project root importable so `from web import ...` works
 _PKG = Path(__file__).resolve().parent.parent
 if str(_PKG) not in sys.path:

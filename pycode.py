@@ -130,10 +130,8 @@ Slash commands in REPL:
 """
 from __future__ import annotations
 
-# ── Standard library ───────────────────────────────────────────────────────
 import os
 
-# Load .env before any other imports read os.environ
 def _load_env() -> None:
     env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
     if not os.path.exists(env_path):
@@ -153,26 +151,15 @@ _load_env()
 import re
 import sys
 import uuid
-if sys.platform == "win32":
-    os.system("")  # Enable ANSI escape codes on Windows CMD
-import json
-try:
-    import readline
-except ImportError:
-    readline = None  # Windows compatibility
+import readline
 import atexit
 import argparse
 import time
-import traceback
 import threading
 from pathlib import Path
-from datetime import datetime
-from typing import Optional, Union
+from typing import Union
 
-
-# ── Safe stdio wrapper (prevents BrokenPipeError in daemon/bridge mode) ──
 class _SafeWriter:
-    """Wraps stdout/stderr to silently handle broken pipes and closed fds."""
     __slots__ = ("_inner",)
 
     def __init__(self, inner):
@@ -197,90 +184,67 @@ class _SafeWriter:
 sys.stdout = _SafeWriter(sys.stdout)
 sys.stderr = _SafeWriter(sys.stderr)
 
-
-# ── UI / rendering ─────────────────────────────────────────────────────────
 from ui.render import (
     C, clr, info, ok, warn, err, _truncate_err_global,
-    render_diff, _has_diff,
     stream_text, stream_thinking, flush_response,
     _start_tool_spinner, _stop_tool_spinner, _change_spinner_phrase,
-    set_spinner_phrase, set_rich_live, set_stream_mode, auto_stream_mode, set_spinner_tips,
+    set_spinner_phrase, set_stream_mode, auto_stream_mode, set_spinner_tips,
     print_tool_start, print_tool_end,
     set_quiet, reset_turn_stats, print_turn_summary,
     set_spinner_tokens, print_turn_stats,
     _RICH, console, _rgb,
 )
 
-# ── Input layer (prompt_toolkit with readline fallback) ──────────────────
 import ui.input as _ui_input
 _pt_read_line = _ui_input.read_line
 HAS_PROMPT_TOOLKIT = _ui_input.HAS_PROMPT_TOOLKIT
 
-# ── Bridge commands ────────────────────────────────────────────────────────
 import bridges.telegram as _btg
 import bridges.wechat   as _bwx
 import bridges.slack    as _bslk
 import bridges.qq       as _bqq
 from bridges.telegram import cmd_telegram, _tg_send
-from bridges.wechat   import cmd_wechat, _wx_start_bridge
-from bridges.slack    import cmd_slack, _slack_start_bridge
+from bridges.wechat   import cmd_wechat, _wx_start_bridge, _wx_send
+from bridges.slack    import cmd_slack, _slack_start_bridge, _slack_send
 from bridges.qq       import cmd_qq, _qq_start_bridge, _qq_send
 
-# ── Session commands ───────────────────────────────────────────────────────
 from commands.session import (
     cmd_save, cmd_load, cmd_resume, cmd_history, cmd_search,
     cmd_cloudsave, cmd_exit, save_latest,
 )
 
-# ── Config commands ────────────────────────────────────────────────────────
 from commands.config_cmd import (
     cmd_model, cmd_config, cmd_verbose, cmd_thinking, cmd_quiet,
     cmd_permissions, cmd_cwd, _interactive_ollama_picker,
 )
 
-# ── Core commands ──────────────────────────────────────────────────────────
 from commands.core import (
     cmd_help, cmd_clear, cmd_context, cmd_cost, cmd_budget, cmd_compact,
     cmd_init, cmd_export, cmd_copy, cmd_status, cmd_doctor,
     cmd_proactive, cmd_image, cmd_circuit, cmd_web, run_setup_wizard,
 )
 
-# ── Checkpoint / Plan commands ─────────────────────────────────────────────
 from commands.checkpoint_plan import cmd_checkpoint, cmd_rewind, cmd_plan
 
-# ── Advanced commands ──────────────────────────────────────────────────────
 from commands.advanced import (
     cmd_brainstorm, cmd_worker, cmd_ssj, cmd_draft, cmd_summarize,
     cmd_memory, cmd_agents, cmd_skills, cmd_mcp, cmd_plugin, cmd_tasks,
-    _save_synthesis, _print_background_notifications,
+    _print_background_notifications,
 )
 
-# ── Agent (autonomous loop) command ───────────────────────────────────────
 from commands.agent_cmd import cmd_agent
-
-# ── Monitor / Subscribe commands ──────────────────────────────────────────
 from commands.monitor_cmd import cmd_subscribe, cmd_subscriptions, cmd_unsubscribe, cmd_monitor
-
 from commands.research_cmd import cmd_research, cmd_reports
 from commands.lab_cmd import cmd_lab
-
-# ── Theme command ──────────────────────────────────────────────────────────
 from commands.theme_cmd import cmd_theme
-
-# ── Tools / thread-local bridge state ─────────────────────────────────────
 from tools import (
     ask_input_interactive,
-    _tg_thread_local, _is_in_tg_turn,
-    _wx_thread_local, _is_in_wx_turn,
-    _slack_thread_local, _is_in_slack_turn,
-    _qq_thread_local, _is_in_qq_turn,
+    _is_in_tg_turn, _is_in_wx_turn, _is_in_slack_turn, _is_in_qq_turn,
 )
 
-# ── Live session context (replaces config["_run_query_callback"] etc.) ─────
 import runtime
 
 def _read_version() -> str:
-    """Read version from pyproject.toml (single source of truth)."""
     try:
         _toml = Path(__file__).resolve().parent / "pyproject.toml"
         for _line in _toml.read_text(encoding="utf-8").splitlines():
@@ -378,6 +342,20 @@ def ask_permission_interactive(desc: str, config: dict) -> bool:
             token = config.get("telegram_token")
             chat_id = config.get("telegram_chat_id")
             _tg_send(token, chat_id, "✅ Permission mode set to accept-all for this session.")
+        elif _is_in_wx_turn(config):
+            import runtime as _rt
+            sctx = _rt.get_ctx(config)
+            _wx_send(sctx.wx_current_user_id or "", "✅ Permission mode set to accept-all for this session.", config)
+        elif _is_in_slack_turn(config):
+            import runtime as _rt
+            token = config.get("slack_token")
+            sctx = _rt.get_ctx(config)
+            channel = sctx.slack_current_channel or config.get("slack_channel", "")
+            _slack_send(token, channel, "✅ Permission mode set to accept-all for this session.")
+        elif _is_in_qq_turn(config):
+            from tools import _qq_thread_local
+            target_id = getattr(_qq_thread_local, "target_id", "") or config.get("qq_target_id", "")
+            _qq_send(target_id, "✅ Permission mode set to accept-all for this session.", config)
         else:
             ok("  Permission mode set to accept-all for this session.")
         return True
@@ -1065,12 +1043,9 @@ def repl(config: dict, initial_prompt: str = None):
 
     # Apply spinner_tips config: rotating Claude-Code-style tips beneath the
     # spinner. Disabled automatically where multi-line cursor moves misbehave
-    # (dumb terminals, macOS Terminal.app) so the tip line never garbles output.
-    import os as _os, platform as _plat
+    # (dumb terminals) so the tip line never garbles output.
     _is_dumb = (console is not None and getattr(console, "is_dumb_terminal", False))
-    _is_macos_terminal = (_plat.system() == "Darwin"
-                          and _os.environ.get("TERM_PROGRAM", "") in ("Apple_Terminal", ""))
-    _spinner_tips_default = not _is_dumb and not _is_macos_terminal
+    _spinner_tips_default = not _is_dumb
     set_spinner_tips(config.get("spinner_tips", _spinner_tips_default))
 
     # Initialize proactive polling state via RuntimeContext (defaults already set)
@@ -1422,7 +1397,7 @@ def repl(config: dict, initial_prompt: str = None):
     #   ESC[200~  (start)  …content…  ESC[201~  (end)
     _PASTE_START = "\x1b[200~"
     _PASTE_END   = "\x1b[201~"
-    _bpm_active  = sys.stdin.isatty() and sys.platform != "win32"
+    _bpm_active  = sys.stdin.isatty()
 
     if _bpm_active:
         sys.stdout.write("\x1b[?2004h")   # enable bracketed paste mode
@@ -1499,39 +1474,22 @@ def repl(config: dict, initial_prompt: str = None):
             lines = [first]
             import time as _time
 
-            if sys.platform == "win32":
-                # Windows: use msvcrt.kbhit() to detect buffered paste data
-                import msvcrt
-                deadline = 0.12   # wider window for Windows paste latency
-                chunk_to = 0.03
+            # Unix: use select() for precise timing
+            deadline = 0.06
+            chunk_to = 0.025
+            t0 = _time.monotonic()
+            while (_time.monotonic() - t0) < deadline:
+                ready = _sel.select([sys.stdin], [], [], chunk_to)[0]
+                if not ready:
+                    break
+                raw = sys.stdin.readline()
+                if not raw:
+                    break
+                stripped = raw.rstrip("\n")
+                if _PASTE_END in stripped:
+                    break
+                lines.append(stripped)
                 t0 = _time.monotonic()
-                while (_time.monotonic() - t0) < deadline:
-                    _time.sleep(chunk_to)
-                    if not msvcrt.kbhit():
-                        break
-                    raw = sys.stdin.readline()
-                    if not raw:
-                        break
-                    stripped = raw.rstrip("\n").rstrip("\r")
-                    lines.append(stripped)
-                    t0 = _time.monotonic()  # extend while data keeps coming
-            else:
-                # Unix: use select() for precise timing
-                deadline = 0.06
-                chunk_to = 0.025
-                t0 = _time.monotonic()
-                while (_time.monotonic() - t0) < deadline:
-                    ready = _sel.select([sys.stdin], [], [], chunk_to)[0]
-                    if not ready:
-                        break
-                    raw = sys.stdin.readline()
-                    if not raw:
-                        break
-                    stripped = raw.rstrip("\n")
-                    if _PASTE_END in stripped:
-                        break
-                    lines.append(stripped)
-                    t0 = _time.monotonic()
 
             if len(lines) > 1:
                 result = "\n".join(lines).strip()
