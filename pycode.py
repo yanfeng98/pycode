@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 PyCode — A Fast, Easy-to-Use, Python-Native Personal AI Assistant for Any Model, Built to Work for You Autonomously 24/7.
 
@@ -1858,32 +1857,16 @@ def repl(config: dict, initial_prompt: str = None):
             print(clr("\n  (interrupted)", "yellow"))
             # Keep conversation history up to the interruption
 
-
-# ── Entry point ────────────────────────────────────────────────────────────
-
 def main():
-    # Subcommand short-circuit: avoid colliding with the positional `prompt`
-    # parser.  `pycode serve` runs the daemon; `pycode daemon
-    # <action>` is the daemon-control verb (status / stop / logs /
-    # rotate-token).  See docs/RFC/0001-daemon-design-note.md and
-    # docs/RFC/0002-daemon-foundation-roadmap.md.
     if len(sys.argv) >= 2 and sys.argv[1] == "serve":
         from cc_daemon.cli import serve_main as _serve_main
         sys.exit(_serve_main(sys.argv[2:]))
     if len(sys.argv) >= 2 and sys.argv[1] == "daemon":
         from commands.daemon_cmd import dispatch as _daemon_dispatch
         sys.exit(_daemon_dispatch(sys.argv[2:]))
-    # Read-only kernel inspection (RFC 0003+ surface). Talks to a
-    # running `pycode serve --enable-kernel` daemon over the
-    # existing daemon RPC channel; gracefully reports "not running"
-    # when the daemon is absent.
     if len(sys.argv) >= 2 and sys.argv[1] == "kernel":
         from cc_kernel.cli import dispatch as _kernel_dispatch
         sys.exit(_kernel_dispatch(sys.argv[2:]))
-    # Backward-compat alias for the spike's `pycode spike-daemon ...`
-    # surface (referenced in docs/RFC/0001-spike-notes.md).  Routes through
-    # the same paths as `serve` / `daemon <action>` so spike-notes commands
-    # keep working unchanged.
     if len(sys.argv) >= 2 and sys.argv[1] == "spike-daemon":
         from cc_daemon.cli import main as _legacy_main
         sys.exit(_legacy_main(sys.argv[2:]))
@@ -1958,12 +1941,11 @@ def main():
         start_web_server(port=args.port, host=args.host, no_auth=args.no_auth)
         sys.exit(0)
 
-    from cc_config import load_config, save_config, has_api_key
+    from cc_config import load_config, has_api_key
     from providers import detect_provider, PROVIDERS
 
     config = load_config()
 
-    # Apply persisted console theme (if any) before any output is rendered.
     try:
         from ui.render import apply_theme as _apply_theme
         _apply_theme(config.get("theme", "default"))

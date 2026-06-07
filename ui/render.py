@@ -34,20 +34,10 @@ except ImportError:
 # ── ANSI helpers ───────────────────────────────────────────────────────────
 
 def _rgb(hex_str: str) -> str:
-    """Convert '#rrggbb' -> ANSI 24-bit foreground escape."""
     h = hex_str.lstrip("#")
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     return f"\033[38;2;{r};{g};{b}m"
 
-
-# Curated palettes — each theme defines four semantic roles:
-#   accent : info / primary chrome (cyan, blue)
-#   ok     : success / diff additions (green) — kept distinct from accent so
-#            info() and ok() are visually distinguishable
-#   warn   : warnings (yellow, magenta)
-#   err    : errors / diff removals (red)
-#   code   : Rich Markdown code-block style
-# Add new entries here and they show up in `/theme` automatically.
 THEMES: dict = {
     "default":     {"accent": "#00D7FF", "ok": "#00FF87", "warn": "#FFAF00", "err": "#FF5F5F", "code": "monokai"},
     "dracula":     {"accent": "#BD93F9", "ok": "#50FA7B", "warn": "#FFB86C", "err": "#FF5555", "code": "dracula"},
@@ -66,7 +56,6 @@ THEMES: dict = {
     "none":        {"disable_color": True, "code": "default"},
 }
 
-# Active code-block style for Rich Markdown rendering. Read by _make_renderable.
 CODE_THEME: str = "monokai"
 
 C = {
@@ -84,7 +73,6 @@ C = {
 
 
 def _supports_truecolor() -> bool:
-    """True when the terminal advertises 24-bit colour support."""
     import os as _os
     ct = _os.environ.get("COLORTERM", "")
     if ct in ("truecolor", "24bit"):
@@ -94,13 +82,11 @@ def _supports_truecolor() -> bool:
 
 
 def apply_theme(name: str) -> bool:
-    """Mutate the global ANSI color map in-place to a named theme."""
     global CODE_THEME
     p = THEMES.get(name)
     if not p:
         return False
 
-    # The "none" theme: strip every escape so output is plain text.
     if p.get("disable_color"):
         for k in list(C.keys()):
             C[k] = ""
@@ -113,9 +99,6 @@ def apply_theme(name: str) -> bool:
         warn_c = _rgb(p["warn"])
         err_c  = _rgb(p.get("err", "#FF5555"))
     else:
-        # Terminal lacks 24-bit colour —  \e[38;2;…m is ignored,
-        # leaving text in the default fg (often white).  Use the
-        # standard 16-colour ANSI codes every terminal understands.
         accent = "\033[36m"    # cyan
         ok_col = "\033[32m"    # green
         warn_c = "\033[33m"    # yellow
