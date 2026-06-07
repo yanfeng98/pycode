@@ -134,6 +134,7 @@ These commands the **user** can invoke at the REPL prompt — they are NOT tools
 - `/mcp` `[reload | add | remove | list]` — Manage MCP servers
 - `/memory` `[consolidate]` — Search / list / consolidate memories
 - `/model` — Show / set model
+- `/monitor` `[start | stop | status | run | set | topics]` — Manage monitor subscriptions and scheduler
 - `/permissions` `[auto | accept-all | manual]` — Set permission mode
 - `/plan` `[done | status]` — Enter/exit plan mode
 - `/plugin` `[install | uninstall | enable | disable | disable-all | update | recommend | info]` — Manage plugins
@@ -141,6 +142,8 @@ These commands the **user** can invoke at the REPL prompt — they are NOT tools
 - `/qq` `[<appid> <secret> | stop | status]` — QQ bot bridge (botpy SDK)
 - `/quiet` — Toggle compact tool display
 - `/quit` — Exit (alias for /exit)
+- `/reports` — List saved research reports
+- `/research` — Multi-source research with cited report
 - `/resume` — Resume last session
 - `/rewind` `[clear]` — Rewind to checkpoint (alias)
 - `/save` — Save session to file
@@ -150,6 +153,9 @@ These commands the **user** can invoke at the REPL prompt — they are NOT tools
 - `/slack` `[stop | status | logout]` — Slack bot bridge (Web API)
 - `/ssj` — SSJ Developer Mode — power menu
 - `/status` — Show session status and model info
+- `/subs` — Alias for /subscriptions
+- `/subscribe` `[--telegram | --slack]` — Subscribe to an AI-monitored topic
+- `/subscriptions` — List active subscriptions
 - `/summarize` — Multi-agent map-reduce summary of any-size file (PDF / txt / code)
 - `/task` `[create | delete | get | clear | todo | in-progress | done | blocked]` — Manage tasks (alias)
 - `/tasks` `[create | delete | get | clear | todo | in-progress | done | blocked]` — Manage tasks
@@ -159,9 +165,11 @@ These commands the **user** can invoke at the REPL prompt — they are NOT tools
 - `/trade` — Alias for /trading
 - `/trading` `[analyze | review | verify | price | indicators | discover | rank | factors | anomaly | monitor | paper | calibration | watch | scan | manage | optimize | ml | backtest | walkforward | status | history | memory]` — AI trading agent — analyze, discover (auto-find candidates from insider clusters / earnings beats / sector rotation / factors), rank, anomaly detection, market monitor with bridge alerts, paper-trade tracker, calibration, position review, managed portfolios ($X→1-week PnL), MV optimization, ML stacker, alt-data (insider / sentiment / trends), walk-forward backtest
 - `/tts` `[status]` — AI voice generator: text → any style → audio file
+- `/unsubscribe` — Remove a subscription
 - `/verbose` — Toggle verbose output
 - `/video` `[status | niches]` — AI video factory: story→voice→images→mp4
 - `/voice` `[lang | status | device]` — Voice input (record → STT)
 - `/web` `[status | --no-auth | --host]` — Start the web terminal / chat UI in background
 - `/wechat` `[stop | status]` — WeChat bridge (iLink Bot API)
+- `/weixin` — WeChat bridge (alias for /wechat)
 - `/worker` — Auto-implement pending tasks

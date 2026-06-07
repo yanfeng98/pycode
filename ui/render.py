@@ -83,6 +83,16 @@ C = {
 }
 
 
+def _supports_truecolor() -> bool:
+    """True when the terminal advertises 24-bit colour support."""
+    import os as _os
+    ct = _os.environ.get("COLORTERM", "")
+    if ct in ("truecolor", "24bit"):
+        return True
+    t = _os.environ.get("TERM", "")
+    return "24bit" in t or "truecolor" in t
+
+
 def apply_theme(name: str) -> bool:
     """Mutate the global ANSI color map in-place to a named theme."""
     global CODE_THEME
@@ -97,10 +107,19 @@ def apply_theme(name: str) -> bool:
         CODE_THEME = p.get("code", "default")
         return True
 
-    accent = _rgb(p["accent"])
-    ok_col = _rgb(p.get("ok", p["accent"]))
-    warn_c = _rgb(p["warn"])
-    err_c  = _rgb(p.get("err", "#FF5555"))
+    if _supports_truecolor():
+        accent = _rgb(p["accent"])
+        ok_col = _rgb(p.get("ok", p["accent"]))
+        warn_c = _rgb(p["warn"])
+        err_c  = _rgb(p.get("err", "#FF5555"))
+    else:
+        # Terminal lacks 24-bit colour —  \e[38;2;…m is ignored,
+        # leaving text in the default fg (often white).  Use the
+        # standard 16-colour ANSI codes every terminal understands.
+        accent = "\033[36m"    # cyan
+        ok_col = "\033[32m"    # green
+        warn_c = "\033[33m"    # yellow
+        err_c  = "\033[31m"    # red
 
     C["cyan"]    = accent
     C["blue"]    = accent

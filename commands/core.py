@@ -39,7 +39,7 @@ def cmd_help(_args: str, _state, config) -> bool:
         return True
 
     doc = pycode.__doc__ or ""
-    print(doc)
+    print(clr(doc, "cyan"))
 
     # Safety net: surface any registered command that the curated docstring
     # forgot to mention (e.g. modular/plugin additions, or newly added commands
@@ -68,10 +68,10 @@ def cmd_help(_args: str, _state, config) -> bool:
 
     if missing:
         print()
-        print("Also available (auto-detected — not in curated list above):")
+        print(clr("Also available (auto-detected — not in curated list above):", "cyan"))
         w = max(len(m[0]) for m in missing)
         for label, desc in missing:
-            print(f"  {label:<{w}}  {desc}")
+            print(clr(f"  {label:<{w}}  {desc}", "cyan"))
 
     return True
 

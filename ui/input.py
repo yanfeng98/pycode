@@ -186,7 +186,8 @@ def _build_session(history_path: Optional[Path]):
     completer = SlashCompleter()
     history = FileHistory(str(history_path)) if history_path else InMemoryHistory()
     style = Style.from_dict({
-        "completion-menu.completion":              "bg:#222222 #cccccc",
+        # ansicyan – standard ANSI colour, visible on every terminal
+        "completion-menu.completion":              "bg:#222222 ansicyan",
         "completion-menu.completion.current":      "bg:#005f87 #ffffff bold",
         "completion-menu.meta.completion":         "bg:#222222 #808080",
         "completion-menu.meta.completion.current": "bg:#005f87 #eeeeee",

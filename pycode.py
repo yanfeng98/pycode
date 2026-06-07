@@ -261,9 +261,6 @@ def _read_version() -> str:
 
 VERSION = _read_version()
 
-# ── Load feature modules from modular/ ecosystem ───────────────────────────
-# Commands from modular/ are merged into COMMANDS after the dict is built.
-# Each module is optional — missing modules degrade gracefully.
 try:
     from modular import load_all_commands as _modular_load_commands
     _MODULAR_AVAILABLE = True
@@ -271,7 +268,6 @@ except ImportError:
     _MODULAR_AVAILABLE = False
     def _modular_load_commands(): return {}  # type: ignore[misc]
 
-# Quick availability checks for UI (help text, menus)
 def _modular_has(cmd_name: str) -> bool:
     if not _MODULAR_AVAILABLE:
         return False
@@ -283,7 +279,7 @@ def _modular_has(cmd_name: str) -> bool:
         return False
 
 _VIDEO_AVAILABLE = _modular_has("video")
-_VOICE_MODULAR   = _modular_has("voice")   # voice from modular (has its own cmd)
+_VOICE_MODULAR   = _modular_has("voice")
 
 # Fallback stubs shown when a module is absent
 def _missing_module_cmd(name: str):
@@ -416,9 +412,6 @@ def _proactive_watcher_loop(config):
         except Exception as e:
             import logging_utils as _log
             _log.error("proactive_watcher_error", error=str(e)[:200])
-
-
-# ── Slash commands ─────────────────────────────────────────────────────────
 
 COMMANDS = {
     "help":        cmd_help,
@@ -614,6 +607,13 @@ _CMD_META: dict[str, tuple[str, list[str]]] = {
                                                            "todo", "in-progress", "done", "blocked"]),
     "proactive":   ("Manage proactive background watcher", ["off"]),
     "cloudsave":   ("Cloud-sync sessions to GitHub Gist", ["setup", "auto", "list", "load", "push"]),
+    "subscribe":   ("Subscribe to an AI-monitored topic",  ["--telegram", "--slack"]),
+    "subscriptions": ("List active subscriptions",         []),
+    "subs":        ("Alias for /subscriptions",            []),
+    "unsubscribe": ("Remove a subscription",               []),
+    "monitor":     ("Manage monitor subscriptions and scheduler", ["start", "stop", "status", "run", "set", "topics"]),
+    "research":    ("Multi-source research with cited report", []),
+    "reports":     ("List saved research reports",          []),
     **({"voice": ("Voice input (record → STT)", ["lang", "status", "device"])} if _VOICE_MODULAR else {}),
     **({"tts": ("AI voice generator: text → any style → audio file", ["status"])} if _VOICE_MODULAR else {}),
     "image":       ("Send clipboard image to model",      []),
@@ -626,6 +626,7 @@ _CMD_META: dict[str, tuple[str, list[str]]] = {
     "ssj":         ("SSJ Developer Mode — power menu",    []),
     "telegram":    ("Telegram bot bridge",                ["stop", "status"]),
     "wechat":      ("WeChat bridge (iLink Bot API)",      ["stop", "status"]),
+    "weixin":      ("WeChat bridge (alias for /wechat)", []),
     "slack":       ("Slack bot bridge (Web API)",         ["stop", "status", "logout"]),
     "qq":          ("QQ bot bridge (botpy SDK)",          ["<appid> <secret>", "stop", "status"]),
     **({"video": ("AI video factory: story→voice→images→mp4", ["status", "niches"])} if _VIDEO_AVAILABLE else {}),
