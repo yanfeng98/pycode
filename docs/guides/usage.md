@@ -218,6 +218,18 @@ Then use any model from the list:
 cheetahclaws --model ollama/<model-name>
 ```
 
+**If a local model "just keeps talking" instead of editing files / running commands:**
+that means it emitted its tool calls as text rather than as structured calls.
+CheetahClaws auto-recovers the common text formats — `<tool_call>…</tool_call>`
+(Qwen/Hermes), `<|tool_call|>…` (Gemma), and `[TOOL_CALLS]…` (Mistral) — so they
+now execute. For best results pick a function-calling model (`qwen2.5-coder`,
+`llama3.3`, `mistral`, `phi4`) and give concrete prompts (a path, a filename, an
+exact command). Small local models are inherently weaker at agentic tool use than
+cloud models, so they may still need more explicit instructions. If a model has no
+tool template at all, the first tool-enabled request returns `500` and CheetahClaws
+falls back to chat-only mode (a yellow `[warn]` is printed) — pull one of the
+recommended models instead.
+
 ---
 
 ### Option B — LM Studio
