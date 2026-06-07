@@ -4,7 +4,7 @@ English | [中文](docs/i18n/README.CN.MD) | [한국어](docs/i18n/README.KO.MD)
 
 <div align="center">
   <a href="[https://github.com/SafeRL-Lab/Robust-Gymnasium](https://github.com/SafeRL-Lab/cheetahclaws)">
-    <img src="docs/media/logos/logo-5.png" alt="Logo" width="280"> 
+    <img src="https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/docs/media/logos/logo-5.png" alt="Logo" width="280"> 
   </a>
 
   
@@ -39,7 +39,8 @@ Other install methods: [pip install](#alternative-install-with-pip) | [uv instal
 
 ## 🔥🔥🔥 News (Pacific Time)
 
-- June 5, 2026 (latest, **v3.05.82**): **User-controllable token/cost budgets** — `/budget $5` / `/budget 200k` / `/budget daily $20` cap spend per session or per day, enforced before each model call; on hit the session auto-saves and you're shown how to `/resume` or raise the cap and continue (warns at ≥80%/95%; `--budget` sets it at startup). Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
+- June 6, 2026 (latest, **v3.5.82**): **macOS install reliably puts `cheetahclaws` on PATH, and local Ollama models that emit tool calls as text now actually execute them** (two fixes from issue #131). **(1) Install/PATH on macOS:** the installer `source`s the dedicated venv it creates, which made the post-install `command -v cheetahclaws` check succeed *inside the script's own shell* — so it reported "on PATH" and **skipped the entire rc-file step**, leaving `~/.zshrc` untouched and the binary unreachable in new terminals. It now symlinks only the `cheetahclaws` entry point into `~/.local/bin` (pipx-style, so the venv's `python`/`pip` don't shadow yours), creates `~/.zshrc` / `.bash_profile` if missing, and appends `~/.local/bin` to PATH there — without trusting the venv-polluted `command -v` (`scripts/install.sh`). **(2) Ollama tool calls:** `stream_ollama` only read Ollama's structured `message.tool_calls` field, while the cloud path already recovers calls a model emits as **text**, so Qwen-coder / Gemma / Mistral over Ollama produced "tool-calling-style chat" that streamed as plain text and never ran — the model seemed to "just keep talking." `stream_ollama` now mirrors the cloud path's interceptor: it buffers from the first `<tool_call>` / `<|tool_call|>` / `[TOOL_CALLS]` marker (so raw markup never reaches the user) and parses it into real tool calls at end-of-stream (`providers.py`). Details: [docs/guides/usage.md](docs/guides/usage.md#usage-open-source-models-local) · [docs/guides/faq.md](docs/guides/faq.md) · [docs/news.md](docs/news.md).
+- June 5, 2026 (**v3.5.82**): **User-controllable token/cost budgets** — `/budget $5` / `/budget 200k` / `/budget daily $20` cap spend per session or per day, enforced before each model call; on hit the session auto-saves and you're shown how to `/resume` or raise the cap and continue (warns at ≥80%/95%; `--budget` sets it at startup). Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
 - June 5, 2026: **Adaptive Markdown streaming — live output stays correct on every device** by auto-selecting a per-device tier (`live` in-place redraw on capable terminals incl. modern SSH emulators, append-only `commit` for SSH/Apple Terminal/pipes/CJK text so frames never duplicate, `plain` fallback); also ships a visual `/context` usage grid and a 1M context window for `deepseek-v4-flash`. Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
 - June 4, 2026 (**v3.05.81**): **Claude-Code-style quiet output** hides per-tool execution and shows one summary line per turn (on by default), with a live spinner timer + token estimate and a `✻ Worked for…` footer; `/verbose` overrides, toggle with `/quiet`. Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
 - June 4, 2026: **Context-window override** — `/config context_window=<N>` sets the context length that drives the prompt `%`, `/context`, the compaction trigger, and the output cap consistently (distinct from `max_tokens`; read live, no restart). Details: [docs/guides/reference.md](docs/guides/reference.md) · [docs/news.md](docs/news.md).
@@ -76,25 +77,25 @@ CheetahClaws: **A Fast** and **Easy-to-Use** Python native Agent Harness Infrast
 ### Demos
 
 <div align=center>
-<img src="docs/media/demos/demo.gif" width="850"/>
+<img src="https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/docs/media/demos/demo.gif" width="850"/>
 </div>
 <div align=center><sub><i>Task execution in the terminal</i></sub></div>
 
 <br/>
 
 <div align=center>
-<img src="docs/media/demos/web_demo.gif" width="850"/>
+<img src="https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/docs/media/demos/web_demo.gif" width="850"/>
 </div>
 <div align=center><sub><i>Web UI: browser chat — sidebar, tool cards, approval prompts, Markdown streaming</i></sub></div>
 
 <br/>
 
 <div align=center>
-<img src="docs/media/demos/trading_demo.gif" width="850"/>
+<img src="https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/docs/media/demos/trading_demo.gif" width="850"/>
 </div>
 <div align=center><sub><i>Autonomous trading agent</i></sub></div>
 
-> More animated demos (code review, `/research`, `/brainstorm`, `/lab`, Telegram/WeChat/Slack bridges) live in [`docs/media/`](docs/media/).
+> More animated demos (code review, `/research`, `/brainstorm`, `/lab`, Telegram/WeChat/Slack bridges) live in [`docs/media/`](https://github.com/SafeRL-Lab/cheetahclaws/tree/main/docs/media/).
 
 ---
 
@@ -208,7 +209,7 @@ Claude Code is a powerful, production-grade AI coding assistant — but its sour
 | `phi4` · `gemma3` · `codellama` | 14B · 4–27B · 7–34B | Reasoning / open / code | `ollama pull phi4` |
 | `llava` · `llama3.2-vision` | 7–13B · 11B | **Vision** | `ollama pull llava` |
 
-> **Tool calling** needs a function-calling model — recommended: `qwen2.5-coder`, `llama3.3`, `mistral`, `phi4`. Reasoning models (`deepseek-r1`, `qwen3`, `gemma4`) stream native `<think>` blocks; enable with `/verbose` + `/thinking`.
+> **Tool calling** needs a function-calling model — recommended: `qwen2.5-coder`, `llama3.3`, `mistral`, `phi4`. Models that emit tool calls as **text** (`<tool_call>…</tool_call>`, `[TOOL_CALLS]…`) instead of Ollama's structured field are auto-recovered, so they execute tools out of the box rather than just chatting about it. Reasoning models (`deepseek-r1`, `qwen3`, `gemma4`) stream native `<think>` blocks; enable with `/verbose` + `/thinking`.
 
 ---
 
@@ -478,8 +479,11 @@ A few common questions — the **full FAQ** is in [docs/guides/faq.md](docs/guid
 /mcp add git uvx mcp-server-git          # or create .mcp.json in your project, then /mcp reload
 ```
 
-**Q: Tool calls don't work with my local Ollama model.**
-Not all models support function calling — use `qwen2.5-coder`, `llama3.3`, `mistral`, or `phi4`.
+**Q: Tool calls don't work with my local Ollama model (it just keeps describing what it would do instead of doing it).**
+CheetahClaws now auto-recovers tool calls that local models emit as **text** (`<tool_call>…</tool_call>`, `[TOOL_CALLS]…`) instead of in Ollama's structured field, so most function-calling models execute tools out of the box. For best reliability use a tool-calling model — `qwen2.5-coder`, `llama3.3`, `mistral`, or `phi4`. Small models are also weaker at agentic tool use than cloud models, so expect them to need clearer, more concrete prompts.
+
+**Q: After installing on macOS, `cheetahclaws: command not found` and no `~/.zshrc` was created.**
+Reload your shell first: `source ~/.zshrc` (zsh) or `source ~/.bash_profile` (bash). The installer creates `~/.zshrc` if missing, symlinks the binary into `~/.local/bin`, and adds it to PATH. If you installed an older version, either re-run the installer or add this line yourself: `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc`.
 
 **Q: How do I connect to a remote GPU server running vLLM?**
 ```

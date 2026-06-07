@@ -67,14 +67,18 @@ For stdio servers with env-based auth:
 
 ## Models & providers
 
-**Q: Tool calls don't work with my local Ollama model.**
+**Q: Tool calls don't work with my local Ollama model (it just keeps describing what it would do instead of doing it).**
 
-Not all models support function calling. Use one of the recommended tool-calling models: `qwen2.5-coder`, `llama3.3`, `mistral`, or `phi4`.
+CheetahClaws now auto-recovers tool calls that local models emit as **text** — `<tool_call>…</tool_call>` (Qwen/Hermes), `<|tool_call|>…` (Gemma), `[TOOL_CALLS]…` (Mistral) — instead of in Ollama's structured `message.tool_calls` field. Previously those were streamed as chat and never executed, which is why the model seemed to "keep talking." Most function-calling models now execute tools out of the box.
+
+For best reliability use one of the recommended tool-calling models. Small local models are also weaker at agentic tool use than cloud models, so give them clear, concrete prompts (a path, a filename, an exact command):
 
 ```bash
 ollama pull qwen2.5-coder
 cheetahclaws --model ollama/qwen2.5-coder
 ```
+
+If a model returns `500` on the first tool-enabled request, it has no tool template — CheetahClaws falls back to chat-only (a yellow `[warn]` is printed). Pull one of the models above instead.
 
 **Q: How do I connect to a remote GPU server running vLLM?**
 
@@ -129,6 +133,22 @@ uv tool install ".[all]"
 ```
 
 After that, just run `cheetahclaws` from any directory. To update after pulling changes, run `uv tool install ".[all]" --reinstall`. For a minimal install, use `uv tool install .` and add extras as needed.
+
+**Q: After installing on macOS I get `cheetahclaws: command not found`, and `~/.zshrc` was never created.**
+
+Reload your shell in a new terminal first:
+
+```bash
+source ~/.zshrc          # zsh (macOS default)
+source ~/.bash_profile   # bash on macOS
+```
+
+On macOS the installer creates a dedicated virtual environment (`~/.cheetahclaws-venv`), symlinks the `cheetahclaws` entry point into `~/.local/bin`, creates `~/.zshrc` if it's missing, and appends `~/.local/bin` to your `PATH` there. (It links only the one binary rather than putting the whole venv on `PATH`, so your own `python`/`pip` aren't shadowed.) If you installed an older build that skipped this, either re-run the installer or add it yourself:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
 
 ## Voice
 

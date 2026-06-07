@@ -1342,6 +1342,14 @@ def stream_ollama(
 
     text = ""
     tool_buf: dict = {}
+    # Native tool-call interceptor. Many local models (Qwen, Gemma, Mistral)
+    # emit tool calls as plain text in `content` — e.g. `<tool_call>{...}</tool_call>`
+    # or `[TOOL_CALLS][...]` — instead of Ollama's structured `message.tool_calls`
+    # field. Without this we stream that markup as chat and never execute the
+    # tool: the classic "the local model just keeps talking" symptom. Buffer from
+    # the first marker so the user never sees raw markup, then parse at end-of-stream.
+    native_tool_buffering = False
+    native_tool_buffer    = ""
 
     try:
         resp_cm = urllib.request.urlopen(req)
@@ -1384,10 +1392,26 @@ def stream_ollama(
             if "thinking" in msg and msg["thinking"]:
                 yield ThinkingChunk(msg["thinking"])
                 
-            if "content" in msg and msg["content"]:
-                text += msg["content"]
-                yield TextChunk(msg["content"])
-            
+            if msg.get("content"):
+                new = msg["content"]
+                if not native_tool_buffering:
+                    # Detect a native tool-call marker, even if split across
+                    # streamed chunks, by scanning the joined accumulated text.
+                    joined = text + new
+                    marker_idx = _find_native_tool_marker(joined)
+                    if marker_idx is not None and marker_idx >= len(text):
+                        split = marker_idx - len(text)
+                        if split > 0:
+                            text += new[:split]
+                            yield TextChunk(new[:split])
+                        native_tool_buffering = True
+                        native_tool_buffer = new[split:]
+                    else:
+                        text += new
+                        yield TextChunk(new)
+                else:
+                    native_tool_buffer += new
+
             # Handle native ollama tools format which mirrors OpenAI
             for tc in msg.get("tool_calls", []):
                 fn = tc.get("function", {})
@@ -1403,6 +1427,18 @@ def stream_ollama(
     for idx in sorted(tool_buf):
         v = tool_buf[idx]
         tool_calls.append({"id": v["id"], "name": v["name"], "input": v["input"]})
+
+    # Fallback: the model emitted its tool calls as text rather than in the
+    # structured `tool_calls` field. Parse the buffered markup into real calls.
+    if native_tool_buffering:
+        native_calls = _extract_native_tool_calls(native_tool_buffer)
+        if native_calls:
+            tool_calls.extend(native_calls)
+        else:
+            # Couldn't parse — surface the buffer as text rather than swallow it,
+            # so the user sees something instead of a silent stall.
+            text += native_tool_buffer
+            yield TextChunk(native_tool_buffer)
 
     # Ollama doesn't return exact token counts via livestream easily until "done",
     # but we can do a rough estimate or 0, cheetahclaws handles zero gracefully
