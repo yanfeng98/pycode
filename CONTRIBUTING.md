@@ -39,17 +39,6 @@ python pycode.py
 > uv sync --extra vision --extra browser
 > ```
 
-### Option 2: pip (quick & simple)
-
-```bash
-git clone git@github.com:yanfeng98/pycode.git
-cd pycode
-pip install -r requirements.txt
-pip install pytest
-python -m pytest tests/ -x -q    # all 327+ tests should pass
-python pycode.py            # run the REPL
-```
-
 ## Project Structure
 
 ```

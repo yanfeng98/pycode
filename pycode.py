@@ -1952,8 +1952,6 @@ def main():
     except Exception:
         pass
 
-    # Explicit bootstrap: configure logging, ensure tool registry is ready,
-    # and start the optional health-check server.
     from bootstrap import bootstrap as _bootstrap
     _bootstrap(config)
 

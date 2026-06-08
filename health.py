@@ -1,19 +1,3 @@
-"""
-health.py — Lightweight HTTP health-check server for PyCode.
-
-Disabled by default.  Enable in config:
-  /config health_check_port=8765
-
-Endpoints:
-  GET /healthz   → 200 JSON (always healthy while server is up)
-  GET /readyz    → 200 JSON (healthy) or 503 (circuit breakers open)
-  GET /metrics   → 200 JSON (sessions, token usage, circuit states)
-
-Config keys:
-  health_check_port : int  — TCP port to listen on (null = disabled)
-
-The HTTP server runs in a daemon thread so it never blocks the REPL.
-"""
 from __future__ import annotations
 
 import json
@@ -24,16 +8,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 _start_time: float = time.monotonic()
 _server_thread: threading.Thread | None = None
-# Reference to the config dict passed at startup (for live model reads)
 _config: dict = {}
-
-
-# ── Request handler ───────────────────────────────────────────────────────
 
 class _HealthHandler(BaseHTTPRequestHandler):
 
     def log_message(self, *_args):
-        pass  # silence access logs; structured logging handles this
+        pass
 
     def _send_json(self, code: int, body: dict) -> None:
         data = json.dumps(body, ensure_ascii=False).encode("utf-8")
@@ -57,11 +37,6 @@ class _HealthHandler(BaseHTTPRequestHandler):
         else:
             self._send_json(404, {"error": "not found"})
 
-    # ── Payload builders ──────────────────────────────────────────────────
-    # The instance methods below delegate to module-level functions so that
-    # other listeners (e.g. daemon/server.py) can reuse the same payload
-    # logic without booting a second http.server.
-
     def _healthz(self) -> dict:
         return healthz_payload(_config)
 
@@ -70,9 +45,6 @@ class _HealthHandler(BaseHTTPRequestHandler):
 
     def _metrics(self) -> dict:
         return metrics_payload(_config)
-
-
-# ── Module-level payload helpers ──────────────────────────────────────────
 
 def uptime_seconds() -> float:
     return round(time.monotonic() - _start_time, 1)
@@ -125,7 +97,6 @@ def readyz_payload(config: dict | None = None) -> dict:
 def metrics_payload(config: dict | None = None) -> dict:
     cfg = config if config is not None else _config
     circuits = _circuit_states()
-    # Today's quota usage (read from file — best effort)
     daily_tokens = daily_cost = 0
     try:
         from quota import _load_daily, _lock as _q_lock
@@ -163,19 +134,11 @@ def install_config(config: dict) -> None:
     global _config
     _config = config
 
-
-# ── Server lifecycle ──────────────────────────────────────────────────────
-
 def start_health_server(port: int, config: dict) -> None:
-    """Start the health-check HTTP server in a daemon thread.
-
-    Safe to call multiple times — a second call while the server is already
-    running is silently ignored.
-    """
     global _server_thread, _config, _start_time
 
     if _server_thread and _server_thread.is_alive():
-        return   # already running
+        return
 
     _config     = config
     _start_time = time.monotonic()

@@ -1,18 +1,3 @@
-"""
-bootstrap.py — Explicit startup sequence for PyCode.
-
-Call ``bootstrap(config)`` once after loading config and before starting
-the REPL.  It makes the startup order visible, documented, and testable —
-instead of relying on implicit module-level side effects scattered across
-tools.py and other modules.
-
-All steps are idempotent: calling bootstrap() more than once is harmless.
-
-Startup sequence:
-  1. Configure structured logging (earliest possible so all steps emit events)
-  2. Ensure the tool registry is populated (imports tools.py)
-  3. Start the optional health-check HTTP server (if health_check_port is set)
-"""
 from __future__ import annotations
 
 import logging_utils as _log
@@ -21,11 +6,8 @@ _bootstrapped: bool = False
 
 
 def bootstrap(config: dict) -> None:
-    """Run the PyCode startup sequence.  Idempotent."""
     global _bootstrapped
 
-    # ── 1. Structured logging ──────────────────────────────────────────────
-    # Configure from config first so all subsequent startup events are logged.
     _log.configure_from_config(config)
     _log.info("bootstrap_start",
               model=config.get("model", ""),
@@ -33,13 +15,9 @@ def bootstrap(config: dict) -> None:
               shell_policy=config.get("shell_policy", "allow"),
               allowed_root=config.get("allowed_root") or "(unrestricted)")
 
-    # ── 2. Tool registry ───────────────────────────────────────────────────
-    # tools.py self-registers built-ins + extension tools on first import.
-    # This import is the single explicit trigger; subsequent imports are no-ops.
     import tools as _tools  # noqa: F401
     _log.debug("bootstrap_tools_ready")
 
-    # ── 3. Health-check HTTP server ────────────────────────────────────────
     port = config.get("health_check_port")
     if port:
         try:

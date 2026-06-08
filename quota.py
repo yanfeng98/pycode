@@ -43,9 +43,6 @@ _lock          = threading.Lock()
 _sess_tokens:  dict[str, int]   = {}   # session_id → total tokens
 _sess_cost:    dict[str, float] = {}   # session_id → total cost (USD)
 
-
-# ── Daily file helpers ─────────────────────────────────────────────────────
-
 def _quota_dir() -> Path:
     from cc_config import CONFIG_DIR
     d = CONFIG_DIR / "quota"
@@ -58,7 +55,6 @@ def _today_key() -> str:
 
 
 def _load_daily() -> tuple[int, float]:
-    """Return (tokens, cost) from today's on-disk record. Lock must be held."""
     p = _quota_dir() / f"{_today_key()}.json"
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
