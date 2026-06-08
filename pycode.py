@@ -572,10 +572,6 @@ def handle_slash(line: str, state, config) -> Union[bool, tuple]:
     err(f"Unknown command: /{cmd}  (type /help for commands)")
     return True
 
-
-# ── Input history setup ────────────────────────────────────────────────────
-
-# Descriptions and subcommands for each slash command (used by Tab completion)
 _CMD_META: dict[str, tuple[str, list[str]]] = {
     "help":        ("Show help",                          []),
     "clear":       ("Clear conversation history",         []),
@@ -870,32 +866,21 @@ def _start_headless_bridges(config: dict) -> None:
         if not (_bqq._qq_thread and _bqq._qq_thread.is_alive()):
             _qq_start_bridge(config)
 
-
-# ── Main REPL ──────────────────────────────────────────────────────────────
-
 def repl(config: dict, initial_prompt: str = None):
     from cc_config import HISTORY_FILE
     from context import build_system_prompt
     from agent import AgentState, run, TextChunk, ThinkingChunk, ToolStart, ToolEnd, TurnDone, PermissionRequest, QuotaPause
 
     if HAS_PROMPT_TOOLKIT:
-        # Inject live providers so ui.input's completer enumerates the same
-        # command set the dispatcher accepts (includes plugin/modular adds).
         _ui_input.setup(lambda: COMMANDS, lambda: _CMD_META)
     else:
         setup_readline(HISTORY_FILE)
 
-    # prompt_toolkit's FileHistory uses an incompatible format to readline's
-    # history file, so give it a sibling path. Both persist across sessions;
-    # toggling PYCODE_PT_INPUT only switches which file is active.
     PT_HISTORY_FILE = HISTORY_FILE.with_name("input_history_pt.txt")
 
     state = AgentState()
     verbose = config.get("verbose", False)
 
-    # Create the per-session RuntimeContext early so all wiring uses it, not
-    # the global singleton.  session_id must be set in config before any
-    # bridge or tool code runs so they can look up the right context.
     import checkpoint as ckpt
     session_id = uuid.uuid4().hex[:8]
     config["_session_id"] = session_id

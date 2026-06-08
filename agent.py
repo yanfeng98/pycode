@@ -27,7 +27,6 @@ __all__ = [
 
 @dataclass
 class AgentState:
-    """Mutable session state. messages use the neutral provider-independent format."""
     messages: list = field(default_factory=list)
     total_input_tokens:  int = 0
     total_output_tokens: int = 0

@@ -665,7 +665,7 @@ def cmd_doctor(args: str, state, config) -> bool:
 
 def run_setup_wizard(config: dict) -> None:
     from cc_config import save_config
-    from providers import PROVIDERS
+    from providers import PROVIDERS, get_api_key
 
     print()
     info("Welcome to PyCode! Let's get you set up.\n")
@@ -729,10 +729,9 @@ def run_setup_wizard(config: dict) -> None:
     else:
         config["model"] = chosen_pname + "/default"
 
-    env_var   = prov.get("api_key_env") or ""
+    env_var = prov.get("api_key_env") or ""
     key_field = f"{chosen_pname}_api_key"
-    existing_key = (os.environ.get(env_var, "") if env_var else "") \
-                   or config.get(key_field, "")
+    existing_key = get_api_key(chosen_pname, config)
 
     if chosen_pname not in ("ollama", "lmstudio"):
         if existing_key:
@@ -763,7 +762,6 @@ def run_setup_wizard(config: dict) -> None:
             if base:
                 config["custom_base_url"] = base
 
-    # ── Step 4: Verify connection ──
     print()
     info("Verifying connection...")
     try:
@@ -811,7 +809,6 @@ def run_setup_wizard(config: dict) -> None:
     except Exception as e:
         warn(f"Connection test failed: {e}")
 
-    # ── Save ──
     save_config(config)
     print()
     ok(f"Setup complete! Model: {config['model']}")

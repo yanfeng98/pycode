@@ -532,16 +532,13 @@ def resolve_max_tokens(config: dict, provider: str, model: str,
 
 def get_api_key(provider_name: str, config: dict) -> str:
     prov = PROVIDERS.get(provider_name, {})
-    # 1. Check config dict (e.g. config["kimi_api_key"])
     cfg_key = config.get(f"{provider_name}_api_key", "")
     if cfg_key:
         return cfg_key
-    # 2. Check env var
     env_var = prov.get("api_key_env")
     if env_var:
         import os
         return os.environ.get(env_var, "")
-    # 3. Hardcoded (for local providers)
     return prov.get("api_key", "")
 
 

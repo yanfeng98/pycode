@@ -28,23 +28,6 @@ pycode        # start chatting!
 
 Other install methods: [pip install](#alternative-install-with-pip) | [uv install](#alternative-install-with-uv) | [run from source](#alternative-run-directly-from-source-no-install) | [full details](#installation)
 
-## 🔥🔥🔥 News (Pacific Time)
-
-- June 4, 2026 (**v3.05.81**): **Claude-Code-style quiet output** hides per-tool execution and shows one summary line per turn (on by default), with a live spinner timer + token estimate and a `✻ Worked for…` footer; `/verbose` overrides, toggle with `/quiet`. Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
-- June 4, 2026: **Context-window override** — `/config context_window=<N>` sets the context length that drives the prompt `%`, `/context`, the compaction trigger, and the output cap consistently (distinct from `max_tokens`; read live, no restart). Details: [docs/guides/reference.md](docs/guides/reference.md) · [docs/news.md](docs/news.md).
-- June 4, 2026: **Rich Live streaming** keeps long responses live via a bounded tail window — redrawing only the most recent screenful and committing the full output when done, fixing duplicate/stale frames (builds on PR #133). Details: [docs/guides/features.md](docs/guides/features.md) · [docs/news.md](docs/news.md).
-- May 31, 2026: **QQ bot bridge — `/qq` connects pycode to QQ groups + C2C private chats via the official `qq-botpy` SDK (PR #121).** Details: [docs/guides/bridges.md](docs/guides/bridges.md#qq-bridge) · [docs/news.md](docs/news.md).
-- May 12, 2026: **Security hardening sweep — env-var bot tokens, web CSRF cookie, terminal session owner-binding, and plugin/MCP/filesystem sandboxing (two CRITICAL + HIGH rounds, 2347 tests green).** Details: [docs/guides/security.md](docs/guides/security.md) · [docs/news.md](docs/news.md).
-- May 12, 2026: **Daemon foundation roadmap — all nine F-1…F-9 items landed: subprocess agent runners, on-crash restart policy, daemonized Telegram/Slack/WeChat bridges, and budget guardrails.** Details: [docs/news.md](docs/news.md).
-
-For more news, see [here](docs/news.md).
-
----
-
-# PyCode
-
-PyCode: **A Fast** and **Easy-to-Use** Python native Agent Harness Infrastructure, **Supporting Any Model**, such as Claude, GPT, Gemini, Kimi, Qwen, Zhipu, DeepSeek, MiniMax, and local open-source models via Ollama or any OpenAI-compatible endpoint.
-
 ---
 
 ## Content
@@ -77,32 +60,6 @@ PyCode: **A Fast** and **Easy-to-Use** Python native Agent Harness Infrastructur
   - [FAQ](#faq)
   - [Citation](#citation)
   - [Thanks to all contributors:](#thanks-to-all-contributors)
-
-
-### Demos
-
-<div align=center>
-<img src="docs/media/demos/demo.gif" width="850"/>
-</div>
-<div align=center><sub><i>Task execution in the terminal</i></sub></div>
-
-<br/>
-
-<div align=center>
-<img src="docs/media/demos/web_demo.gif" width="850"/>
-</div>
-<div align=center><sub><i>Web UI: browser chat — sidebar, tool cards, approval prompts, Markdown streaming</i></sub></div>
-
-<br/>
-
-<div align=center>
-<img src="docs/media/demos/trading_demo.gif" width="850"/>
-</div>
-<div align=center><sub><i>Autonomous trading agent</i></sub></div>
-
-> More animated demos (code review, `/research`, `/brainstorm`, `/lab`, Telegram/WeChat/Slack bridges) live in [`docs/media/`](docs/media/).
-
----
 
 ## Why PyCode
 

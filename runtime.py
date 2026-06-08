@@ -25,9 +25,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class RuntimeContext:
-    """Live references wired up when the REPL starts.  Not persisted to disk."""
 
-    # Unique identifier for this session (matches config["_session_id"])
     session_id: str = "default"
 
     # Fire a background query from any thread (set by repl())
@@ -116,15 +114,11 @@ class RuntimeContext:
     # Voice
     voice_device_index: Optional[int] = None
 
-
-# ── Per-session registry ───────────────────────────────────────────────────
-
 _registry: dict[str, RuntimeContext] = {}
 _registry_lock = threading.Lock()
 
 
 def get_session_ctx(session_id: str = "default") -> RuntimeContext:
-    """Return (creating if needed) the RuntimeContext for the given session."""
     with _registry_lock:
         if session_id not in _registry:
             _registry[session_id] = RuntimeContext(session_id=session_id)

@@ -28,9 +28,6 @@ try:
 except ImportError:
     HAS_PROMPT_TOOLKIT = False
 
-
-# ── Injected providers ───────────────────────────────────────────────────────
-# Callers (pycode.repl) must call setup() before read_line().
 _commands_provider: Optional[Callable[[], dict]] = None
 _meta_provider: Optional[Callable[[], dict]] = None
 
@@ -39,11 +36,6 @@ def setup(
     commands_provider: Callable[[], dict],
     meta_provider: Callable[[], dict],
 ) -> None:
-    """Register providers for the live command registry and metadata.
-
-    `commands_provider` returns the dispatcher's COMMANDS dict.
-    `meta_provider` returns the _CMD_META dict (descriptions + subcommands).
-    """
     global _commands_provider, _meta_provider
     _commands_provider = commands_provider
     _meta_provider = meta_provider
