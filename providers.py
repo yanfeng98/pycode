@@ -27,8 +27,6 @@ import time
 import urllib.request
 from typing import Generator
 
-# ── Provider registry ──────────────────────────────────────────────────────
-
 PROVIDERS: dict[str, dict] = {
     "anthropic": {
         "type":       "anthropic",
@@ -45,7 +43,7 @@ PROVIDERS: dict[str, dict] = {
         "api_key_env": "OPENAI_API_KEY",
         "base_url":   "https://api.openai.com/v1",
         "context_limit": 128000,
-        "max_completion_tokens": 16384,  # safe cap across gpt-4o/gpt-4.1 family
+        "max_completion_tokens": 16384,
         "models": [
             "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4.1", "gpt-4.1-mini",
             "gpt-5", "gpt-5-nano", "gpt-5-mini",
@@ -132,46 +130,21 @@ PROVIDERS: dict[str, dict] = {
         "base_url":   "http://localhost:1234/v1",
         "api_key":    "lm-studio",
         "context_limit": 128000,
-        "models": [],   # dynamic, depends on loaded model
+        "models": [],
     },
     "custom": {
         "type":       "openai",
         "api_key_env": "CUSTOM_API_KEY",
-        "base_url":   None,   # read from config["custom_base_url"]
+        "base_url":   None,
         "context_limit": 128000,
         "models": [],
     },
-    # LiteLLM — universal adapter routing to 100+ providers (OpenAI,
-    # Anthropic, Azure, Bedrock, Vertex AI, Ollama, …) via one SDK. The
-    # real value-add over the existing custom/ + provider-specific entries
-    # is auth handling that's painful to do by hand:
-    #   • Bedrock SigV4 signing (boto3 chain, region resolution)
-    #   • Azure deployment routing (api_version + deployment_id mapping)
-    #   • Vertex AI service-account JWT minting
-    # For OpenAI-shaped endpoints you can already reach via the "custom"
-    # entry, prefer custom/ — it adds no dependency. Use litellm/<provider>/<model>
-    # when the upstream needs the auth gymnastics above.
-    # Install: pip install cheetahclaws[litellm]
     "litellm": {
         "type":          "litellm",
-        # litellm reads provider-specific keys (ANTHROPIC_API_KEY,
-        # OPENAI_API_KEY, AZURE_API_KEY, AWS_*, …) from env itself, so
-        # there is no single env-var fallback. CC_LLM_API_KEY is an
-        # explicit override used when callers want to pin one key
-        # without leaking it into the provider's canonical env var.
         "api_key_env":   "CC_LLM_API_KEY",
-        # Conservative default; the actual cap comes from the real
-        # underlying model. dynamic_cap_max_tokens never exceeds this.
         "context_limit": 128000,
-        "models":        [],   # dynamic — see docs/guides/litellm.md
+        "models":        [],
     },
-    # NVIDIA NIM (build.nvidia.com) — free tier, no payment info required.
-    # OpenAI-compatible. Get a key at https://build.nvidia.com (free signup).
-    # Model IDs use the upstream <vendor>/<name> form, so callers must use
-    # the double-prefixed `nim/<vendor>/<model>` invocation, e.g.
-    #   pycode --model nim/meta/llama-3.3-70b-instruct
-    # The catalog evolves — this list is a curated 2026-vintage starting set;
-    # any model the catalog still serves works regardless of presence here.
     "nim": {
         "type":       "openai",
         "api_key_env": "NVIDIA_API_KEY",

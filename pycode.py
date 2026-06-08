@@ -1955,10 +1955,8 @@ def main():
     from bootstrap import bootstrap as _bootstrap
     _bootstrap(config)
 
-    # Apply CLI overrides first (so key check uses the right provider)
     if args.model:
         m = args.model
-        # Convert "provider:model" → "provider/model" only when left side is a known provider
         if "/" not in m and ":" in m:
             from providers import PROVIDERS
             left, _ = m.split(":", 1)
@@ -1983,12 +1981,10 @@ def main():
         except ValueError as _e:
             warn(f"--budget: {_e} (e.g. --budget $5 or --budget 200k); ignoring.")
 
-    # ── Setup wizard: --setup flag or first-run auto-trigger ─────────────
     from cc_config import CONFIG_FILE
     is_first_run = not CONFIG_FILE.exists() or os.path.getsize(CONFIG_FILE) < 5
     if args.setup or (is_first_run and sys.stdin.isatty() and not args.print_mode):
         run_setup_wizard(config)
-        # Reload after wizard may have changed config
         config = load_config()
     elif not has_api_key(config):
         # Check API key for active provider (warn only, don't block local providers)

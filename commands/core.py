@@ -663,18 +663,13 @@ def cmd_doctor(args: str, state, config) -> bool:
 
     return True
 
-
-# ── Setup wizard ──────────────────────────────────────────────────────────
-
 def run_setup_wizard(config: dict) -> None:
-    """Interactive first-run setup: pick provider, set API key, verify."""
     from cc_config import save_config
-    from providers import PROVIDERS, detect_provider, get_api_key
+    from providers import PROVIDERS
 
     print()
     info("Welcome to PyCode! Let's get you set up.\n")
 
-    # ── Step 1: Pick provider ──
     providers_list = [
         ("ollama",    "Ollama (local, free, no API key)"),
         ("anthropic", "Anthropic Claude (cloud, API key required)"),
@@ -703,7 +698,6 @@ def run_setup_wizard(config: dict) -> None:
     chosen_pname, chosen_desc = providers_list[idx]
     prov = PROVIDERS.get(chosen_pname, {})
 
-    # ── Step 2: Set model ──
     models = prov.get("models", [])
     if chosen_pname == "ollama":
         # Check if Ollama is running and list local models
@@ -735,12 +729,6 @@ def run_setup_wizard(config: dict) -> None:
     else:
         config["model"] = chosen_pname + "/default"
 
-    # ── Step 3: Set API key (if needed) ──
-    # `or ""` (not just .get(..., "")) is load-bearing: ollama / lmstudio
-    # entries in PROVIDERS have ``api_key_env: None``, and dict.get returns
-    # the stored None — not the default — when the key is present.  Passing
-    # None into os.environ.get raises TypeError ("str expected, not NoneType")
-    # because os.environ fsencodes its keys.  See issue #59.
     env_var   = prov.get("api_key_env") or ""
     key_field = f"{chosen_pname}_api_key"
     existing_key = (os.environ.get(env_var, "") if env_var else "") \

@@ -208,10 +208,6 @@ def reset_session(session_id: str) -> None:
         _sess_tokens.pop(session_id, None)
         _sess_cost.pop(session_id, None)
 
-
-# ── User-facing helpers (for the /budget command, --budget flag, warnings) ──
-
-# Maps a parsed budget kind+scope to its config key.
 BUDGET_KEYS = {
     ("tokens", "session"): "session_token_budget",
     ("cost",   "session"): "session_cost_budget",
@@ -221,13 +217,6 @@ BUDGET_KEYS = {
 
 
 def parse_budget(s: str) -> tuple[str, float]:
-    """Parse a human budget string into ``(kind, value)``.
-
-    Cost (``kind="cost"``) when prefixed ``$`` or suffixed ``usd``/``$``
-    (e.g. ``$5``, ``5usd`` → ``("cost", 5.0)``); otherwise a token count with
-    optional ``k``/``m`` suffix (``200k`` → ``("tokens", 200000)``,
-    ``1.5m`` → ``("tokens", 1500000)``). Raises ``ValueError`` on bad input.
-    """
     raw = s.strip().lower().replace(",", "").replace(" ", "")
     if not raw:
         raise ValueError("empty budget")
@@ -253,7 +242,6 @@ def parse_budget(s: str) -> tuple[str, float]:
 
 
 def fmt_amount(value: float, unit: str) -> str:
-    """Compact rendering of a budget amount: ``$1.83`` for cost, ``124k`` for tokens."""
     if unit == "usd":
         return f"${value:,.2f}"
     value = int(value)
