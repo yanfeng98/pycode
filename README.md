@@ -31,54 +31,35 @@ Other install methods: [pip install](#alternative-install-with-pip) | [uv instal
 ---
 
 ## Content
-- [PyCode](#pycode)
-  - [Content](#content)
-    - [Demos](#demos)
-  - [Why PyCode](#why-pycode)
-  - [PyCode vs OpenClaw](#pycode-vs-openclaw)
-  - [Features](#features)
-  - [Supported Models](#supported-models)
-    - [Closed-Source (API)](#closed-source-api)
-    - [Open-Source (Local via Ollama)](#open-source-local-via-ollama)
-  - [Installation](#installation)
-    - [Alternative: install with `pip`](#alternative-install-with-pip)
-      - [Optional extras](#optional-extras)
-    - [Alternative: install with `uv`](#alternative-install-with-uv)
-    - [Alternative: run directly from source (no install)](#alternative-run-directly-from-source-no-install)
-  - [Usage: Closed-Source API Models](#usage-closed-source-api-models)
-  - [Usage: Open-Source Models (Local)](#usage-open-source-models-local)
-    - [Ollama (recommended)](#ollama-recommended)
-    - [LM Studio](#lm-studio)
-    - [vLLM / self-hosted OpenAI-compatible server](#vllm--self-hosted-openai-compatible-server)
-    - [Atlas Cloud (hosted, OpenAI-compatible)](#atlas-cloud-hosted-openai-compatible)
-  - [Model Name Format](#model-name-format)
-  - [Trading Agent](#trading-agent)
-  - [Web UI](#web-ui)
-  - [Documentation](#documentation)
-  - [Quick Reference](#quick-reference)
-  - [Contributing](#contributing)
-  - [FAQ](#faq)
-  - [Citation](#citation)
-  - [Thanks to all contributors:](#thanks-to-all-contributors)
+- [Content](#content)
+- [Why PyCode](#why-pycode)
+- [PyCode vs OpenClaw](#pycode-vs-openclaw)
+- [Features](#features)
+- [Supported Models](#supported-models)
+  - [Closed-Source (API)](#closed-source-api)
+  - [Open-Source (Local via Ollama)](#open-source-local-via-ollama)
+- [Installation](#installation)
+  - [Alternative: install with `pip`](#alternative-install-with-pip)
+    - [Optional extras](#optional-extras)
+  - [Alternative: install with `uv`](#alternative-install-with-uv)
+  - [Alternative: run directly from source (no install)](#alternative-run-directly-from-source-no-install)
+- [Usage: Closed-Source API Models](#usage-closed-source-api-models)
+- [Usage: Open-Source Models (Local)](#usage-open-source-models-local)
+  - [Ollama (recommended)](#ollama-recommended)
+  - [LM Studio](#lm-studio)
+  - [vLLM / self-hosted OpenAI-compatible server](#vllm--self-hosted-openai-compatible-server)
+  - [Atlas Cloud (hosted, OpenAI-compatible)](#atlas-cloud-hosted-openai-compatible)
+- [Model Name Format](#model-name-format)
+- [Trading Agent](#trading-agent)
+- [Web UI](#web-ui)
+- [Documentation](#documentation)
+- [Quick Reference](#quick-reference)
+- [Contributing](#contributing)
+- [FAQ](#faq)
+- [Citation](#citation)
+- [Thanks to all contributors:](#thanks-to-all-contributors)
 
 ## Why PyCode
-
-Claude Code is a powerful, production-grade AI coding assistant — but its source is a compiled ~12 MB TypeScript/Node bundle (~1,300 files, ~283K lines), tightly coupled to the Anthropic API, hard to modify, and impossible to run against a local or alternative model.
-
-**PyCode** reimplements the same core loop in ~90K lines of readable Python — keeping what you need, dropping what you don't, and adding multi-provider + local-model support. Full comparison: [docs/guides/comparison.md](docs/guides/comparison.md).
-
-| Dimension | Claude Code (TypeScript) | PyCode (Python) |
-|---|---|---|
-| Language | TypeScript + React/Ink | Python 3.8+ |
-| Source files / LoC | ~1,332 files / ~283K | ~315 files / ~90K (core; ~127K with tests) |
-| Built-in tools / commands | 44+ / 88 | 27 / 50+ |
-| Model providers | Anthropic only | 8+ (Anthropic · OpenAI · Gemini · Kimi · Qwen · DeepSeek · MiniMax · …) |
-| Local models | No | Yes — Ollama, LM Studio, vLLM, any OpenAI-compatible endpoint |
-| Build step | Yes (Bun + esbuild) | No — `python pycode.py` |
-| Extensibility | Closed (compile-time) | Open — `register_tool()` at runtime, Markdown skills, git plugins, MCP |
-| Voice input | Proprietary WebSocket (OAuth) | Local Whisper / OpenAI — works offline |
-
-**Where Claude Code wins:** richer React/Ink UI, more built-in tools, enterprise features (MDM, team permission sync, OAuth/keychain), AI-driven memory extraction, single-binary production reliability.
 
 **Where PyCode wins:** any-model switching (`--model`/`/model`, no recompile) incl. full local/offline support; a readable agent loop in one file (`agent.py`, ~740 lines); zero build; runtime tool registration + MCP + git plugins + Markdown skills; task dependency graph (`blocks`/`blocked_by`); two-layer context compression; offline voice; cloud session sync; bridges to Telegram/WeChat/Slack/QQ.
 
