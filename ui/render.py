@@ -186,15 +186,6 @@ def set_stream_mode(mode: str) -> None:
     _RICH_LIVE = (mode == "live")
 
 
-def set_rich_live(enabled: bool) -> None:
-    """Back-compat shim for the old boolean rich_live config.
-
-    True  → full in-place Live. False → 'commit' (still rich, just append-only
-    instead of plain raw tokens, which is a strict UX upgrade over the old
-    behaviour). New code should call set_stream_mode / auto_stream_mode."""
-    set_stream_mode("live" if (enabled and _RICH) else "commit")
-
-
 # Terminal emulators known to handle in-place cursor-up redraw reliably, even
 # over SSH. Detected via TERM_PROGRAM, TERM, or an emulator-specific env var.
 _GOOD_TERM_PROGRAMS = {

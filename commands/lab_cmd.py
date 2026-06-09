@@ -59,8 +59,6 @@ def cmd_lab(args: str, _state, config) -> bool:
         return _cmd_daemon(rest, config)
     if sub == "models":
         return _cmd_models(rest, config)
-    if sub == "migrate-paths":
-        return _cmd_migrate_paths(rest, config)
     if sub in ("help", "?", "-h", "--help"):
         _print_usage()
         return True
@@ -82,7 +80,6 @@ def _print_usage() -> None:
         "  /lab backlog list|remove|clear Manage queue\n"
         "  /lab daemon start|stop|status  24/7 worker pulling from backlog\n"
         "  /lab models                    Show effective per-role model assignment\n"
-        "  /lab migrate-paths [--apply]   Rename legacy lab_xxx/ dirs to human-readable form\n"
     )
 
 
@@ -589,79 +586,6 @@ def _cmd_daemon(arg: str, config: dict) -> bool:
         ok(f"Lab daemon: running (uptime {int(ago)//60}m{int(ago)%60}s)")
         return True
     err(f"Unknown /lab daemon subcommand: {sub!r}.  Use: start, stop, status")
-    return True
-
-
-# ── migrate-paths (rename legacy lab_xxx/ dirs to human-readable form) ──
-
-
-def _cmd_migrate_paths(arg: str, config: dict) -> bool:
-    """`/lab migrate-paths [--dry-run]` — rename legacy ``lab_xxx/``
-    output directories to ``<date>_<time>_<topic-slug>_<short>``.
-
-    Idempotent: a directory already in the new format is ignored.
-    Default is **dry-run** so the user can review before committing —
-    pass ``--apply`` to actually rename.
-    """
-    from research.lab.storage import (
-        DEFAULT_OUTPUT_DIR, LabStorage, output_dir_for,
-    )
-
-    apply = "--apply" in arg.split()
-    if not apply:
-        info("Dry run — pass `--apply` to actually rename.")
-    storage = LabStorage()
-    if not DEFAULT_OUTPUT_DIR.exists():
-        info("No research_papers/ directory yet.")
-        return True
-
-    plan: list[tuple[Path, Path]] = []
-    skipped_unknown: list[Path] = []
-    for entry in sorted(DEFAULT_OUTPUT_DIR.iterdir()):
-        if not entry.is_dir():
-            continue
-        name = entry.name
-        if not name.startswith("lab_"):
-            # Already in new format (or unrelated dir we shouldn't touch).
-            continue
-        rec = storage.get_run(name)
-        if rec is None:
-            skipped_unknown.append(entry)
-            continue
-        new_dir = output_dir_for(rec.run_id, rec.topic, rec.created_at)
-        if new_dir.exists() and new_dir.resolve() != entry.resolve():
-            # Conflict — both old and new exist. Skip rather than risk loss.
-            warn(f"  ✗ {name}: target {new_dir.name} already exists, skip")
-            continue
-        plan.append((entry, new_dir))
-
-    if not plan and not skipped_unknown:
-        ok("Nothing to migrate.")
-        return True
-
-    print(clr(f"\n  Plan ({len(plan)} dir(s)):", "cyan", "bold"))
-    for src, dst in plan:
-        print(f"    {src.name}")
-        print(clr(f"      → {dst.name}", "dim"))
-
-    if skipped_unknown:
-        print(clr(f"\n  Skipped {len(skipped_unknown)} unknown dir(s)"
-                  " (no matching run in DB):", "yellow"))
-        for s in skipped_unknown[:5]:
-            print(f"    {s.name}")
-
-    if not apply:
-        info("\nRun `/lab migrate-paths --apply` to rename.")
-        return True
-
-    n = 0
-    for src, dst in plan:
-        try:
-            src.rename(dst)
-            n += 1
-        except OSError as e:
-            err(f"  ✗ {src.name}: {e}")
-    ok(f"Migrated {n}/{len(plan)} dir(s).")
     return True
 
 

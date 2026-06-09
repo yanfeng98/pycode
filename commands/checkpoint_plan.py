@@ -114,7 +114,7 @@ def cmd_checkpoint(args: str, state, config) -> bool:
 
     ckpt.reset_tracked()
     ckpt.make_snapshot(
-        session_id, state, config,
+        session_id, state,
         f"[rewind to #{snap_id}]",
         tracked_edits=None,
     )
@@ -181,7 +181,7 @@ def cmd_plan(args: str, state, config) -> Union[bool, tuple]:
         return True
 
     session_id = config.get("_session_id", "default")
-    plans_dir = Path.cwd() / ".nano_claude" / "plans"
+    plans_dir = Path.cwd() / ".pycode" / "plans"
     plans_dir.mkdir(parents=True, exist_ok=True)
     plan_path = plans_dir / f"{session_id}.md"
     plan_path.write_text(f"# Plan: {arg}\n\n", encoding="utf-8")

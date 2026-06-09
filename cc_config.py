@@ -68,8 +68,6 @@ def load_config() -> dict:
             cfg.update(json.loads(CONFIG_FILE.read_text()))
         except Exception:
             pass
-    if cfg.get("api_key") and not cfg.get("anthropic_api_key"):
-        cfg["anthropic_api_key"] = cfg.pop("api_key")
     if not cfg.get("anthropic_api_key"):
         cfg["anthropic_api_key"] = os.environ.get("ANTHROPIC_API_KEY", "")
     if os.environ.get("ANTHROPIC_ENDPOINT"):

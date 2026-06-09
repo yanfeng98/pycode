@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
+from checkpoint.store import _checkpoints_root
 from ui.render import clr, info, ok, warn, err
 
 # VERSION is imported lazily from pycode to avoid circular imports
@@ -355,7 +356,7 @@ def cmd_export(args: str, state, config) -> bool:
     if arg:
         out_path = Path(arg)
     else:
-        export_dir = Path.cwd() / ".nano_claude" / "exports"
+        export_dir = Path.cwd() / ".pycode" / "exports"
         export_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_path = export_dir / f"conversation_{ts}.md"
@@ -635,7 +636,7 @@ def cmd_doctor(args: str, state, config) -> bool:
     if global_md.exists():
         _ok(f"Global CLAUDE.md: {global_md}")
 
-    ckpt_root = Path.home() / ".nano_claude" / "checkpoints"
+    ckpt_root = _checkpoints_root()
     if ckpt_root.exists():
         total = sum(f.stat().st_size for f in ckpt_root.rglob("*") if f.is_file())
         mb = total / (1024 * 1024)

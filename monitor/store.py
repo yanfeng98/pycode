@@ -23,84 +23,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-STORE_PATH = Path.home() / ".pycode" / "monitor_subscriptions.json"
-
-_MIGRATION_KEY = "monitor_migrated_from_json"
-_migration_done_in_process = False
-_migration_lock = threading.Lock()
-
-
 def _conn():
     from cc_daemon.schema import get_conn
     return get_conn()
-
-
-# ── One-shot JSON → SQLite migration ──────────────────────────────────────
-
-def _ensure_migrated() -> None:
-    """Idempotent import of the legacy JSON file into SQLite.
-
-    Tracked by ``schema_meta.monitor_migrated_from_json`` so subsequent
-    processes don't redo the import.
-
-    Note: this migration is **one-way**.  After the marker is set the
-    JSON file is never read again; subsequent edits to
-    ``~/.pycode/monitor_subscriptions.json`` are ignored.  The
-    file is left on disk so prior-release users can still read it, but
-    SQLite is now the source of truth.  To redo the migration, delete
-    the ``monitor_migrated_from_json`` row from ``schema_meta`` AND the
-    rows in ``monitor_subscriptions`` you want re-imported.
-    """
-    global _migration_done_in_process
-    if _migration_done_in_process:
-        return
-    with _migration_lock:
-        if _migration_done_in_process:
-            return
-        c = _conn()
-        row = c.execute(
-            "SELECT value FROM schema_meta WHERE key=?", (_MIGRATION_KEY,)
-        ).fetchone()
-        if row is None and STORE_PATH.exists():
-            try:
-                legacy = json.loads(STORE_PATH.read_text(encoding="utf-8"))
-            except Exception:
-                legacy = {"subscriptions": []}
-            for sub in legacy.get("subscriptions", []) or []:
-                if not isinstance(sub, dict) or "topic" not in sub:
-                    continue
-                try:
-                    _persist(sub, conn=c)
-                except Exception:
-                    continue
-            # If a legacy subscription had a last_report we mirror it as a
-            # single seed row in monitor_reports so /monitor history works
-            # right after upgrade.
-            for sub in legacy.get("subscriptions", []) or []:
-                if not isinstance(sub, dict):
-                    continue
-                last_report = sub.get("last_report")
-                if last_report and sub.get("topic"):
-                    try:
-                        _save_report_row(
-                            topic=sub["topic"],
-                            body=last_report,
-                            sent_to=sub.get("channels") or [],
-                            ts=sub.get("last_run") or _now_iso(),
-                            conn=c,
-                        )
-                    except Exception:
-                        pass
-        if row is None:
-            now = _now_iso()
-            c.execute(
-                "INSERT INTO schema_meta (key, value, updated_at) "
-                "VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET "
-                "value=excluded.value, updated_at=excluded.updated_at",
-                (_MIGRATION_KEY, "1", now),
-            )
-            c.commit()
-        _migration_done_in_process = True
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -175,7 +100,6 @@ def _persist(sub: dict, *, conn=None) -> None:
 # ── Public API ────────────────────────────────────────────────────────────
 
 def list_subscriptions() -> list[dict]:
-    _ensure_migrated()
     rows = _conn().execute(
         "SELECT * FROM monitor_subscriptions ORDER BY topic"
     ).fetchall()
@@ -183,7 +107,6 @@ def list_subscriptions() -> list[dict]:
 
 
 def get_subscription(topic: str) -> Optional[dict]:
-    _ensure_migrated()
     row = _conn().execute(
         "SELECT * FROM monitor_subscriptions WHERE topic=?", (topic,)
     ).fetchone()
@@ -193,7 +116,6 @@ def get_subscription(topic: str) -> Optional[dict]:
 def add_subscription(topic: str, schedule: str = "daily",
                      channels: Optional[list[str]] = None) -> dict:
     """Add or update a subscription.  Returns the full subscription dict."""
-    _ensure_migrated()
     existing = get_subscription(topic)
     if existing is None:
         sub = {
@@ -217,7 +139,6 @@ def add_subscription(topic: str, schedule: str = "daily",
 
 
 def remove_subscription(topic: str) -> bool:
-    _ensure_migrated()
     c = _conn()
     cur = c.execute(
         "DELETE FROM monitor_subscriptions WHERE topic=?", (topic,)
@@ -227,7 +148,6 @@ def remove_subscription(topic: str) -> bool:
 
 
 def update_last_run(topic: str, report: str) -> None:
-    _ensure_migrated()
     c = _conn()
     # Stash a 500-char preview of the latest report on the row itself
     # (mirrors the legacy behaviour); full body lives in monitor_reports.
@@ -270,13 +190,11 @@ def _save_report_row(*, topic: str, body: str, sent_to: Iterable[str],
 def save_report(topic: str, body: str,
                 sent_to: Optional[Iterable[str]] = None) -> str:
     """Persist a generated monitor report.  Returns the new report id."""
-    _ensure_migrated()
     return _save_report_row(topic=topic, body=body, sent_to=sent_to or [])
 
 
 def list_reports(topic: Optional[str] = None, *, limit: int = 20) -> list[dict]:
     """Most-recent reports, optionally filtered by topic."""
-    _ensure_migrated()
     c = _conn()
     if topic is None:
         rows = c.execute(

@@ -11,7 +11,7 @@ print(f"Workspace: {tmpdir}")
 # Patch checkpoints root to temp
 import checkpoint.store as store
 _orig_root = store._checkpoints_root
-store._checkpoints_root = lambda: tmpdir / ".nano_claude" / "checkpoints"
+store._checkpoints_root = lambda: tmpdir / ".pycode" / "checkpoints"
 
 import checkpoint as ckpt
 from checkpoint.hooks import set_session, get_tracked_edits, reset_tracked, _backup_before_write
@@ -31,7 +31,7 @@ config = {"_session_id": session_id}
 SEP = "=" * 60
 
 def auto_snapshot(user_input):
-    """Same logic as nano_claude.py auto-snapshot with throttle."""
+    """Same logic as pycode.py auto-snapshot with throttle."""
     tracked = get_tracked_edits()
     last_snaps = ckpt.list_snapshots(session_id)
     skip = False
@@ -40,7 +40,7 @@ def auto_snapshot(user_input):
             skip = True
     snap = None
     if not skip:
-        snap = ckpt.make_snapshot(session_id, state, config, user_input, tracked_edits=tracked)
+        snap = ckpt.make_snapshot(session_id, state, user_input, tracked_edits=tracked)
     reset_tracked()
     return snap, skip
 
@@ -51,7 +51,7 @@ print("STEP 1: Initialize session & create initial snapshot")
 print(SEP)
 set_session(session_id)
 ckpt.cleanup_old_sessions()
-snap0 = ckpt.make_snapshot(session_id, state, config, "(initial state)", tracked_edits=None)
+snap0 = ckpt.make_snapshot(session_id, state, "(initial state)", tracked_edits=None)
 print(f"  Initial snapshot: id={snap0.id}, message_index={snap0.message_index}")
 assert snap0.id == 1 and snap0.message_index == 0 and snap0.file_backups == {}
 print("  PASS")

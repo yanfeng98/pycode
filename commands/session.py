@@ -13,35 +13,12 @@ from pathlib import Path
 
 from ui.render import clr, info, ok, warn, err
 
-# ── Session format version ─────────────────────────────────────────────────
-# Increment when the on-disk structure changes in a backward-incompatible way.
-# Loaders call _migrate_session(data) which upgrades older files in memory.
-SESSION_VERSION = 1
-
-
-def _migrate_session(data: dict) -> dict:
-    """Upgrade a session dict to the current SESSION_VERSION format.
-
-    Always returns a (possibly modified) copy — never mutates the input.
-    Unknown future versions are accepted as-is to be forward-compatible.
-    """
-    v = data.get("_version", 0)
-    if v == SESSION_VERSION:
-        return data           # already current
-    out = dict(data)
-    # v0 → v1: no structural change; just tag it
-    if v == 0:
-        out["_version"] = 1
-    return out
-
-
 # ── Session data builder ───────────────────────────────────────────────────
 
 def _build_session_data(state, session_id: str | None = None) -> dict:
     """Serialize current conversation state to a JSON-serializable dict."""
     import uuid
     return {
-        "_version": SESSION_VERSION,
         "session_id": session_id or uuid.uuid4().hex[:8],
         "saved_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "messages": [
@@ -271,7 +248,7 @@ def cmd_load(args: str, state, config) -> bool:
             loaded_names = []
             for idx in indices:
                 s_path = sessions[idx]
-                s_data = _migrate_session(json.loads(s_path.read_text()))
+                s_data = json.loads(s_path.read_text())
                 all_messages.extend(s_data.get("messages", []))
                 total_turns += s_data.get("turn_count", 0)
                 loaded_names.append(s_path.name)
@@ -303,7 +280,7 @@ def cmd_load(args: str, state, config) -> bool:
 
     try:
         raw = path.read_text(encoding="utf-8")
-        data = _migrate_session(json.loads(raw))
+        data = json.loads(raw)
     except json.JSONDecodeError as e:
         err(f"Session file is corrupted: {path}")
         warn(f"  JSON error: {e}")
@@ -340,7 +317,7 @@ def cmd_resume(args: str, state, config) -> bool:
 
     try:
         raw = path.read_text(encoding="utf-8")
-        data = _migrate_session(json.loads(raw))
+        data = json.loads(raw)
     except json.JSONDecodeError as e:
         err(f"Session file is corrupted: {path}")
         warn(f"  JSON error: {e}")
@@ -371,16 +348,10 @@ def cmd_search(args: str, state, config) -> bool:
         info("Search across all past session conversations.")
         return True
 
-    from session_store import search_sessions, session_count, import_json_sessions
+    from session_store import search_sessions, session_count
 
     # Auto-import legacy JSON sessions on first search
     count = session_count()
-    if count == 0:
-        from cc_config import SESSION_HIST_FILE
-        imported = import_json_sessions(SESSION_HIST_FILE)
-        if imported:
-            info(f"Imported {imported} sessions from history.json into search index.")
-
     results = search_sessions(query)
     if not results:
         info(f"No sessions found matching: \"{query}\"")

@@ -23,8 +23,8 @@ class FakeState:
 
 @pytest.fixture
 def tmp_home(tmp_path):
-    """Redirect ~/.nano_claude/checkpoints to a temp directory."""
-    ckpt_root = tmp_path / ".nano_claude" / "checkpoints"
+    """Redirect ~/.pycode/checkpoints to a temp directory."""
+    ckpt_root = tmp_path / ".pycode" / "checkpoints"
     ckpt_root.mkdir(parents=True)
     with patch("checkpoint.store._checkpoints_root", return_value=ckpt_root):
         yield tmp_path, ckpt_root
@@ -116,7 +116,7 @@ class TestStore:
             total_input_tokens=100,
             total_output_tokens=50,
         )
-        snap = store.make_snapshot("sess1", state, {}, "hi", tracked_edits=None)
+        snap = store.make_snapshot("sess1", state, "hi", tracked_edits=None)
         assert snap is not None
         assert snap.id == 1
         assert snap.turn_count == 1
@@ -132,7 +132,7 @@ class TestStore:
         # First snapshot with a tracked edit
         backup_name = store.track_file_edit("sess1", str(test_file))
         snap1 = store.make_snapshot(
-            "sess1", state, {}, "first",
+            "sess1", state, "first",
             tracked_edits={str(test_file): backup_name},
         )
         assert str(test_file) in snap1.file_backups
@@ -140,7 +140,7 @@ class TestStore:
         # Second snapshot — no edits, should carry forward the same file reference
         state.messages.append({"role": "user", "content": "b"})
         state.turn_count = 2
-        snap2 = store.make_snapshot("sess1", state, {}, "second", tracked_edits=None)
+        snap2 = store.make_snapshot("sess1", state, "second", tracked_edits=None)
         assert snap2.id == 2
         assert str(test_file) in snap2.file_backups
         # Carried forward from snap1 (same backup since no edits)
@@ -149,8 +149,8 @@ class TestStore:
     def test_list_snapshots(self, tmp_home):
         from checkpoint import store
         state = FakeState(messages=[], turn_count=0)
-        store.make_snapshot("sess1", state, {}, "one")
-        store.make_snapshot("sess1", state, {}, "two")
+        store.make_snapshot("sess1", state, "one")
+        store.make_snapshot("sess1", state, "two")
         snaps = store.list_snapshots("sess1")
         assert len(snaps) == 2
         assert snaps[0]["id"] == 1
@@ -159,7 +159,7 @@ class TestStore:
     def test_get_snapshot(self, tmp_home):
         from checkpoint import store
         state = FakeState(messages=[], turn_count=0)
-        store.make_snapshot("sess1", state, {}, "test")
+        store.make_snapshot("sess1", state, "test")
         snap = store.get_snapshot("sess1", 1)
         assert snap is not None
         assert snap.user_prompt_preview == "test"
@@ -173,7 +173,7 @@ class TestStore:
         state = FakeState(messages=[], turn_count=0)
         backup_name = store.track_file_edit("sess1", str(test_file))
         store.make_snapshot(
-            "sess1", state, {}, "before edit",
+            "sess1", state, "before edit",
             tracked_edits={str(test_file): backup_name},
         )
 
@@ -194,7 +194,7 @@ class TestStore:
         state = FakeState(messages=[], turn_count=0)
         # Snapshot where file doesn't exist (backup_filename=None)
         store.make_snapshot(
-            "sess1", state, {}, "before create",
+            "sess1", state, "before create",
             tracked_edits={str(new_file): None},
         )
 
@@ -212,7 +212,7 @@ class TestStore:
         from checkpoint.types import MAX_SNAPSHOTS
         state = FakeState(messages=[], turn_count=0)
         for i in range(MAX_SNAPSHOTS + 10):
-            store.make_snapshot("sess1", state, {}, f"snap {i}")
+            store.make_snapshot("sess1", state, f"snap {i}")
         snaps = store.list_snapshots("sess1")
         assert len(snaps) == MAX_SNAPSHOTS
 
@@ -225,10 +225,10 @@ class TestStore:
 
         state = FakeState(messages=[], turn_count=0)
         b1 = store.track_file_edit("sess1", str(f1))
-        store.make_snapshot("sess1", state, {}, "s1", tracked_edits={str(f1): b1})
+        store.make_snapshot("sess1", state, "s1", tracked_edits={str(f1): b1})
 
         b2 = store.track_file_edit("sess1", str(f2))
-        store.make_snapshot("sess1", state, {}, "s2", tracked_edits={str(f2): b2})
+        store.make_snapshot("sess1", state, "s2", tracked_edits={str(f2): b2})
 
         changed = store.files_changed_since("sess1", 1)
         assert str(f2) in changed
@@ -237,7 +237,7 @@ class TestStore:
     def test_delete_session_checkpoints(self, tmp_home):
         from checkpoint import store
         state = FakeState(messages=[], turn_count=0)
-        store.make_snapshot("sess1", state, {}, "test")
+        store.make_snapshot("sess1", state, "test")
         assert store.delete_session_checkpoints("sess1")
         assert store.list_snapshots("sess1") == []
 
@@ -329,7 +329,7 @@ class TestIntegration:
             total_output_tokens=100,
         )
         tracked = hooks.get_tracked_edits()
-        snap = store.make_snapshot(session_id, state, {}, "write code", tracked_edits=tracked)
+        snap = store.make_snapshot(session_id, state, "write code", tracked_edits=tracked)
         hooks.reset_tracked()
         assert snap.id == 1
 
@@ -343,7 +343,7 @@ class TestIntegration:
         ])
         state.turn_count = 2
         tracked2 = hooks.get_tracked_edits()
-        snap2 = store.make_snapshot(session_id, state, {}, "change it", tracked_edits=tracked2)
+        snap2 = store.make_snapshot(session_id, state, "change it", tracked_edits=tracked2)
         hooks.reset_tracked()
         assert snap2.id == 2
 
@@ -367,7 +367,7 @@ class TestIntegration:
         from checkpoint import store
 
         state = FakeState(messages=[], turn_count=0)
-        snap = store.make_snapshot("init_test", state, {}, "(initial state)", tracked_edits=None)
+        snap = store.make_snapshot("init_test", state, "(initial state)", tracked_edits=None)
         assert snap.id == 1
         assert snap.message_index == 0
         assert snap.turn_count == 0
@@ -380,7 +380,7 @@ class TestIntegration:
 
         state = FakeState(messages=[], turn_count=0)
         # Initial snapshot
-        store.make_snapshot("throttle_test", state, {}, "(initial state)")
+        store.make_snapshot("throttle_test", state, "(initial state)")
 
         # Same state, no tracked edits — should be skippable
         snaps = store.list_snapshots("throttle_test")
@@ -394,7 +394,7 @@ class TestIntegration:
         from checkpoint import store
 
         state = FakeState(messages=[], turn_count=0)
-        store.make_snapshot("throttle2", state, {}, "(initial state)")
+        store.make_snapshot("throttle2", state, "(initial state)")
 
         # Messages grew (a turn happened)
         state.messages = [
@@ -408,7 +408,7 @@ class TestIntegration:
         # message count changed → should NOT skip
         assert len(state.messages) != last_msg_idx
 
-        store.make_snapshot("throttle2", state, {}, "hello", tracked_edits=None)
+        store.make_snapshot("throttle2", state, "hello", tracked_edits=None)
         snaps_after = store.list_snapshots("throttle2")
         assert len(snaps_after) == 2
 
@@ -418,7 +418,7 @@ class TestIntegration:
 
         state = FakeState(messages=[], turn_count=0)
         # Snap 1: initial
-        store.make_snapshot("rewind_conv", state, {}, "(initial state)")
+        store.make_snapshot("rewind_conv", state, "(initial state)")
 
         # Snap 2: first turn (no files, but messages grew)
         state.messages = [
@@ -426,7 +426,7 @@ class TestIntegration:
             {"role": "assistant", "content": "done"},
         ]
         state.turn_count = 1
-        store.make_snapshot("rewind_conv", state, {}, "do something")
+        store.make_snapshot("rewind_conv", state, "do something")
 
         # Snap 3: second turn (no files, messages grew again)
         state.messages.extend([
@@ -434,7 +434,7 @@ class TestIntegration:
             {"role": "assistant", "content": "more done"},
         ])
         state.turn_count = 2
-        store.make_snapshot("rewind_conv", state, {}, "do more")
+        store.make_snapshot("rewind_conv", state, "do more")
 
         # Verify we have 3 snapshots
         snaps = store.list_snapshots("rewind_conv")

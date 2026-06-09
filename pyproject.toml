@@ -58,8 +58,6 @@ py-modules = [
     "quota",
     "runtime",
     "session_store",
-    "skills",
-    "subagent",
     "tmux_tools",
     "tool_registry",
 ]

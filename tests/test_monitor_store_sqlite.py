@@ -1,4 +1,4 @@
-"""F-3 tests for monitor/store.py — SQLite backing + JSON migration."""
+"""F-3 tests for monitor/store.py — SQLite backing."""
 from __future__ import annotations
 
 import json
@@ -16,12 +16,9 @@ from cc_daemon import schema
 
 @pytest.fixture(autouse=True)
 def _isolated(tmp_path: Path, monkeypatch):
-    """Each test gets a private sessions.db AND a tmp STORE_PATH so the
-    legacy migration can't touch the developer's real file."""
-    monkeypatch.setattr(store, "STORE_PATH", tmp_path / "monitor_subscriptions.json")
+    """Each test gets a private sessions.db."""
     schema.set_db_path(tmp_path / "sessions.db")
     schema._local.conn = None
-    store._migration_done_in_process = False
     yield
     schema._local.conn = None
     schema.set_db_path(schema.get_default_db_path())
@@ -84,92 +81,6 @@ def test_subscription_persists_across_connections():
     schema._local.conn = None  # drop conn → next call re-opens
     subs = store.list_subscriptions()
     assert any(s["topic"] == "arxiv" for s in subs)
-
-
-# ── JSON → SQLite migration ──────────────────────────────────────────────
-
-def _legacy_payload(subs: list[dict]) -> str:
-    return json.dumps({"subscriptions": subs}, ensure_ascii=False)
-
-
-def test_migration_imports_legacy_subscriptions(tmp_path):
-    legacy = [
-        {"id": "abc12345", "topic": "arxiv", "schedule": "daily",
-         "channels": ["console"], "created_at": "2026-04-01T10:00:00",
-         "last_run": "2026-04-02T10:00:00", "next_run": None,
-         "last_report": "Yesterday's report …"},
-        {"id": "def67890", "topic": "news", "schedule": "6h",
-         "channels": ["telegram"], "created_at": "2026-04-01T10:00:00",
-         "last_run": None, "next_run": None, "last_report": None},
-    ]
-    store.STORE_PATH.write_text(_legacy_payload(legacy), encoding="utf-8")
-    subs = store.list_subscriptions()
-    topics = {s["topic"] for s in subs}
-    assert {"arxiv", "news"} <= topics
-
-
-def test_migration_carries_last_run_and_channels():
-    legacy = [{"id": "x", "topic": "arxiv", "schedule": "daily",
-               "channels": ["telegram", "console"],
-               "created_at": "2026-04-01T10:00:00",
-               "last_run": "2026-04-02T10:00:00", "next_run": None,
-               "last_report": "old digest"}]
-    store.STORE_PATH.write_text(_legacy_payload(legacy), encoding="utf-8")
-    sub = store.get_subscription("arxiv")
-    assert sub["last_run"] == "2026-04-02T10:00:00"
-    assert set(sub["channels"]) == {"telegram", "console"}
-
-
-def test_migration_seeds_last_report_into_monitor_reports():
-    """A subscription with last_report should produce one row in
-    monitor_reports so the post-upgrade /monitor history view isn't
-    empty."""
-    legacy = [{"id": "x", "topic": "arxiv", "schedule": "daily",
-               "channels": ["console"], "created_at": "",
-               "last_run": "2026-04-02T10:00:00", "next_run": None,
-               "last_report": "Old digest body"}]
-    store.STORE_PATH.write_text(_legacy_payload(legacy), encoding="utf-8")
-    store.list_subscriptions()  # triggers migration
-    reports = store.list_reports("arxiv")
-    assert len(reports) == 1
-    assert reports[0]["body"] == "Old digest body"
-
-
-def test_migration_is_idempotent():
-    legacy = [{"id": "x", "topic": "arxiv", "schedule": "daily",
-               "channels": [], "created_at": "", "last_run": None,
-               "next_run": None, "last_report": None}]
-    store.STORE_PATH.write_text(_legacy_payload(legacy), encoding="utf-8")
-    store.list_subscriptions()
-    store.list_subscriptions()
-    store.list_subscriptions()
-    subs = store.list_subscriptions()
-    assert sum(1 for s in subs if s["topic"] == "arxiv") == 1
-
-
-def test_migration_marker_is_recorded():
-    store.STORE_PATH.write_text(_legacy_payload([]), encoding="utf-8")
-    store.list_subscriptions()
-    row = schema.get_conn().execute(
-        "SELECT value FROM schema_meta WHERE key='monitor_migrated_from_json'"
-    ).fetchone()
-    assert row is not None
-    assert row[0] == "1"
-
-
-def test_migration_keeps_legacy_file_in_place():
-    legacy = [{"id": "x", "topic": "arxiv", "schedule": "daily",
-               "channels": [], "created_at": "", "last_run": None,
-               "next_run": None, "last_report": None}]
-    store.STORE_PATH.write_text(_legacy_payload(legacy), encoding="utf-8")
-    store.list_subscriptions()
-    assert store.STORE_PATH.exists()  # one-release fallback
-
-
-def test_migration_tolerates_corrupt_json():
-    store.STORE_PATH.write_text("{ this is not json", encoding="utf-8")
-    # Should not raise.
-    assert store.list_subscriptions() == []
 
 
 # ── Reports ─────────────────────────────────────────────────────────────────

@@ -29,7 +29,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-_JOBS_PATH = Path.home() / ".pycode" / "jobs.json"
 _MAX_JOBS = 100          # keep last N jobs on disk
 _MAX_STEPS = 30          # max steps to record per job
 _RESULT_PREVIEW = 600    # chars of result to store
@@ -145,65 +144,8 @@ class Job:
         return "\n".join(lines)
 
 
-# ── Storage ──────────────────────────────────────────────────────────────────
-#
-# F-2 swapped the JSON-file backend for the SQLite ``jobs`` table.  The
-# legacy ``~/.pycode/jobs.json`` is migrated on first access and
-# kept readable for one release as a fallback.  Public API
-# (``create``, ``start``, ``get``, ``list_recent`` …) is unchanged.
-
-_MIGRATION_KEY = "jobs_migrated_from_json"
-_migration_done_in_process = False  # process-wide guard, avoids re-checking
-
-
 def _now() -> str:
     return datetime.now().isoformat(timespec="seconds")
-
-
-def _ensure_migrated() -> None:
-    """Idempotent one-shot import of the legacy JSON file.
-
-    Tracked by a row in ``schema_meta`` so it survives across processes.
-    A process-wide bool short-circuits subsequent calls.
-
-    Note: this migration is **one-way**.  Once the schema_meta marker is
-    set, the JSON file is never read again — subsequent edits to
-    ``~/.pycode/jobs.json`` are ignored.  The file is left on disk
-    so that users still on the prior release (or anyone holding a
-    backup-style script that scrapes it) can read it, but it is no
-    longer the source of truth.  To redo the migration, delete the
-    ``jobs_migrated_from_json`` row from ``schema_meta`` AND the rows in
-    the ``jobs`` table you want re-imported.
-    """
-    global _migration_done_in_process
-    if _migration_done_in_process:
-        return
-    from cc_daemon.schema import get_conn
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT value FROM schema_meta WHERE key=?", (_MIGRATION_KEY,)
-    ).fetchone()
-    if row is None and _JOBS_PATH.exists():
-        try:
-            legacy = json.loads(_JOBS_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            legacy = []
-        for d in legacy if isinstance(legacy, list) else []:
-            try:
-                _persist(Job.from_dict(d), conn=conn)
-            except Exception:
-                continue
-    if row is None:
-        from datetime import timezone
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        conn.execute(
-            "INSERT INTO schema_meta (key, value, updated_at) "
-            "VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET "
-            "value=excluded.value, updated_at=excluded.updated_at",
-            (_MIGRATION_KEY, "1", now),
-        )
-        conn.commit()
-    _migration_done_in_process = True
 
 
 def _row_to_job(row) -> Job:
@@ -273,7 +215,6 @@ def _prune_to_max(conn=None) -> None:
 
 
 def _get_all() -> list[Job]:
-    _ensure_migrated()
     from cc_daemon.schema import get_conn
     rows = get_conn().execute(
         "SELECT * FROM jobs ORDER BY created_at"
@@ -282,7 +223,6 @@ def _get_all() -> list[Job]:
 
 
 def _update(job: Job) -> None:
-    _ensure_migrated()
     with _lock:
         _persist(job)
         _prune_to_max()
@@ -420,7 +360,6 @@ def cancel(job_id: str) -> None:
 # ── Query ────────────────────────────────────────────────────────────────────
 
 def get(job_id: str) -> Optional[Job]:
-    _ensure_migrated()
     from cc_daemon.schema import get_conn
     row = get_conn().execute(
         "SELECT * FROM jobs WHERE id=?", (job_id,)
@@ -430,7 +369,6 @@ def get(job_id: str) -> Optional[Job]:
 
 def list_recent(n: int = 10) -> list[Job]:
     """Return last N jobs, newest first."""
-    _ensure_migrated()
     from cc_daemon.schema import get_conn
     rows = get_conn().execute(
         "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (n,)
@@ -439,7 +377,6 @@ def list_recent(n: int = 10) -> list[Job]:
 
 
 def list_running() -> list[Job]:
-    _ensure_migrated()
     from cc_daemon.schema import get_conn
     rows = get_conn().execute(
         "SELECT * FROM jobs WHERE status='running' ORDER BY started_at"

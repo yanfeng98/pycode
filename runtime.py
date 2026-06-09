@@ -27,23 +27,11 @@ if TYPE_CHECKING:
 class RuntimeContext:
 
     session_id: str = "default"
-
-    # Fire a background query from any thread (set by repl())
     run_query: Optional[Callable[[str], None]] = None
-
-    # Process a /slash command coming in from a bridge (set by repl())
     handle_slash: Optional[Callable[[str], str]] = None
-
-    # The active AgentState — message history, token counts, turn count
     agent_state: Optional["AgentState"] = None
-
-    # Low-level Telegram send helper (from bridges.telegram._tg_send)
     tg_send: Optional[Callable] = None
-
-    # Low-level Slack send helper: (channel, text) → None  (set by _slack_poll_loop)
     slack_send: Optional[Callable] = None
-
-    # Low-level WeChat send helper: (user_id, text) → None  (set by _wx_poll_loop)
     wx_send: Optional[Callable] = None
 
     # Per-bridge synchronous-input synchronisation.
@@ -65,19 +53,14 @@ class RuntimeContext:
     wx_input_event:    Optional[threading.Event] = None
     wx_input_value:    str = ""
 
-    # ── QQ bridge ───────────────────────────────────────────────────────────────
     qq_send: Optional[Callable] = None
     qq_input_event: Optional[threading.Event] = None
     qq_input_value: str = ""
     qq_input_target_id: str = ""
     in_qq_turn: bool = False
     qq_current_target_id: str = ""
-    qq_current_msg_type: str = ""   # "group" or "c2c"
+    qq_current_msg_type: str = ""
 
-    # ── Live-streaming hooks (set by bridges before run_query; cleared after) ──
-    # on_text_chunk(text)          — called for every TextChunk as it streams
-    # on_tool_start(name, inputs)  — called when a tool call begins
-    # on_tool_end(name, result)    — called when a tool call finishes
     on_text_chunk:  Optional[Callable[[str], None]] = None
     on_tool_start:  Optional[Callable[[str, dict], None]] = None
     on_tool_end:    Optional[Callable[[str, str], None]] = None
@@ -135,7 +118,3 @@ def get_ctx(config: dict) -> RuntimeContext:
     """Shortcut: return the RuntimeContext for the session stored in config."""
     return get_session_ctx(config.get("_session_id", "default"))
 
-
-# ── Backward-compat alias ──────────────────────────────────────────────────
-# Single-session CLI code that does `import runtime; runtime.ctx.xxx` still works.
-ctx = get_session_ctx("default")

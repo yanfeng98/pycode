@@ -82,7 +82,7 @@ def _run_tests(tmpdir):
     print(SEP)
     result = cmd_export("", state, config)
     assert result == True
-    export_dir = tmpdir / ".nano_claude" / "exports"
+    export_dir = tmpdir / ".pycode" / "exports"
     exports = list(export_dir.glob("conversation_*.md"))
     assert len(exports) == 1
     md_content = exports[0].read_text(encoding="utf-8")

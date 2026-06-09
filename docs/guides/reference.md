@@ -156,7 +156,7 @@ Type `/` and press **Tab** to see all commands with descriptions. Continue typin
 | `/compact` | Manually compact the conversation (same as auto-compact but user-triggered) |
 | `/compact <focus>` | Compact with focus instructions (e.g. `/compact keep the auth refactor context`) |
 | `/init` | Create a `CLAUDE.md` template in the current working directory |
-| `/export` | Export the conversation as a Markdown file to `.nano_claude/exports/` |
+| `/export` | Export the conversation as a Markdown file to `.pycode/exports/` |
 | `/export <filename>` | Export as Markdown or JSON (detected by `.json` extension) |
 | `/copy` | Copy the last assistant response to the clipboard |
 | `/status` | Show version, model, provider, permissions, session ID, token usage, and context % |
@@ -353,7 +353,7 @@ Keys are saved to `~/.pycode/config.json` and loaded automatically on next launc
 | `auto` (default) | Read-only operations always allowed. Prompts before Bash commands and file writes. |
 | `accept-all` | Never prompts. All operations proceed automatically. |
 | `manual` | Prompts before every single operation, including reads. |
-| `plan` | Read-only analysis mode. Only the plan file (`.nano_claude/plans/`) is writable. Entered via `/plan <desc>` or the `EnterPlanMode` tool. |
+| `plan` | Read-only analysis mode. Only the plan file (`.pycode/plans/`) is writable. Entered via `/plan <desc>` or the `EnterPlanMode` tool. |
 
 **When prompted:**
 

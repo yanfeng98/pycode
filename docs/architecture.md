@@ -578,7 +578,7 @@ prompt).  Five built-ins: `general-purpose`, `coder`, `reviewer`,
 ### Plan mode (`commands/checkpoint_plan.py` + `tools/__init__.py`)
 
 `/plan <desc>` sets `config["permission_mode"] = "plan"` and creates a
-plan file at `.nano_claude/plans/<session_id>.md`.  The only write the
+plan file at `.pycode/plans/<session_id>.md`.  The only write the
 model can perform in this mode is to that file; everything else
 returns a `[Plan mode]` message explaining the restriction.
 
@@ -586,10 +586,6 @@ Two agent-callable tools — `EnterPlanMode` and `ExitPlanMode` — let
 the model enter/exit plan mode autonomously on complex requests.
 `ExitPlanMode` refuses to exit if the plan file is empty, forcing the
 model to actually write the plan before resuming normal permissions.
-
-**The historical path `.nano_claude/plans/…` is intentional** (dates
-from when the project was called "Nano Claude Code").  Don't rename
-without updating plan mode code.
 
 ### Checkpoint (`checkpoint/`)
 
@@ -1489,11 +1485,10 @@ A collection of non-obvious traps; most bit someone at some point.
 - **Renamed modules**: `config.py` → `cc_config.py`; `mcp/` → `cc_mcp/`.
   Rename was forced by stdlib / package namespace collisions.  Always
   `import cc_config` / `from cc_mcp import ...`.
-- **`.nano_claude/plans/` vs `~/.pycode/`**: runtime state is
-  under `~/.pycode/` (underscore), but plan mode writes to
-  `.nano_claude/plans/<session>.md` in cwd.  The `.nano_claude` path
-  is historical (pre-rename) and intentional; don't "fix" it without
-  updating plan-mode code.
+- **`.pycode/` (project) vs `~/.pycode/` (user)**: project-local state
+  (plans, exports, tasks, memory, skills) lives under `.pycode/` in the
+  working directory; user-global state (config, sessions, checkpoints)
+  lives under `~/.pycode/`.
 - **py-modules discipline**: top-level `.py` files must be listed in
   `pyproject.toml` `py-modules`, and packages in `packages`.  `pip
   install .` silently drops anything not listed.  Backward-compat

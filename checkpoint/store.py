@@ -1,7 +1,7 @@
 """Checkpoint store: file-level backup + snapshot persistence.
 
 Directory layout:
-    ~/.nano_claude/checkpoints/<session_id>/
+    ~/.pycode/checkpoints/<session_id>/
         snapshots.json       # list of Snapshot metadata
         backups/
             <hash>@v<N>      # actual file copies
@@ -27,7 +27,7 @@ _file_versions: dict[str, int] = {}
 
 
 def _checkpoints_root() -> Path:
-    return Path.home() / ".nano_claude" / "checkpoints"
+    return Path.home() / ".pycode" / "checkpoints"
 
 
 def _session_dir(session_id: str) -> Path:
@@ -116,7 +116,6 @@ def track_file_edit(session_id: str, file_path: str) -> str | None:
 def make_snapshot(
     session_id: str,
     state: Any,
-    config: dict,
     user_prompt: str,
     tracked_edits: dict[str, str | None] | None = None,
 ) -> Snapshot | None:
@@ -290,7 +289,6 @@ def delete_session_checkpoints(session_id: str) -> bool:
 
 
 def cleanup_old_sessions(max_age_days: int = 30) -> int:
-    """Remove checkpoint sessions older than max_age_days. Returns count removed."""
     root = _checkpoints_root()
     if not root.exists():
         return 0

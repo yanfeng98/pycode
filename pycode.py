@@ -890,8 +890,7 @@ def repl(config: dict, initial_prompt: str = None):
 
     ckpt.set_session(session_id)
     ckpt.cleanup_old_sessions()
-    # Initial snapshot: capture the "blank slate" before any prompts
-    ckpt.make_snapshot(session_id, state, config, "(initial state)", tracked_edits=None)
+    ckpt.make_snapshot(session_id, state, "(initial state)", tracked_edits=None)
 
     # Banner
     if not initial_prompt:
@@ -1312,7 +1311,7 @@ def repl(config: dict, initial_prompt: str = None):
                 if len(state.messages) == last_snaps[-1].get("message_index", -1):
                     skip = True
             if not skip:
-                ckpt.make_snapshot(session_id, state, config, user_input, tracked_edits=tracked)
+                ckpt.make_snapshot(session_id, state, user_input, tracked_edits=tracked)
             ckpt.reset_tracked()
         except Exception:
             pass  # never let checkpoint errors break the REPL

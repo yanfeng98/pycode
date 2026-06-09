@@ -7,7 +7,7 @@ import re
 def _webfetch(url: str, prompt: str = None) -> str:
     try:
         import httpx
-        r = httpx.get(url, headers={"User-Agent": "NanoClaude/1.0"},
+        r = httpx.get(url, headers={"User-Agent": "PyCode/1.0"},
                       timeout=30, follow_redirects=True)
         r.raise_for_status()
         ct = r.headers.get("content-type", "")

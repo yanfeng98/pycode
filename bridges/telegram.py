@@ -28,10 +28,7 @@ _tg_queue_lock = threading.Lock()
 _tg_busy = threading.Event()   # set while a query is running
 
 
-# ── HTTP helpers ───────────────────────────────────────────────────────────
-
 def _tg_api(token: str, method: str, params: dict = None):
-    """Call Telegram Bot API. Returns parsed JSON or None on error."""
     import urllib.request
     url = f"https://api.telegram.org/bot{token}/{method}"
     if params:
@@ -47,7 +44,6 @@ def _tg_api(token: str, method: str, params: dict = None):
 
 
 def _tg_send(token: str, chat_id: int, text: str):
-    """Send a message to a Telegram chat, splitting if too long."""
     MAX = 4000
     chunks = [text[i:i+MAX] for i in range(0, len(text), MAX)]
     for chunk in chunks:

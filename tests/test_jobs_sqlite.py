@@ -1,4 +1,4 @@
-"""F-2 tests for jobs.py — SQLite backing + JSON-file migration."""
+"""F-2 tests for jobs.py — SQLite backing."""
 from __future__ import annotations
 
 import importlib
@@ -17,13 +17,9 @@ from cc_daemon import schema
 
 @pytest.fixture(autouse=True)
 def _isolated_db_and_jobs_path(tmp_path: Path, monkeypatch):
-    """Each test gets a private sessions.db AND its own jobs.json path
-    so the legacy migration logic doesn't touch the real user file."""
-    monkeypatch.setattr(jobs, "_JOBS_PATH", tmp_path / "jobs.json")
+    """Each test gets a private sessions.db."""
     schema.set_db_path(tmp_path / "sessions.db")
     schema._local.conn = None
-    # Reset migration sentinel so each test re-runs migration
-    jobs._migration_done_in_process = False
     yield
     schema._local.conn = None
     schema.set_db_path(schema.get_default_db_path())
@@ -96,100 +92,3 @@ def test_max_jobs_pruning_keeps_recent():
     finally:
         jobs._MAX_JOBS = original
 
-
-# ── JSON migration ────────────────────────────────────────────────────────
-
-def test_migration_imports_legacy_json_jobs(tmp_path):
-    legacy = [
-        {"id": "abc123", "title": "old job", "prompt": "old prompt",
-         "status": "done", "source": "telegram", "steps": [],
-         "step_count": 0, "current_step": "", "result": "old result",
-         "error": "", "created_at": "2026-04-01T10:00:00",
-         "started_at": "2026-04-01T10:00:01",
-         "done_at": "2026-04-01T10:00:05",
-         "duration_s": 4.0, "retry_of": ""},
-        {"id": "def456", "title": "another", "prompt": "another prompt",
-         "status": "failed", "source": "console", "steps": [],
-         "step_count": 0, "current_step": "", "result": "",
-         "error": "boom", "created_at": "2026-04-02T11:00:00",
-         "started_at": "", "done_at": "2026-04-02T11:00:01",
-         "duration_s": 1.0, "retry_of": ""},
-    ]
-    jobs._JOBS_PATH.write_text(json.dumps(legacy), encoding="utf-8")
-
-    # First call triggers migration.
-    out = jobs.list_recent(10)
-    ids = {j.id for j in out}
-    assert {"abc123", "def456"} <= ids
-
-
-def test_migration_is_idempotent_across_calls():
-    legacy = [{"id": "x", "title": "t", "prompt": "p", "status": "done",
-               "source": "console", "steps": [], "step_count": 0,
-               "current_step": "", "result": "", "error": "",
-               "created_at": "2026-04-01", "started_at": "",
-               "done_at": "", "duration_s": 0.0, "retry_of": ""}]
-    jobs._JOBS_PATH.write_text(json.dumps(legacy), encoding="utf-8")
-
-    jobs.list_recent(10)
-    jobs.list_recent(10)
-    jobs.list_recent(10)
-
-    conn = schema.get_conn()
-    count = conn.execute("SELECT COUNT(*) FROM jobs WHERE id='x'").fetchone()[0]
-    assert count == 1
-
-
-def test_migration_marks_schema_meta_after_run():
-    jobs._JOBS_PATH.write_text("[]", encoding="utf-8")
-    jobs.list_recent(10)
-    conn = schema.get_conn()
-    row = conn.execute(
-        "SELECT value FROM schema_meta WHERE key='jobs_migrated_from_json'"
-    ).fetchone()
-    assert row is not None
-    assert row[0] == "1"
-
-
-def test_migration_skips_when_no_legacy_file():
-    # Without a JSON file the migration mark is still set so we never
-    # re-scan on every call.
-    assert not jobs._JOBS_PATH.exists()
-    jobs.list_recent(10)
-    conn = schema.get_conn()
-    row = conn.execute(
-        "SELECT value FROM schema_meta WHERE key='jobs_migrated_from_json'"
-    ).fetchone()
-    assert row is not None
-
-
-def test_migration_keeps_legacy_json_in_place():
-    """One-release fallback: the JSON file is left readable post-migration."""
-    legacy = [{"id": "x", "title": "t", "prompt": "p", "status": "done",
-               "source": "c", "steps": [], "step_count": 0,
-               "current_step": "", "result": "", "error": "",
-               "created_at": "2026-04-01", "started_at": "",
-               "done_at": "", "duration_s": 0.0, "retry_of": ""}]
-    jobs._JOBS_PATH.write_text(json.dumps(legacy), encoding="utf-8")
-    jobs.list_recent(10)
-    assert jobs._JOBS_PATH.exists()  # not deleted
-
-
-def test_migration_tolerates_corrupt_json():
-    jobs._JOBS_PATH.write_text("{ this is not json", encoding="utf-8")
-    # Should not raise — corrupt file is treated as empty.
-    out = jobs.list_recent(10)
-    assert out == []
-
-
-def test_new_jobs_after_migration_persist_to_sqlite():
-    legacy = [{"id": "old", "title": "t", "prompt": "p", "status": "done",
-               "source": "c", "steps": [], "step_count": 0,
-               "current_step": "", "result": "", "error": "",
-               "created_at": "2026-04-01", "started_at": "",
-               "done_at": "", "duration_s": 0.0, "retry_of": ""}]
-    jobs._JOBS_PATH.write_text(json.dumps(legacy), encoding="utf-8")
-    new_job = jobs.create("brand new", source="t")
-    fetched = jobs.get(new_job.id)
-    assert fetched is not None
-    assert fetched.prompt == "brand new"

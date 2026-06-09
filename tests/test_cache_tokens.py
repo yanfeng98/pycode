@@ -67,7 +67,7 @@ def test_checkpoint_snapshot_includes_cache(tmp_path, monkeypatch):
     state.turn_count = 3
     state.messages = [{"role": "user", "content": "test"}]
 
-    snap = store.make_snapshot("test-session", state, {}, "hello user")
+    snap = store.make_snapshot("test-session", state, "hello user")
     assert snap.token_snapshot == {
         "input": 500, "output": 200, "cache_read": 300, "cache_write": 50,
     }
@@ -90,7 +90,7 @@ def test_rewind_restores_cache_tokens_from_snapshot(tmp_path, monkeypatch):
     state.total_cache_write_tokens = 50
     state.turn_count = 3
     state.messages = [{"role": "user", "content": "test"}]
-    snap = store.make_snapshot("rewind-session", state, {}, "p1")
+    snap = store.make_snapshot("rewind-session", state, "p1")
 
     state.total_input_tokens       = 9999
     state.total_output_tokens      = 8888
@@ -203,7 +203,7 @@ def test_agent_run_propagates_cache_tokens_from_mocked_stream(monkeypatch, tmp_p
     assert state.total_cache_read_tokens == 700
     assert state.total_cache_write_tokens == 50
 
-    snap = ck_store.make_snapshot("cache_e2e", state, {}, "hello")
+    snap = ck_store.make_snapshot("cache_e2e", state, "hello")
     assert snap.token_snapshot["cache_read"] == 700
     assert snap.token_snapshot["cache_write"] == 50
 

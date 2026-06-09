@@ -384,7 +384,7 @@ PyCode automatically snapshots your conversation and any edited files after ever
 - **100-snapshot sliding window** — older snapshots are automatically evicted when the limit is reached.
 - **Throttling** — if nothing changed (no new messages, no file edits) since the last snapshot, the snapshot is skipped.
 - **Initial snapshot** — captured at session start, so you can always rewind to a clean slate.
-- **Storage** — `~/.nano_claude/checkpoints/<session_id>/` (snapshots metadata + backup files).
+- **Storage** — `~/.pycode/checkpoints/<session_id>/` (snapshots metadata + backup files).
 
 ### Commands
 
@@ -428,7 +428,7 @@ Plan mode is a structured workflow for tackling complex, multi-file tasks: Claud
 
 In plan mode:
 - **Only reads** are permitted (`Read`, `Glob`, `Grep`, `WebFetch`, `WebSearch`, safe `Bash` commands).
-- **Writes are blocked** everywhere **except** the dedicated plan file (`.nano_claude/plans/<session_id>.md`).
+- **Writes are blocked** everywhere **except** the dedicated plan file (`.pycode/plans/<session_id>.md`).
 - Blocked write attempts produce a helpful message rather than prompting the user.
 - The system prompt is augmented with plan mode instructions.
 - After compaction, the plan file context is automatically restored.
@@ -438,7 +438,7 @@ In plan mode:
 ```
 [myproject] ❯ /plan add WebSocket support
   Plan mode activated.
-  Plan file: .nano_claude/plans/a3f9c1b2.md
+  Plan file: .pycode/plans/a3f9c1b2.md
   Reads allowed. All other writes blocked (except plan file).
 
 [myproject] ❯ <describe your task>
@@ -468,7 +468,7 @@ User: Refactor the authentication module
 
 Claude: [calls EnterPlanMode(task_description="Refactor auth module")]
   → reads auth.py, users.py, tests/test_auth.py ...
-  → writes plan to .nano_claude/plans/...
+  → writes plan to .pycode/plans/...
   [calls ExitPlanMode()]
   → "Here is my plan. Please review and approve before I begin."
 

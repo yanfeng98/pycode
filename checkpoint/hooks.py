@@ -3,12 +3,7 @@
 Import this module after tools are registered to install the hooks.
 """
 from __future__ import annotations
-
-from pathlib import Path
-
 from . import store
-
-# ── Module state ────────────────────────────────────────────────────────────
 
 _current_session_id: str | None = None
 _tracked_edits: dict[str, str | None] = {}   # file_path → backup_filename

@@ -707,7 +707,7 @@ def _enter_plan_mode(params: dict, config: dict) -> str:
         return "Already in plan mode. Write your plan to the plan file, then call ExitPlanMode."
 
     session_id = config.get("_session_id", "default")
-    plans_dir  = _Path(config.get("_worktree_cwd") or _Path.cwd()) / ".nano_claude" / "plans"
+    plans_dir  = _Path(config.get("_worktree_cwd") or _Path.cwd()) / ".pycode" / "plans"
     plans_dir.mkdir(parents=True, exist_ok=True)
     plan_path  = plans_dir / f"{session_id}.md"
 
