@@ -32,7 +32,6 @@ Other install methods: [pip install](#alternative-install-with-pip) | [uv instal
 
 ## Content
 - [Content](#content)
-- [Why PyCode](#why-pycode)
 - [PyCode vs OpenClaw](#pycode-vs-openclaw)
 - [Features](#features)
 - [Supported Models](#supported-models)
@@ -59,17 +58,7 @@ Other install methods: [pip install](#alternative-install-with-pip) | [uv instal
 - [Citation](#citation)
 - [Thanks to all contributors:](#thanks-to-all-contributors)
 
-## Why PyCode
-
-**Where PyCode wins:** any-model switching (`--model`/`/model`, no recompile) incl. full local/offline support; a readable agent loop in one file (`agent.py`, ~740 lines); zero build; runtime tool registration + MCP + git plugins + Markdown skills; task dependency graph (`blocks`/`blocked_by`); two-layer context compression; offline voice; cloud session sync; bridges to Telegram/WeChat/Slack/QQ.
-
-**Who it's for:** developers who want a local/non-Anthropic coding assistant, researchers studying how agentic assistants work, and teams who need a hackable baseline — without a Node.js build chain.
-
----
-
 ## PyCode vs OpenClaw
-
-[OpenClaw](https://github.com/openclaw/openclaw) is another popular open-source assistant (TypeScript/Node). The two have **different primary goals** — OpenClaw is a personal life-assistant across messaging channels; PyCode is a developer/coding tool.
 
 | Dimension | OpenClaw (TypeScript) | PyCode (Python) |
 |---|---|---|
