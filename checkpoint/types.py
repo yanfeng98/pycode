@@ -1,4 +1,3 @@
-"""Checkpoint system types: FileBackup and Snapshot dataclasses."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -10,13 +9,6 @@ MAX_SNAPSHOTS = 100
 
 @dataclass
 class FileBackup:
-    """A single file's backup reference within a snapshot.
-
-    backup_filename: hash@vN name in the backups/ dir, or None if the file
-                     did not exist before (meaning restore = delete).
-    version: monotonically increasing per-file version counter.
-    backup_time: ISO timestamp of when the backup was created.
-    """
     backup_filename: str | None
     version: int
     backup_time: str
@@ -39,14 +31,13 @@ class FileBackup:
 
 @dataclass
 class Snapshot:
-    """A checkpoint snapshot — metadata about conversation + file state."""
     id: int
     session_id: str
     created_at: str
     turn_count: int
-    message_index: int              # len(state.messages) at snapshot time
-    user_prompt_preview: str        # first 80 chars of the triggering prompt
-    token_snapshot: dict[str, int]  # {"input": N, "output": N}
+    message_index: int
+    user_prompt_preview: str
+    token_snapshot: dict[str, int]
     file_backups: dict[str, FileBackup] = field(default_factory=dict)
 
     def to_dict(self) -> dict:

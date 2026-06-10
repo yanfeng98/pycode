@@ -230,14 +230,12 @@ _PREFIXES = [
 
 
 def detect_provider(model: str) -> str:
-    """Return provider name for a model string.
-    Supports 'provider/model' explicit format, or auto-detect by prefix."""
     if "/" in model:
         return model.split("/", 1)[0]
     for prefix, pname in _PREFIXES:
         if model.lower().startswith(prefix):
             return pname
-    return "openai"   # fallback
+    return "openai"
 
 
 def bare_model(model: str) -> str:

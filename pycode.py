@@ -892,19 +892,9 @@ def repl(config: dict, initial_prompt: str = None):
     ckpt.cleanup_old_sessions()
     ckpt.make_snapshot(session_id, state, "(initial state)", tracked_edits=None)
 
-    # Banner
     if not initial_prompt:
         from providers import detect_provider
 
-        # ── PyCode startup animation ──
-        _PYCODE_FRAMES = [
-            "     ✦",
-            "    ✦ ·",
-            "   ✦ · ·",
-            "  ✦ · · ·",
-            " ✦ · · · ·",
-            "✦ · · · · ·",
-        ]
         _PYCODE_LOGO = [
             "██████╗ ██╗   ██╗ ██████╗ ██████╗ ██████╗ ███████╗",
             "██╔══██╗╚██╗ ██╔╝██╔════╝██╔═══██╗██╔══██╗██╔════╝",
@@ -913,11 +903,10 @@ def repl(config: dict, initial_prompt: str = None):
             "██║        ██║   ╚██████╗╚██████╔╝██████╔╝███████╗",
             "╚═╝        ╚═╝    ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝",
         ]
-        _PYCODE_GRADIENT = [  # blue gradient (top -> bottom)
+        _PYCODE_GRADIENT = [
             "#64B5F6", "#42A5F5", "#2196F3", "#1E88E5", "#1976D2", "#1565C0",
         ]
 
-        # Spinning galaxy animation
         _GALAXY_FRAMES = ["◜", "◝", "◞", "◟"]
         try:
             for i in range(8):
@@ -930,10 +919,7 @@ def repl(config: dict, initial_prompt: str = None):
         except Exception:
             pass
 
-        # Blank line so the logo sits a little farther below the shell prompt.
         print()
-
-        # Print logo - warm cheetah-gold vertical gradient, plain if color is off.
         if C["reset"]:
             for _ln, _hex in zip(_PYCODE_LOGO, _PYCODE_GRADIENT):
                 print(C["bold"] + _rgb(_hex) + _ln + C["reset"])

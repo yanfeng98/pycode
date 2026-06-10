@@ -1,28 +1,17 @@
-"""Checkpoint store: file-level backup + snapshot persistence.
-
-Directory layout:
-    ~/.pycode/checkpoints/<session_id>/
-        snapshots.json       # list of Snapshot metadata
-        backups/
-            <hash>@v<N>      # actual file copies
-"""
 from __future__ import annotations
 
 import hashlib
 import json
-import os
 import shutil
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from .types import FileBackup, Snapshot, MAX_SNAPSHOTS
 
-# Max file size to back up (1 MB)
 _MAX_FILE_SIZE = 1 * 1024 * 1024
 
-# Per-file version counters (reset per session)
 _file_versions: dict[str, int] = {}
 
 
@@ -47,7 +36,6 @@ def _snapshots_file(session_id: str) -> Path:
 
 
 def _path_hash(file_path: str) -> str:
-    """Deterministic short hash from file path (not content)."""
     return hashlib.sha256(file_path.encode()).hexdigest()[:16]
 
 
@@ -55,9 +43,6 @@ def _next_version(file_path: str) -> int:
     v = _file_versions.get(file_path, 0) + 1
     _file_versions[file_path] = v
     return v
-
-
-# ── Load / save snapshots JSON ──────────────────────────────────────────────
 
 def _load_snapshots(session_id: str) -> list[Snapshot]:
     f = _snapshots_file(session_id)
@@ -75,9 +60,6 @@ def _save_snapshots(session_id: str, snapshots: list[Snapshot]) -> None:
     f.parent.mkdir(parents=True, exist_ok=True)
     data = [s.to_dict() for s in snapshots]
     f.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-# ── Public API ───────────────────────────────────────────────────────────────
 
 def track_file_edit(session_id: str, file_path: str) -> str | None:
     """Back up a file before it is edited (first-write-wins per snapshot interval).
@@ -119,14 +101,8 @@ def make_snapshot(
     user_prompt: str,
     tracked_edits: dict[str, str | None] | None = None,
 ) -> Snapshot | None:
-    """Create a snapshot after a user prompt has been processed.
-
-    tracked_edits: dict mapping file_path → backup_filename (or None if new file).
-                   Populated by hooks.py during the turn.
-    """
     snapshots = _load_snapshots(session_id)
 
-    # Build file_backups: merge previous snapshot's backups with new edits
     prev_backups: dict[str, FileBackup] = {}
     if snapshots:
         prev_backups = dict(snapshots[-1].file_backups)
@@ -134,11 +110,9 @@ def make_snapshot(
     now = datetime.now().isoformat()
     new_backups: dict[str, FileBackup] = {}
 
-    # Carry forward unchanged files from previous snapshot
     for path, fb in prev_backups.items():
         new_backups[path] = fb
 
-    # Add/update files that were edited this turn — back up their CURRENT state
     if tracked_edits:
         for path in tracked_edits:
             p = Path(path)
@@ -162,7 +136,6 @@ def make_snapshot(
                     backup_time=now,
                 )
             else:
-                # File was deleted during the turn (unlikely but possible)
                 new_backups[path] = FileBackup(
                     backup_filename=None,
                     version=_file_versions.get(path, 0),
@@ -188,8 +161,6 @@ def make_snapshot(
     )
 
     snapshots.append(snapshot)
-
-    # Sliding window: keep only the last MAX_SNAPSHOTS
     if len(snapshots) > MAX_SNAPSHOTS:
         snapshots = snapshots[-MAX_SNAPSHOTS:]
 
