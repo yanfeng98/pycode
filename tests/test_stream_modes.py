@@ -6,8 +6,6 @@ Covers:
   - commit-mode stream_text / flush_response (append-only progressive Markdown)
   - the bounded, self-healing in-progress preview
 """
-import platform
-
 import pytest
 
 import ui.render as render
@@ -35,7 +33,6 @@ def clean_env(monkeypatch):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setattr(render, "_RICH", True)
     monkeypatch.setattr(render, "console", _Console())
-    monkeypatch.setattr(platform, "system", lambda: "Linux")
     return monkeypatch
 
 
@@ -43,12 +40,6 @@ def test_explicit_stream_mode_wins(clean_env):
     assert render.auto_stream_mode({"stream_mode": "plain"}) == "plain"
     assert render.auto_stream_mode({"stream_mode": "commit"}) == "commit"
     assert render.auto_stream_mode({"stream_mode": "live"}) == "live"
-
-
-def test_legacy_rich_live_flag(clean_env):
-    assert render.auto_stream_mode({"rich_live": True}) == "live"
-    # Legacy False now maps to the rich append-only tier, not raw plain.
-    assert render.auto_stream_mode({"rich_live": False}) == "commit"
 
 
 def test_no_rich_is_plain(clean_env):
@@ -87,14 +78,7 @@ def test_windows_terminal_over_ssh_gets_live(clean_env):
     assert render.auto_stream_mode({}) == "live"
 
 
-def test_apple_terminal_gets_commit(clean_env):
-    clean_env.setattr(platform, "system", lambda: "Darwin")
-    clean_env.setenv("TERM_PROGRAM", "Apple_Terminal")
-    assert render.auto_stream_mode({}) == "commit"
-
-
-def test_iterm_on_macos_gets_live(clean_env):
-    clean_env.setattr(platform, "system", lambda: "Darwin")
+def test_iterm_gets_live(clean_env):
     clean_env.setenv("TERM_PROGRAM", "iTerm.app")
     assert render.auto_stream_mode({}) == "live"
 

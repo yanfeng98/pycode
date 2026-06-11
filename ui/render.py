@@ -156,29 +156,14 @@ def _has_diff(text: str) -> bool:
 
 _accumulated_text: list[str] = []   # buffer text during streaming
 _current_live = None                # active Rich Live instance (one at a time)
-_RICH_LIVE = True                   # True only in "live" mode (in-place redraw)
+_RICH_LIVE = True
 _plain_streaming_response = False   # current response has fallen back from Live
 _live_shows_full = False            # True when the live frame holds the whole response (not a tail window)
-
-# ── Adaptive streaming mode ────────────────────────────────────────────────
-# Three tiers, chosen per-device (see auto_stream_mode):
-#   "live"   — full in-place Rich Live redraw. Best experience, but the
-#              cursor-up rewrite breaks on some terminals (Apple Terminal can't
-#              erase above the scroll boundary; flaky network PTYs duplicate
-#              frames), so it is reserved for terminals known to handle it.
-#   "commit" — append-only progressive Markdown. Completed blocks are rendered
-#              and printed permanently (never redrawn). Pure append-only: it
-#              issues NO cursor-up / erase sequences at all, so it can never
-#              leave duplicate frames — correct over SSH / Apple Terminal /
-#              pipes / CJK-wide text alike, while still showing rich Markdown
-#              block by block. The universal default for non-"live" terminals.
-#   "plain"  — raw token stream (only when Rich is unavailable).
 _STREAM_MODE = "live" if _RICH else "plain"
 _commit_idx = 0                     # chars of the response already committed (rendered + printed)
 
 
 def set_stream_mode(mode: str) -> None:
-    """Select the streaming tier ('live' | 'commit' | 'plain')."""
     global _STREAM_MODE, _RICH_LIVE
     if mode not in ("live", "commit", "plain") or not _RICH:
         mode = mode if (mode == "plain") else ("commit" if _RICH else "plain")
@@ -195,53 +180,33 @@ _GOOD_TERM_PROGRAMS = {
 
 
 def auto_stream_mode(config: dict | None = None) -> str:
-    """Pick the best streaming tier for the current device.
-
-    Priority: explicit config override → capability detection. Capable
-    terminals (local TTYs and modern emulators, incl. over SSH) get 'live';
-    everything else with Rich gets the safe-but-rich 'commit' tier; only a
-    missing Rich install falls all the way back to 'plain'.
-    """
     import os as _os
-    import platform as _plat
 
     cfg = config or {}
     explicit = cfg.get("stream_mode")
     if explicit in ("live", "commit", "plain"):
         return explicit
-    rl = cfg.get("rich_live")
-    if rl is True:
-        return "live"
-    if rl is False:
-        return "commit"
 
     if not _RICH or console is None:
         return "plain"
     if getattr(console, "is_dumb_terminal", False):
         return "commit"
-    # Not a real TTY (piped / redirected / captured): append-only, no cursor games.
     if not getattr(console, "is_terminal", False):
         return "commit"
 
     term = _os.environ.get("TERM", "") or ""
     term_program = _os.environ.get("TERM_PROGRAM", "") or ""
     in_ssh = bool(_os.environ.get("SSH_CLIENT") or _os.environ.get("SSH_TTY"))
-    is_apple_terminal = (_plat.system() == "Darwin"
-                         and term_program in ("Apple_Terminal", ""))
     modern = (
         term_program in _GOOD_TERM_PROGRAMS
         or "kitty" in term
         or "alacritty" in term
-        or bool(_os.environ.get("WT_SESSION"))          # Windows Terminal
+        or bool(_os.environ.get("WT_SESSION"))
         or bool(_os.environ.get("KITTY_WINDOW_ID"))
         or bool(_os.environ.get("ALACRITTY_WINDOW_ID"))
         or bool(_os.environ.get("WEZTERM_PANE"))
     )
 
-    # Apple Terminal has a real cursor-erase bug → never full Live.
-    if is_apple_terminal:
-        return "commit"
-    # Untrusted network terminal → safe rich commit instead of risky redraw.
     if in_ssh and not modern:
         return "commit"
     return "live"
@@ -560,13 +525,12 @@ _tool_spinner_stop = threading.Event()
 _spinner_phrase = ""
 _spinner_lock = threading.Lock()
 _spinner_start = 0.0           # monotonic timestamp when current spinner began
-_spinner_tips_enabled = True   # toggled via set_spinner_tips() (config spinner_tips)
+_spinner_tips_enabled = True
 _spinner_tip = ""              # tip currently displayed (rotates while spinning)
 _spinner_tokens = 0            # live (estimated) output-token meter shown on the spinner
 
 
 def set_spinner_tips(enabled: bool) -> None:
-    """Called from repl.py to apply the spinner_tips config setting."""
     global _spinner_tips_enabled
     _spinner_tips_enabled = bool(enabled)
 

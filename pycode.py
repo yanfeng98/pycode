@@ -937,8 +937,6 @@ def repl(config: dict, initial_prompt: str = None):
         out_mode  = "quiet" if (config.get("quiet", True) and not config.get("verbose", False)) else "full"
         out_clr   = clr(out_mode, "cyan")
 
-        # ── Banner: aligned box ─────────────────────────────────────────
-        # Compute widths from plain text (strip ANSI escapes from coloring).
         title_plain = f"PyCode v{VERSION}"
         line_plains = [
             f"  Model: {model} ({pname})",
@@ -946,13 +944,10 @@ def repl(config: dict, initial_prompt: str = None):
             f"  Output: {out_mode}",
             f"  /model to switch · /help for commands",
         ]
-        # Inner width = widest content; title needs 3 chars of decoration ("─ X ").
         inner_w = max(len(title_plain) + 6, *(len(p) for p in line_plains)) + 2
-        # Don't shrink below the previous visual width.
         inner_w = max(inner_w, 56)
 
-        # Top: ╭─ PyCode vX ─...─╮
-        title_decoration_width = 3 + len(title_plain)  # "─ TITLE "
+        title_decoration_width = 3 + len(title_plain)
         top_trailing = "─" * (inner_w - title_decoration_width)
         print(
             clr("  ╭", "dim")
@@ -963,7 +958,6 @@ def repl(config: dict, initial_prompt: str = None):
             + clr(top_trailing + "╮", "dim")
         )
 
-        # Middle lines — each must close with │, padded to inner_w on the right.
         def _row(colored: str, plain: str) -> str:
             pad = " " * (inner_w - len(plain))
             return clr("  │", "dim") + colored + pad + clr("│", "dim")
@@ -972,11 +966,8 @@ def repl(config: dict, initial_prompt: str = None):
         print(_row(clr("  Permissions: ", "dim") + pmode,                 line_plains[1]))
         print(_row(clr("  Output: ", "dim") + out_clr,                    line_plains[2]))
         print(_row(clr(line_plains[3], "dim"),                            line_plains[3]))
-
-        # Bottom: ╰─...─╯ (same inner_w as top)
         print(clr("  ╰" + "─" * inner_w + "╯", "dim"))
 
-        # Show active non-default settings
         active_flags = []
         if config.get("verbose"):
             active_flags.append("verbose")
@@ -999,26 +990,12 @@ def repl(config: dict, initial_prompt: str = None):
 
     query_lock = threading.RLock()
 
-    # Pick the streaming tier for this device (see ui.render.auto_stream_mode):
-    #   "live"   — full in-place Rich redraw (capable terminals, incl. modern
-    #              emulators over SSH like iTerm2 / WezTerm / Windows Terminal /
-    #              VSCode / kitty / Alacritty / Ghostty).
-    #   "commit" — append-only progressive Markdown for terminals where cursor-up
-    #              redraw is unsafe (Apple Terminal, unknown SSH PTYs, pipes). Still
-    #              renders rich formatting block-by-block — a big upgrade over the
-    #              old raw-token fallback.
-    #   "plain"  — only when Rich is unavailable.
-    # An explicit `stream_mode` or legacy `rich_live` config value overrides detection.
     set_stream_mode(auto_stream_mode(config))
 
-    # Apply spinner_tips config: rotating Claude-Code-style tips beneath the
-    # spinner. Disabled automatically where multi-line cursor moves misbehave
-    # (dumb terminals) so the tip line never garbles output.
     _is_dumb = (console is not None and getattr(console, "is_dumb_terminal", False))
     _spinner_tips_default = not _is_dumb
     set_spinner_tips(config.get("spinner_tips", _spinner_tips_default))
 
-    # Initialize proactive polling state via RuntimeContext (defaults already set)
     session_ctx.last_interaction_time = time.time()
     if session_ctx.proactive_thread is None:
         t = threading.Thread(target=_proactive_watcher_loop, args=(config,), daemon=True)
