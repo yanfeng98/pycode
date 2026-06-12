@@ -527,7 +527,7 @@ _spinner_lock = threading.Lock()
 _spinner_start = 0.0           # monotonic timestamp when current spinner began
 _spinner_tips_enabled = True
 _spinner_tip = ""              # tip currently displayed (rotates while spinning)
-_spinner_tokens = 0            # live (estimated) output-token meter shown on the spinner
+_spinner_tokens = 0
 
 
 def set_spinner_tips(enabled: bool) -> None:
@@ -536,11 +536,6 @@ def set_spinner_tips(enabled: bool) -> None:
 
 
 def set_spinner_tokens(n: int) -> None:
-    """Update the live token counter shown on the spinner line.
-
-    Providers only report real usage at turn end, so during streaming we feed
-    a cheap char-based estimate here (see est_tokens). 0 hides the counter.
-    """
     global _spinner_tokens
     with _spinner_lock:
         _spinner_tokens = max(0, int(n))
@@ -646,26 +641,17 @@ def _stop_tool_spinner():
         sys.stdout.write(f"\r{' ' * 50}\r")
     sys.stdout.flush()
 
-
-# ── Tool call display ──────────────────────────────────────────────────────
-
-# Quiet mode: suppress the per-tool ⚙/✓ lines while a turn runs and instead
-# emit a single Claude-Code-style summary line ("Read 1 file, ran 3 shell
-# commands") once the turn finishes. Verbose mode always wins and shows
-# everything regardless of this flag.
 _QUIET = False
-_turn_tool_stats: dict[str, int] = {}   # tool name -> times invoked this turn
-_turn_tool_order: list[str] = []        # first-seen order, for stable summary
+_turn_tool_stats: dict[str, int] = {}
+_turn_tool_order: list[str] = []
 
 
 def set_quiet(enabled: bool) -> None:
-    """Enable/disable compact (Claude-Code-style) tool display."""
     global _QUIET
     _QUIET = bool(enabled)
 
 
 def reset_turn_stats() -> None:
-    """Clear the per-turn tool counters. Call at the start of every turn."""
     _turn_tool_stats.clear()
     _turn_tool_order.clear()
 

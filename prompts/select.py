@@ -52,42 +52,20 @@ _BASE_DIR       = _PROMPTS_DIR / "base"
 _OVERLAYS_DIR   = _PROMPTS_DIR / "overlays"
 _FRAGMENTS_DIR  = _PROMPTS_DIR / "fragments"
 
-
-# ── Family-overlay routing ───────────────────────────────────────────────
-#
-# Ordered list of (substring-keywords, overlay-filename).  First hit wins.
-# Matching is case-insensitive on the *last path segment* of the model ID
-# (so "custom/anthropic/claude-sonnet-4-5" → "claude-sonnet-4-5" → matches
-# "claude").  No match ⇒ no overlay (just the default base).
-#
-# Adding a new family means: write the overlay file, add an entry here,
-# and add a case to tests/test_prompt_selection.py.
 _OVERLAY_RULES: tuple[tuple[tuple[str, ...], str], ...] = (
     (("claude",),                                "claude.md"),
     (("gemini",),                                "gemini.md"),
-    # OpenAI reasoning models (o1/o3/o4 + codex variant of GPT-5).
-    # Plain "gpt-" without a reasoning suffix gets NO overlay — the
-    # default-base guidance is already what GPT chat models want.
     (("o1", "o3", "o4", "gpt-5-codex", "codex"), "openai-reasoning.md"),
-    # Qwen / QwQ — chat-tuned default is conversational, needs an explicit
-    # "call the tool, don't ask the user" stance for agentic use.
     (("qwen", "qwq"),                            "qwen.md"),
-    # Families without an overlay yet (kimi / llama / mistral / gemma /
-    # phi / glm / minimax / deepseek) all rely on default.md. Add an
-    # overlay file + entry here when a documented quirk emerges.
 )
 
-# Provider → overlay fallback.  Used only when model_id is empty.
 _PROVIDER_OVERLAY_FALLBACK: dict[str, str] = {
     "anthropic": "claude.md",
     "gemini":    "gemini.md",
-    # "openai" provider WITHOUT a model id intentionally omitted —
-    # we can't tell chat-vs-reasoning, so default base only.
 }
 
 
 def _family_overlay_for_model(model_id: str) -> str | None:
-    """Return the overlay filename for a model ID, or None."""
     if not model_id:
         return None
     tail = model_id.rsplit("/", 1)[-1].lower()
@@ -120,20 +98,6 @@ def _assemble(base_name: str, overlay_name: str | None) -> str:
 
 
 def pick_base_prompt(provider: str = "", model_id: str = "") -> str:
-    """Return the assembled base prompt (default + matched overlay).
-
-    Args:
-        provider: provider name from ``providers.detect_provider()``. Used
-                  only as a fallback when ``model_id`` is empty.
-        model_id: the full model identifier (may include a ``provider/``
-                  or ``provider/vendor/`` prefix). Matched against
-                  ``_OVERLAY_RULES`` case-insensitively on its last path
-                  segment.
-
-    Returns:
-        ``default.md`` body, optionally followed by one matched overlay.
-        Never raises for unknown models.
-    """
     overlay = (
         _family_overlay_for_model(model_id)
         or _PROVIDER_OVERLAY_FALLBACK.get(provider)

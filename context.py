@@ -261,26 +261,10 @@ def _render_commands_block() -> str:
 
 
 def build_system_prompt(config: dict | None = None) -> str:
-    """Build the full system prompt for the current session.
-
-    Structure (top → bottom):
-        1. Provider-selected base prompt (``prompts/base/<provider>.md``)
-        2. Per-run environment block (date, cwd, platform, git, CLAUDE.md)
-        3. Live slash-command index (so the model can answer
-           "what can you do?" without confabulating)
-        4. Memory index (if any memories exist)
-        5. Tmux fragment (if tmux is installed)
-        6. Plan-mode fragment (if ``permission_mode == "plan"``)
-    """
-    # Resolve provider lazily to avoid circular imports at module load.
     from providers import detect_provider
 
     cfg = config or {}
     model_id = cfg.get("model", "")
-    # No model -> empty provider so pick_base_prompt falls through to
-    # default.md.  The previous "anthropic" fallback silently gave Claude-
-    # styled prompts (XML tags, minimal-scope guard) to whatever model
-    # picked them up later, which is wrong for non-Claude families.
     provider = detect_provider(model_id) if model_id else ""
 
     parts: list[str] = [

@@ -206,7 +206,6 @@ COSTS = {
     "google/gemma-2-27b-it":                     (0.0, 0.0),
 }
 
-# Auto-detection: prefix → provider name
 _PREFIXES = [
     ("claude-",       "anthropic"),
     ("gpt-",          "openai"),

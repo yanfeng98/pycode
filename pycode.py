@@ -357,9 +357,6 @@ def ask_permission_interactive(desc: str, config: dict) -> bool:
 
     return text in ("y", "yes")
 
-
-# ── Proactive watcher ──────────────────────────────────────────────────────
-
 def _proactive_foreign_daemon_running() -> bool:
     try:
         import os
@@ -993,20 +990,16 @@ def repl(config: dict, initial_prompt: str = None):
 
         with query_lock:
             verbose = config.get("verbose", False)
-            # Quiet mode (Claude-Code-style): hide per-tool execution lines and
-            # show one summary line per turn. Verbose always overrides it.
             quiet = config.get("quiet", True) and not verbose
             set_quiet(quiet)
             reset_turn_stats()
-            # Live token meter (estimated) + real per-turn totals for the footer.
             set_spinner_tokens(0)
             turn_start = time.monotonic()
             turn_in_tokens = 0
             turn_out_tokens = 0
-            quota_paused = False    # set when a budget is reached mid-turn
+            quota_paused = False
             streamed_chars = 0
 
-            # Rebuild system prompt each turn (picks up cwd changes, etc.)
             system_prompt = build_system_prompt(config)
 
             if is_background and not (session_ctx.telegram_incoming or session_ctx.qq_incoming):

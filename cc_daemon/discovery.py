@@ -1,23 +1,3 @@
-"""Discovery file: tells clients where a running daemon lives.
-
-The daemon writes ``~/.pycode/daemon.json`` when it binds, and removes
-it on clean exit.  Clients call :func:`locate` to learn whether a daemon is
-running and how to reach it.
-
-Schema::
-
-    { "pid":        12345,
-      "started_at": "2026-04-30T12:00:00Z",
-      "transport":  "unix" | "tcp",
-      "address":    "/run/user/1000/pycode/daemon.sock"
-                  | "127.0.0.1:8765",
-      "version":    "3.05.72",
-      "schema":     1 }
-
-Atomic write semantics: writes go through a sibling ``.tmp`` file then
-``os.replace``, so an interrupted write never leaves the discovery file
-half-overwritten.
-"""
 from __future__ import annotations
 
 import datetime
@@ -113,15 +93,11 @@ def read(*, path: Optional[Path] = None) -> Optional[dict]:
 
 
 def clear(*, path: Optional[Path] = None) -> None:
-    """Remove the discovery file.  Idempotent — missing file is not an error."""
     p = _resolve(path)
     try:
         p.unlink()
     except FileNotFoundError:
         pass
-
-
-# ── Liveness probe ─────────────────────────────────────────────────────────
 
 def pid_alive(pid: int) -> bool:
     if pid <= 0:
@@ -131,7 +107,6 @@ def pid_alive(pid: int) -> bool:
     except ProcessLookupError:
         return False
     except PermissionError:
-        # Process exists but we don't own it; for our purposes that counts.
         return True
     except OSError:
         return False

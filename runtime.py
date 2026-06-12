@@ -65,9 +65,6 @@ class RuntimeContext:
     on_tool_start:  Optional[Callable[[str, dict], None]] = None
     on_tool_end:    Optional[Callable[[str, str], None]] = None
 
-    # ── Runtime state (previously stored in config["_xxx"]) ──────────────────
-
-    # Proactive polling
     proactive_enabled:  bool = False
     proactive_interval: int = 300
     proactive_thread:   Optional[threading.Thread] = None
@@ -115,6 +112,5 @@ def release_session_ctx(session_id: str) -> None:
 
 
 def get_ctx(config: dict) -> RuntimeContext:
-    """Shortcut: return the RuntimeContext for the session stored in config."""
     return get_session_ctx(config.get("_session_id", "default"))
 
