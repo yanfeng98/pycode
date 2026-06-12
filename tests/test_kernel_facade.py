@@ -15,9 +15,7 @@ from cc_kernel import (
     SCHEMA_VERSION,
 )
 
-
 # ── Lifecycle ────────────────────────────────────────────────────────────
-
 
 def test_open_creates_db_with_schema(tmp_path):
     db = tmp_path / "kernel.db"
@@ -29,19 +27,16 @@ def test_open_creates_db_with_schema(tmp_path):
     finally:
         k.close()
 
-
 def test_context_manager(tmp_path):
     db = tmp_path / "kernel.db"
     with Kernel.open(db) as k:
         a = k.create_agent(name="x", template="t")
         assert a.state == AgentState.READY
 
-
 def test_close_idempotent(tmp_path):
     k = Kernel.open(tmp_path / "kernel.db")
     k.close()
     k.close()  # no error
-
 
 def test_from_kernel_store(tmp_path):
     """Wrap an existing KernelStore — useful when tests share the
@@ -54,9 +49,7 @@ def test_from_kernel_store(tmp_path):
     finally:
         ks.close()
 
-
 # ── Store accessors ──────────────────────────────────────────────────────
-
 
 def test_all_stores_accessible(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -69,7 +62,6 @@ def test_all_stores_accessible(tmp_path):
         assert k.registry is not None
         assert k.fs is not None
         assert k.observability is not None
-
 
 def test_stores_share_connection(tmp_path):
     """All stores must use the same underlying connection — required
@@ -85,7 +77,6 @@ def test_stores_share_connection(tmp_path):
         assert k.registry._conn is conn
         assert k.fs._conn is conn
 
-
 def test_stores_share_write_lock(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         wl = k.process.write_lock
@@ -96,9 +87,7 @@ def test_stores_share_write_lock(tmp_path):
         assert k.registry._lock is wl
         assert k.fs._lock is wl
 
-
 # ── Convenience helpers ─────────────────────────────────────────────────
-
 
 def test_create_agent_sugar(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -107,7 +96,6 @@ def test_create_agent_sugar(tmp_path):
         fetched = k.process.get(a.pid)
         assert fetched.name == "alice"
         assert fetched.metadata == {"role": "researcher"}
-
 
 def test_info_combines_summary_and_facade(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -122,9 +110,7 @@ def test_info_combines_summary_and_facade(tmp_path):
             "worker_active":     False,
         }
 
-
 # ── Lazy supervisor + worker ────────────────────────────────────────────
-
 
 def test_make_supervisor_caches(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -132,9 +118,6 @@ def test_make_supervisor_caches(tmp_path):
         s2 = k.make_supervisor()
         assert s1 is s2
 
-
-@pytest.mark.skipif(os.name != "posix",
-                    reason="worker spawns POSIX subprocesses")
 def test_make_worker_after_make_supervisor(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         sup = k.make_supervisor()
@@ -148,9 +131,6 @@ def test_make_worker_after_make_supervisor(tmp_path):
         # Worker re-uses the cached supervisor.
         assert k.make_supervisor() is sup
 
-
-@pytest.mark.skipif(os.name != "posix",
-                    reason="worker spawns POSIX subprocesses")
 def test_close_stops_worker(tmp_path):
     """Kernel.close() halts the worker if started."""
     k = Kernel.open(tmp_path / "kernel.db")
@@ -163,9 +143,7 @@ def test_close_stops_worker(tmp_path):
     k.close()
     # No assertions on worker state — just that close() didn't hang.
 
-
 # ── Daemon attachment ──────────────────────────────────────────────────
-
 
 def test_attach_to_daemon_registers_methods(tmp_path):
     """attach_to_daemon registers all kernel.* methods on the
@@ -202,12 +180,8 @@ def test_attach_to_daemon_registers_methods(tmp_path):
         server.server_close()
         k.close()
 
-
 # ── End-to-end example as a test ───────────────────────────────────────
 
-
-@pytest.mark.skipif(os.name != "posix",
-                    reason="example spawns POSIX subprocesses")
 def test_e2e_smoke_example_runs(tmp_path):
     """Run examples/kernel_e2e_smoke.py via subprocess, expect exit 0."""
     repo_root = Path(__file__).resolve().parent.parent

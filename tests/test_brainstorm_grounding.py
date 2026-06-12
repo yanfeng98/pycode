@@ -25,9 +25,7 @@ from commands.advanced import (
     _fetch_grounding,
 )
 
-
 # ── --ground flag parsing ────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("args,expected_n,expected_remaining", [
     # No flag → off
@@ -48,7 +46,6 @@ def test_parse_ground_flag(args, expected_n, expected_remaining):
     assert n == expected_n
     assert remaining == expected_remaining
 
-
 def test_parse_ground_composes_with_other_flags():
     """All four flags can stack — --ground / --rounds / --lead / --models."""
     args = ("--ground=20 --rounds 3 --lead claude-opus-4-7 "
@@ -63,9 +60,7 @@ def test_parse_ground_composes_with_other_flags():
     assert models == ["gpt-5", "nim/deepseek-ai/deepseek-r1"]
     assert rest4 == "stocks 2026"
 
-
 # ── Brief formatting ─────────────────────────────────────────────────────
-
 
 @dataclass
 class _FakeResult:
@@ -76,13 +71,11 @@ class _FakeResult:
     domain: str = "web"
     engagement_score: float = 0.0
 
-
 @dataclass
 class _FakeBrief:
     topic: str = ""
     results: list = field(default_factory=list)
     statuses: list = field(default_factory=list)
-
 
 def test_format_grounding_brief_basic_shape():
     brief = _FakeBrief(results=[
@@ -101,7 +94,6 @@ def test_format_grounding_brief_basic_shape():
     assert "[N]" in out
     assert "do not invent" in out.lower() or "do NOT invent" in out
 
-
 def test_format_grounding_brief_sorted_by_engagement_desc():
     """Results are re-sorted by engagement_score so the top entries
     fit into the char budget when truncation kicks in."""
@@ -114,7 +106,6 @@ def test_format_grounding_brief_sorted_by_engagement_desc():
     # The high-score one must appear first.
     high_idx = out.find("[1]")
     assert "High" in out[high_idx:high_idx + 100]
-
 
 def test_format_grounding_brief_respects_char_budget():
     """A huge brief must be truncated rather than blow context window."""
@@ -132,14 +123,11 @@ def test_format_grounding_brief_respects_char_budget():
         f"grounding body {len(body_only)} chars exceeds 2200 (budget 2000 + slack)"
     )
 
-
 def test_format_grounding_brief_empty_results():
     assert _format_grounding_brief(_FakeBrief(results=[])) == ""
     assert _format_grounding_brief(None) == ""
 
-
 # ── Fetch graceful degradation ───────────────────────────────────────────
-
 
 def test_fetch_grounding_returns_empty_on_research_exception(monkeypatch):
     """A flaky network or missing API keys must not break the brainstorm
@@ -153,7 +141,6 @@ def test_fetch_grounding_returns_empty_on_research_exception(monkeypatch):
     out = _fetch_grounding("topic", 15, {})
     assert out == ""
 
-
 def test_fetch_grounding_returns_empty_on_empty_brief(monkeypatch):
     """A brief with zero results (every source 429'd, etc.) is also a
     'no grounding' case — return empty so the brainstorm continues
@@ -163,7 +150,6 @@ def test_fetch_grounding_returns_empty_on_empty_brief(monkeypatch):
                          lambda **kw: _FakeBrief(results=[]))
     out = _fetch_grounding("topic", 15, {})
     assert out == ""
-
 
 def test_fetch_grounding_returns_formatted_block_on_success(monkeypatch):
     """Happy path: research returns a brief, _fetch_grounding returns
@@ -178,9 +164,7 @@ def test_fetch_grounding_returns_formatted_block_on_success(monkeypatch):
     assert "### GROUNDING DATA" in out
     assert "Real Paper" in out
 
-
 # ── Lead synthesis: optional grounding param ─────────────────────────────
-
 
 def test_lead_synthesis_passes_grounding_to_prompt(monkeypatch):
     """When grounding is provided, the synthesis prompt must include it
@@ -201,7 +185,6 @@ def test_lead_synthesis_passes_grounding_to_prompt(monkeypatch):
     assert "GROUNDING DATA" in captured["user"]
     # Traceability instruction
     assert "trace to either" in captured["user"]
-
 
 def test_lead_synthesis_grounding_optional_backward_compat(monkeypatch):
     """Existing callers passing only the original args (no grounding) must

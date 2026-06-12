@@ -13,9 +13,7 @@ from cc_kernel.process import (
     is_transition_allowed,
 )
 
-
 # ── Allowed transitions per RFC 0003 §1 "State machine" ────────────────────
-
 
 _LEGAL = {
     (AgentState.READY,     AgentState.RUNNING),
@@ -30,24 +28,20 @@ _LEGAL = {
     (AgentState.SUSPENDED, AgentState.DEAD),
 }
 
-
 def test_every_legal_pair_is_allowed():
     for prev, target in _LEGAL:
         assert is_transition_allowed(prev, target), \
             f"{prev} -> {target} should be allowed"
-
 
 def test_dead_is_terminal():
     for target in AgentState.ALL:
         assert not is_transition_allowed(AgentState.DEAD, target), \
             f"DEAD -> {target} must NOT be allowed"
 
-
 def test_no_self_loops():
     for s in AgentState.ALL:
         assert not is_transition_allowed(s, s), \
             f"{s} -> {s} self-loop must NOT be allowed"
-
 
 def test_table_completeness_exhaustive():
     """Every (prev, target) pair across all 5 states must be either in
@@ -59,11 +53,9 @@ def test_table_completeness_exhaustive():
             assert allowed == expected, \
                 f"({prev} -> {target}): allowed={allowed} expected={expected}"
 
-
 def test_unknown_state_returns_false():
     assert not is_transition_allowed("BOGUS", AgentState.RUNNING)
     assert not is_transition_allowed(AgentState.READY, "BOGUS")
-
 
 def test_allowed_transitions_table_well_formed():
     # Every state appears as a key, and DEAD has empty set.
@@ -74,9 +66,7 @@ def test_allowed_transitions_table_well_formed():
         for t in targets:
             assert t in AgentState.ALL, f"{prev} targets unknown state {t}"
 
-
 # ── AgentProcess.to_dict round-trip-ish ────────────────────────────────────
-
 
 def test_agent_process_to_dict_keys():
     p = AgentProcess(
@@ -96,7 +86,6 @@ def test_agent_process_to_dict_keys():
     assert set(d) == expected_keys
     assert d["state"] == AgentState.READY
     assert d["metadata"] == {"x": 1}
-
 
 def test_agent_can_transition_to_uses_table():
     p = AgentProcess(

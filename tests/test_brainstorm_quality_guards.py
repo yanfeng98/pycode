@@ -24,9 +24,7 @@ from commands.advanced import (
     _is_weak_lead_model,
 )
 
-
 # ── Challenge-block extraction ───────────────────────────────────────────
-
 
 def test_extract_challenge_blocks_finds_one():
     text = """### [CHALLENGE → Agent B]
@@ -41,7 +39,6 @@ unrelated text"""
     assert "tsla will hit" in blocks[0]
     assert "200 max" in blocks[0]
 
-
 def test_extract_challenge_blocks_finds_multiple():
     text = """### [CHALLENGE → Agent A]
 body 1 here
@@ -51,23 +48,18 @@ body 2 here
 """
     assert len(_extract_challenge_blocks(text)) == 2
 
-
 def test_extract_challenge_blocks_empty_on_no_match():
     assert _extract_challenge_blocks("nothing here") == []
     assert _extract_challenge_blocks("") == []
 
-
 # ── Jaccard similarity ──────────────────────────────────────────────────
-
 
 def test_jaccard_identical_strings():
     s = "the quick brown fox jumps over the lazy dog"
     assert _jaccard_similarity(s, s) == 1.0
 
-
 def test_jaccard_disjoint_strings():
     assert _jaccard_similarity("alpha beta gamma", "delta epsilon zeta") == 0.0
-
 
 def test_jaccard_partial_overlap():
     sim = _jaccard_similarity("the quick brown fox", "the quick red fox")
@@ -76,14 +68,11 @@ def test_jaccard_partial_overlap():
     # 3/5 = 0.6
     assert abs(sim - 0.6) < 0.01
 
-
 def test_jaccard_empty_strings():
     assert _jaccard_similarity("", "anything") == 0.0
     assert _jaccard_similarity("anything", "") == 0.0
 
-
 # ── Redundancy detection (the user's exact bug) ──────────────────────────
-
 
 def test_redundant_challenge_catches_verbatim_clone():
     """The user's exact bug: persona B copy-pastes persona A's challenge
@@ -96,7 +85,6 @@ def test_redundant_challenge_catches_verbatim_clone():
     redundant, sim = _is_redundant_challenge(clone, [original])
     assert redundant is True
     assert sim >= 0.95
-
 
 def test_redundant_challenge_catches_near_clone():
     """A near-clone with one word changed (the qwen2.5 pattern) must
@@ -112,7 +100,6 @@ def test_redundant_challenge_catches_near_clone():
     redundant, sim = _is_redundant_challenge(near_clone, [original])
     assert redundant is True
     assert 0.7 <= sim < 1.0
-
 
 def test_redundant_challenge_passes_genuinely_different():
     """A genuinely different challenge on a different agent / claim must
@@ -130,7 +117,6 @@ def test_redundant_challenge_passes_genuinely_different():
     assert redundant is False
     assert sim < 0.7
 
-
 def test_redundant_no_blocks_in_new_text_is_safe():
     """If the new persona response doesn't contain any CHALLENGE block
     (defense-only round 2 reply, etc.), there's nothing to compare."""
@@ -139,9 +125,7 @@ def test_redundant_no_blocks_in_new_text_is_safe():
     redundant, _ = _is_redundant_challenge(defense_only, [original])
     assert redundant is False
 
-
 # ── Weak-lead-model detection ────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("model_id,expected", [
     # Strong models — must NOT trigger
@@ -166,9 +150,7 @@ def test_redundant_no_blocks_in_new_text_is_safe():
 def test_is_weak_lead_model(model_id, expected):
     assert _is_weak_lead_model(model_id) is expected
 
-
 # ── Synthesis signature accepts opening param ────────────────────────────
-
 
 def test_lead_synthesis_accepts_opening(monkeypatch):
     """Backward compat: opening is optional. Existing callers passing
@@ -183,7 +165,6 @@ def test_lead_synthesis_accepts_opening(monkeypatch):
     out2 = adv._lead_synthesis("topic", "transcript", "lead-model", {},
                                  opening="### Lead Opening\n- ban filler")
     assert "Consensus" in out2
-
 
 def test_lead_synthesis_passes_opening_to_prompt(monkeypatch):
     """When opening is provided, it MUST appear in the user message so

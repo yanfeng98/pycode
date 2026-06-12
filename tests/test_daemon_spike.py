@@ -26,15 +26,12 @@ from cc_daemon.permission import (
 )
 from cc_daemon.server import make_tcp_server
 
-
 # ── Fixtures ─────────────────────────────────────────────────────────────────
-
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def daemon_tcp(tmp_path):
@@ -64,7 +61,6 @@ def daemon_tcp(tmp_path):
     server.shutdown()
     server.server_close()
     t.join(timeout=2)
-
 
 def _rpc(host, port, token, method, params, *, version=API_VERSION,
          client_id=None, kind="test"):
@@ -99,9 +95,7 @@ def _rpc(host, port, token, method, params, *, version=API_VERSION,
     conn.close()
     return out
 
-
 # ── Pure-unit tests for ring buffer (covers #7) ──────────────────────────────
-
 
 def test_ring_buffer_overflow_emits_gap():
     """F-2: ring → SQLite swap.  Original spike test exercised the bounded
@@ -122,7 +116,6 @@ def test_ring_buffer_overflow_emits_gap():
     assert all(e["id"] > 1 for e in out[1:])
     assert out[-1]["data"]["i"] == 9
 
-
 def test_ring_buffer_no_gap_within_window():
     """F-2: SQLite-backed bus, retention high enough that nothing's evicted.
     Replay should be exact and gap-free."""
@@ -134,9 +127,7 @@ def test_ring_buffer_no_gap_within_window():
     assert all(e["type"] != "gap" for e in out)
     assert [e["data"]["i"] for e in out] == [2, 3, 4]
 
-
 # ── Permission store unit tests (covers #9 timeout + originator-only) ───────
-
 
 def test_permission_originator_only_unit():
     store = PermissionStore()
@@ -148,13 +139,10 @@ def test_permission_originator_only_unit():
     with pytest.raises(UnknownRequest):
         store.answer(req.request_id, "alice", {"approve": True})
 
-
 def test_permission_default_timeout_is_30min():
     assert DEFAULT_TIMEOUT_INTERACTIVE_S == 30 * 60
 
-
 # ── HTTP integration tests ──────────────────────────────────────────────────
-
 
 def test_echo_ping_and_event_emission(daemon_tcp):
     """#4: session-style sync RPC + side-effect event on /events."""
@@ -164,7 +152,6 @@ def test_echo_ping_and_event_emission(daemon_tcp):
     assert out["body"]["result"]["pong"] is True
     assert "server_uptime_s" in out["body"]["result"]
     assert out["client_id"], "daemon should mint and return a client_id"
-
 
 def test_api_version_mismatch_returns_426(daemon_tcp):
     """#6: missing/wrong API version → 426."""
@@ -176,7 +163,6 @@ def test_api_version_mismatch_returns_426(daemon_tcp):
     # Missing version
     out2 = _rpc(host, port, token, "echo.ping", {}, version=None)
     assert out2["status"] == 426
-
 
 def test_unauthenticated_tcp_returns_401(daemon_tcp):
     """Auth: missing/wrong token → 401."""
@@ -195,7 +181,6 @@ def test_unauthenticated_tcp_returns_401(daemon_tcp):
     assert resp.status == 401
     conn.close()
 
-
 def test_audit_log_records_outcomes(daemon_tcp):
     """#8: audit log default-on captures both ok and denied lines."""
     host, port, token, data_dir = daemon_tcp
@@ -209,7 +194,6 @@ def test_audit_log_records_outcomes(daemon_tcp):
     outcomes = {l["outcome"] for l in lines}
     assert "ok" in outcomes
     assert "denied" in outcomes
-
 
 def test_permission_not_originator_returns_403(daemon_tcp):
     """#3 + originator routing: non-originator gets 403."""
@@ -243,7 +227,6 @@ def test_permission_not_originator_returns_403(daemon_tcp):
     assert alice_answer["status"] == 200
     assert alice_answer["body"]["result"]["answer"] == {"approve": True}
 
-
 def test_client_id_resume(daemon_tcp):
     """#3: presenting a known client_id reuses it; daemon does not mint a new one."""
     host, port, token, _ = daemon_tcp
@@ -259,7 +242,6 @@ def test_client_id_resume(daemon_tcp):
     third = _rpc(host, port, token, "echo.ping", {},
                  client_id="ffffffffffffffffffffffffffffffff", kind="resume")
     assert third["client_id"] != "ffffffffffffffffffffffffffffffff"
-
 
 def test_sse_heartbeat_arrives(daemon_tcp):
     """#2: SSE sends `:\\n\\n` heartbeat within the window when no events flow.
@@ -304,7 +286,6 @@ def test_sse_heartbeat_arrives(daemon_tcp):
         assert saw_heartbeat, f"no heartbeat in 2.5s; got: {buffer!r}"
     finally:
         _srv.HEARTBEAT_INTERVAL_S = original
-
 
 def test_concurrent_rpc_not_blocked_by_sse(daemon_tcp):
     """#1: ThreadingHTTPServer keeps /rpc responsive while many SSE clients are open."""
@@ -352,7 +333,6 @@ def test_concurrent_rpc_not_blocked_by_sse(daemon_tcp):
                 c.close()
             except Exception:
                 pass
-
 
 def test_originator_store_persistence(tmp_path):
     """#3: client_ids survive an OriginatorStore reload (daemon restart)."""

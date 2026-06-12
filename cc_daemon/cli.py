@@ -160,11 +160,6 @@ def cmd_serve(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    if transport == "unix" and os.name == "nt":
-        print("error: Unix sockets unavailable on Windows; "
-              "use --listen tcp://host:port instead.", file=sys.stderr)
-        return 2
-
     data_dir = Path(args.data_dir).expanduser()
     pid_file = (DEFAULT_PID_FILE if args.data_dir == str(DEFAULT_DATA_DIR)
                 else data_dir / "run" / "daemon.pid")

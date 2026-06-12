@@ -20,12 +20,10 @@ from cc_daemon.server import make_tcp_server
 from cc_kernel import register_with_daemon
 from cc_kernel.integration import detach
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def daemon(tmp_path):
@@ -56,7 +54,6 @@ def daemon(tmp_path):
     server.server_close()
     t.join(timeout=2)
 
-
 def _rpc(host, port, token, method, params, *, kind="test"):
     body = json.dumps({
         "jsonrpc": "2.0",
@@ -79,9 +76,7 @@ def _rpc(host, port, token, method, params, *, kind="test"):
     finally:
         conn.close()
 
-
 # ── kernel.cap.* ──────────────────────────────────────────────────────────
-
 
 def test_cap_create_and_get_round_trip(daemon):
     h, p, t = daemon
@@ -100,7 +95,6 @@ def test_cap_create_and_get_round_trip(daemon):
     cap = _rpc(h, p, t, "kernel.cap.get", {"pid": pid})[1]["result"]
     assert cap["tool_grants"] == ["Bash", "Read"]
     assert cap["sub_agent"] is True
-
 
 def test_cap_check_endpoints(daemon):
     h, p, t = daemon
@@ -126,7 +120,6 @@ def test_cap_check_endpoints(daemon):
     assert _rpc(h, p, t, "kernel.cap.check_model",
                 {"pid": pid, "model": "claude-opus-4"})[1]["result"]["allowed"] is True
 
-
 def test_cap_derive_via_rpc(daemon):
     h, p, t = daemon
     p1 = _rpc(h, p, t, "kernel.agent.create",
@@ -143,7 +136,6 @@ def test_cap_derive_via_rpc(daemon):
     assert s == 200, r
     assert r["result"]["parent_cap_id"] is not None
 
-
 def test_cap_derive_violation_returns_error(daemon):
     h, p, t = daemon
     p1 = _rpc(h, p, t, "kernel.agent.create",
@@ -159,9 +151,7 @@ def test_cap_derive_violation_returns_error(daemon):
     assert "error" in r
     assert "CapabilityDerivationError" in r["error"]["message"]
 
-
 # ── kernel.ledger.* ───────────────────────────────────────────────────────
-
 
 def test_ledger_create_charge_round_trip(daemon):
     h, p, t = daemon
@@ -180,7 +170,6 @@ def test_ledger_create_charge_round_trip(daemon):
     assert r["result"]["first_breach"] is True
     assert r["result"]["used"]         == 1500
 
-
 def test_ledger_check_no_mutate(daemon):
     h, p, t = daemon
     pid = _rpc(h, p, t, "kernel.agent.create",
@@ -194,7 +183,6 @@ def test_ledger_check_no_mutate(daemon):
     led = _rpc(h, p, t, "kernel.ledger.get", {"pid": pid})[1]["result"]
     assert led["entries"][0]["used"] == 0
 
-
 def test_ledger_list_breached(daemon):
     h, p, t = daemon
     p1 = _rpc(h, p, t, "kernel.agent.create",
@@ -207,7 +195,6 @@ def test_ledger_list_breached(daemon):
     assert s == 200
     assert len(r["result"]["entries"]) == 1
     assert r["result"]["entries"][0]["pid"] == p1
-
 
 def test_phase2_does_not_break_phase1(daemon):
     """Sanity: existing kernel.* methods still work alongside the new ones."""

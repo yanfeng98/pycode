@@ -29,7 +29,6 @@ import agent
 from agent import AgentState, run, ToolStart, ToolEnd, TextChunk
 from providers import AssistantTurn
 
-
 def _fake_turn(text="", tool_calls=None):
     t = AssistantTurn.__new__(AssistantTurn)
     t.text = text
@@ -40,7 +39,6 @@ def _fake_turn(text="", tool_calls=None):
     t.cache_write_tokens = 0
     return t
 
-
 def _baseline_config():
     return {
         "model":          "claude-opus-4-7",
@@ -48,7 +46,6 @@ def _baseline_config():
         "no_tools":       False,
         "_session_id":    "test-dedup",
     }
-
 
 def _install_fake_stream(monkeypatch, replies):
     it = iter(replies)
@@ -64,13 +61,11 @@ def _install_fake_stream(monkeypatch, replies):
 
     monkeypatch.setattr(agent, "stream", fake_stream)
 
-
 def _install_fake_execute(monkeypatch, registry: dict):
     """Stub execute_tool so we don't need real files. registry: name → result."""
     def fake_execute(name, inputs, permission_mode="auto", config=None):
         return registry.get(name, "ok")
     monkeypatch.setattr(agent, "execute_tool", fake_execute)
-
 
 def test_second_identical_read_is_deduped(monkeypatch):
     """Same Read called twice in same run() → 2nd is short-circuited:
@@ -117,7 +112,6 @@ def test_second_identical_read_is_deduped(monkeypatch):
     assert "[deduped]" in tool_msgs[1]["content"]
     assert "Read" in tool_msgs[1]["content"]
 
-
 def test_dedup_emits_brief_text_marker(monkeypatch):
     """The user still sees SOMETHING happened — a one-line `[deduped ...]`
     text chunk — but not the full ⚙ Read(<long path>) line."""
@@ -135,7 +129,6 @@ def test_dedup_emits_brief_text_marker(monkeypatch):
 
     text_chunks = "".join(e.text for e in events if isinstance(e, TextChunk))
     assert "[deduped Read" in text_chunks
-
 
 def test_dedup_only_for_readonly_tools(monkeypatch):
     """Write fired twice with same args must NOT be deduped — writes can
@@ -158,7 +151,6 @@ def test_dedup_only_for_readonly_tools(monkeypatch):
     # that path; PermissionRequest events are simply unhandled in the
     # event stream and that's fine for this assertion.)
     assert len(tool_starts) == 2
-
 
 def test_different_args_not_deduped(monkeypatch):
     """Read on file A then Read on file B → both run, no dedup."""

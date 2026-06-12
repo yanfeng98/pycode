@@ -21,9 +21,7 @@ import agent
 from agent import _looks_like_investigation, AgentState, run
 from providers import AssistantTurn, TextChunk
 
-
 # ── Heuristic ────────────────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("text,expected", [
     # Positive — absolute paths
@@ -45,9 +43,7 @@ from providers import AssistantTurn, TextChunk
 def test_looks_like_investigation(text: str, expected: bool):
     assert _looks_like_investigation(text) is expected
 
-
 # ── Loop integration via a fake provider stream ──────────────────────────
-
 
 def _fake_turn(text: str = "", tool_calls: list | None = None) -> AssistantTurn:
     """Build a minimal AssistantTurn that satisfies the loop's reads."""
@@ -60,11 +56,9 @@ def _fake_turn(text: str = "", tool_calls: list | None = None) -> AssistantTurn:
     t.cache_write_tokens = 0
     return t
 
-
 def _drain(gen):
     """Exhaust a generator; collect events for inspection."""
     return list(gen)
-
 
 def _install_fake_stream(monkeypatch, replies: list[AssistantTurn]):
     """Replace providers.stream so each call returns the next scripted reply.
@@ -85,7 +79,6 @@ def _install_fake_stream(monkeypatch, replies: list[AssistantTurn]):
 
     monkeypatch.setattr(agent, "stream", fake_stream)
 
-
 def _baseline_config() -> dict:
     """Minimal config the loop needs to run without external services."""
     return {
@@ -94,7 +87,6 @@ def _baseline_config() -> dict:
         "no_tools":       False,
         "_session_id":    "test-nudge",
     }
-
 
 def test_nudge_fires_when_user_gave_path_and_model_replies_text_only(monkeypatch):
     """User gives a path → model says 'please specify' → loop nudges → model
@@ -115,7 +107,6 @@ def test_nudge_fires_when_user_gave_path_and_model_replies_text_only(monkeypatch
     assert roles == ["user", "assistant", "user", "assistant"], roles
     assert "[system reminder]" in state.messages[2]["content"]
 
-
 def test_nudge_does_not_fire_without_path(monkeypatch):
     """Bare 'hi' → model text-only reply → no nudge, single API call."""
     replies = [_fake_turn(text="Hello!")]
@@ -128,7 +119,6 @@ def test_nudge_does_not_fire_without_path(monkeypatch):
     assert roles == ["user", "assistant"], (
         f"Expected exactly one round-trip, got: {roles}"
     )
-
 
 def test_nudge_fires_at_most_once(monkeypatch):
     """Even if the model still refuses to use tools after the nudge, the loop

@@ -21,12 +21,10 @@ from cc_kernel import register_with_daemon
 from cc_kernel.cli import dispatch as kernel_dispatch
 from cc_kernel.integration import detach
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def running_kernel(tmp_path, monkeypatch):
@@ -86,7 +84,6 @@ def running_kernel(tmp_path, monkeypatch):
     server.server_close()
     t.join(timeout=2)
 
-
 def _run_cli(*argv) -> tuple[int, str, str]:
     out = io.StringIO()
     err = io.StringIO()
@@ -94,9 +91,7 @@ def _run_cli(*argv) -> tuple[int, str, str]:
         rc = kernel_dispatch(list(argv))
     return rc, out.getvalue(), err.getvalue()
 
-
 # ── No-daemon path ──────────────────────────────────────────────────────
-
 
 def test_cli_no_daemon_returns_1(monkeypatch, tmp_path):
     """When discovery is empty (no daemon), `summary` exits 1 with a
@@ -107,9 +102,7 @@ def test_cli_no_daemon_returns_1(monkeypatch, tmp_path):
     assert rc == 1
     assert "not running" in err.lower() or "is `pycode serve" in err
 
-
 # ── help / unknown ──────────────────────────────────────────────────────
-
 
 def test_cli_help(tmp_path, monkeypatch):
     """--help prints usage and exits 0 even with no daemon."""
@@ -119,7 +112,6 @@ def test_cli_help(tmp_path, monkeypatch):
     assert rc == 0
     assert "kernel" in err.lower() or "actions:" in err.lower()
 
-
 def test_cli_unknown_subcommand(tmp_path, monkeypatch):
     monkeypatch.setattr(_discovery, "get_default_path",
                          lambda: tmp_path / "no.json")
@@ -127,16 +119,13 @@ def test_cli_unknown_subcommand(tmp_path, monkeypatch):
     assert rc == 2
     assert "unknown" in err.lower()
 
-
 def test_cli_no_args(tmp_path, monkeypatch):
     monkeypatch.setattr(_discovery, "get_default_path",
                          lambda: tmp_path / "no.json")
     rc, out, err = _run_cli()
     assert rc == 2
 
-
 # ── Live RPC path ───────────────────────────────────────────────────────
-
 
 def test_cli_summary(running_kernel):
     rc, out, err = _run_cli("summary")
@@ -145,14 +134,12 @@ def test_cli_summary(running_kernel):
     assert "schema:" in out
     assert "agents:" in out
 
-
 def test_cli_summary_json(running_kernel):
     rc, out, err = _run_cli("summary", "--json")
     assert rc == 0, err
     parsed = json.loads(out)
     assert "schema_version" in parsed
     assert "agents" in parsed
-
 
 def test_cli_info(running_kernel):
     rc, out, err = _run_cli("info")
@@ -161,12 +148,10 @@ def test_cli_info(running_kernel):
     assert "schema_version:" in out
     assert "method_count:" in out
 
-
 def test_cli_agents_empty(running_kernel):
     rc, out, err = _run_cli("agents")
     assert rc == 0, err
     assert "no agents" in out or "(0 of 0)" in out
-
 
 def test_cli_agents_with_data(running_kernel):
     """Create an agent through the daemon's kernel store, then list
@@ -178,7 +163,6 @@ def test_cli_agents_with_data(running_kernel):
     assert "alice" in out
     assert str(a.pid) in out
 
-
 def test_cli_agents_state_filter(running_kernel):
     ks = running_kernel["server"].daemon_state.kernel_store
     a = ks.create(name="ready_one", template="t")
@@ -188,7 +172,6 @@ def test_cli_agents_state_filter(running_kernel):
     assert rc == 0
     assert "ready_one" in out
     assert "dead_one" not in out
-
 
 def test_cli_proc(running_kernel):
     ds = running_kernel["server"].daemon_state
@@ -201,12 +184,10 @@ def test_cli_proc(running_kernel):
     assert "tools:" in out
     assert "ledger" in out
 
-
 def test_cli_proc_unknown_pid(running_kernel):
     rc, out, err = _run_cli("proc", "9999")
     assert rc == 1
     assert "no process" in out
-
 
 def test_cli_events(running_kernel):
     ks = running_kernel["server"].daemon_state.kernel_store
@@ -217,12 +198,10 @@ def test_cli_events(running_kernel):
     assert "kernel.process.created" in out
     assert "kernel.process.transitioned" in out
 
-
 def test_cli_queue_empty(running_kernel):
     rc, out, err = _run_cli("queue")
     assert rc == 0, err
     assert "queue empty" in out
-
 
 def test_cli_queue_with_entries(running_kernel):
     ds = running_kernel["server"].daemon_state
@@ -234,12 +213,10 @@ def test_cli_queue_with_entries(running_kernel):
     assert str(sid) in out
     assert "queued" in out
 
-
 def test_cli_registry_empty(running_kernel):
     rc, out, err = _run_cli("registry")
     assert rc == 0, err
     assert "registry empty" in out
-
 
 def test_cli_registry_with_entries(running_kernel):
     ds = running_kernel["server"].daemon_state
@@ -250,7 +227,6 @@ def test_cli_registry_with_entries(running_kernel):
     assert rc == 0
     assert "/agents/test/x" in out
 
-
 def test_cli_methods(running_kernel):
     rc, out, err = _run_cli("methods")
     assert rc == 0, err
@@ -259,12 +235,10 @@ def test_cli_methods(running_kernel):
     # Tier counts at the bottom.
     assert "stable=" in out
 
-
 def test_cli_methods_tier_filter(running_kernel):
     rc, out, err = _run_cli("methods", "--tier", "stable")
     assert rc == 0
     assert "kernel.agent.create" in out
-
 
 def test_cli_methods_invalid_tier(running_kernel):
     """argparse choices catches this — exits 2."""
@@ -273,7 +247,6 @@ def test_cli_methods_invalid_tier(running_kernel):
     with redirect_stdout(out), redirect_stderr(err), pytest.raises(SystemExit) as e:
         kernel_dispatch(["methods", "--tier", "bogus"])
     assert e.value.code == 2
-
 
 def test_cli_prometheus(running_kernel):
     rc, out, err = _run_cli("prometheus")

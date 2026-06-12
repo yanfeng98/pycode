@@ -21,20 +21,11 @@ from cc_kernel.runner.llm import (
     ScriptedMockProvider,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="streaming tests spawn POSIX subprocesses",
-)
-
-
 # ── LlmRequest.stream ─────────────────────────────────────────────────
-
 
 def test_request_stream_default_false():
     r = LlmRequest(model="m", user="hi")
     assert r.stream is False
-
 
 def test_request_stream_round_trip():
     r = LlmRequest(model="m", user="hi", stream=True)
@@ -43,22 +34,18 @@ def test_request_stream_round_trip():
     r2 = LlmRequest.from_dict(d)
     assert r2.stream is True
 
-
 def test_request_stream_must_be_bool():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest(model="m", user="hi",
                     stream="yes")  # type: ignore[arg-type]
 
-
 # ── ScriptedMockProvider.stream ───────────────────────────────────────
-
 
 def _resp(text="ok", **kw):
     defaults = dict(text=text, tokens_input=1, tokens_output=1,
                      cost_micro=10, model="m")
     defaults.update(kw)
     return LlmResponse(**defaults)
-
 
 def test_scripted_stream_emits_each_char():
     p = ScriptedMockProvider([_resp("hello")])
@@ -67,7 +54,6 @@ def test_scripted_stream_emits_each_char():
                          on_delta=lambda d: received.append(d))
     assert received == ["h", "e", "l", "l", "o"]
     assert response.text == "hello"
-
 
 def test_scripted_stream_advances_cursor():
     p = ScriptedMockProvider([_resp("a"), _resp("b")])
@@ -78,13 +64,11 @@ def test_scripted_stream_advances_cursor():
               on_delta=lambda d: None)
     assert p.remaining == 0
 
-
 def test_scripted_stream_rejects_non_callable():
     p = ScriptedMockProvider([_resp("x")])
     with pytest.raises(ProviderInvalidRequest):
         p.stream(LlmRequest(model="m", user="x"),
                   on_delta="not callable")  # type: ignore[arg-type]
-
 
 def test_scripted_stream_empty_text_zero_deltas():
     """Tool-use responses (text='') emit zero deltas but still
@@ -101,9 +85,7 @@ def test_scripted_stream_empty_text_zero_deltas():
     assert received == []
     assert out.is_tool_use is True
 
-
 # ── Subprocess: streaming end-to-end ─────────────────────────────────
-
 
 def _scripted_env(responses: list[dict]) -> dict:
     return {
@@ -112,12 +94,10 @@ def _scripted_env(responses: list[dict]) -> dict:
         "CC_LLM_SCRIPTED_RESPONSES_JSON": json.dumps(responses),
     }
 
-
 @pytest.fixture
 def kernel(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         yield k
-
 
 def test_subprocess_streams_each_char_to_chunks(kernel):
     a = kernel.create_agent(name="x", template="t")
@@ -147,7 +127,6 @@ def test_subprocess_streams_each_char_to_chunks(kernel):
         assert c["kind"] == "text"
         assert "iter" in c["metadata"]
 
-
 def test_subprocess_stream_false_no_chunks(kernel):
     """stream=False (default) → no chunk messages emitted."""
     a = kernel.create_agent(name="x", template="t")
@@ -166,7 +145,6 @@ def test_subprocess_stream_false_no_chunks(kernel):
     assert info.exit_kind == "completed"
     assert received == []        # no streaming
     assert info.chunks == ()     # back-compat
-
 
 def test_subprocess_stream_with_long_text(kernel):
     a = kernel.create_agent(name="x", template="t")
@@ -188,7 +166,6 @@ def test_subprocess_stream_with_long_text(kernel):
     assert "".join(received) == text
     assert len(info.chunks) == len(text)
 
-
 def test_subprocess_stream_with_unicode(kernel):
     a = kernel.create_agent(name="x", template="t")
     sup = kernel.make_supervisor()
@@ -207,9 +184,7 @@ def test_subprocess_stream_with_unicode(kernel):
     assert info.exit_kind == "completed"
     assert "".join(received) == text
 
-
 # ── Multi-iteration: tool_use iter no streaming, text iter streams ───
-
 
 def test_subprocess_streaming_multi_iteration_tool_call(kernel):
     """Iter 1 returns tool_use (no text → no chunks expected);
@@ -258,9 +233,7 @@ def test_subprocess_streaming_multi_iteration_tool_call(kernel):
     iters = [c["metadata"]["iter"] for c in received]
     assert all(i == 2 for i in iters), iters
 
-
 # ── Provider without stream() falls back gracefully ──────────────────
-
 
 def test_subprocess_stream_with_mock_no_stream_method(kernel):
     """MockProvider doesn't define .stream(), so the runner's
@@ -289,9 +262,7 @@ def test_subprocess_stream_with_mock_no_stream_method(kernel):
     # MockProvider has no stream() — runner falls back to non-stream.
     assert received == []
 
-
 # ── Anthropic adapter lazy stream import ─────────────────────────────
-
 
 def test_anthropic_provider_has_stream_method():
     """The class should expose `stream` as an attribute even

@@ -18,7 +18,6 @@ import pytest
 
 from commands.advanced import _parse_models_flag
 
-
 @pytest.mark.parametrize("args,expected_models,expected_remaining", [
     # Default: no flag → empty list, args unchanged
     ("redesign the auth flow",                  [], "redesign the auth flow"),
@@ -44,7 +43,6 @@ def test_parse_models_flag(args, expected_models, expected_remaining):
     assert models == expected_models
     assert remaining == expected_remaining
 
-
 def test_parse_models_handles_provider_prefixed_ids():
     """Provider-prefixed model IDs (with '/') must round-trip intact —
     the flag-stripping regex must not eat the slash."""
@@ -55,7 +53,6 @@ def test_parse_models_handles_provider_prefixed_ids():
         "custom/qwen2.5-72b",
     ]
     assert remaining == "improve x"
-
 
 def test_parse_models_empty_value_returns_empty_list():
     """Edge case: `--models ` with no value should not crash; returns []."""

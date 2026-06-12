@@ -25,9 +25,7 @@ from research.lab.iterate import (
 from research.lab.orchestrator import LLMResponse, Stage
 from research.lab.storage import LabStorage
 
-
 # ── Fake LLM ──────────────────────────────────────────────────────────────
-
 
 class FakeLLM:
     """Records every call; returns a programmable response per role.
@@ -52,7 +50,6 @@ class FakeLLM:
         text = self._by_role.get(role_name, self.default_text)
         return LLMResponse(text=text, tokens_in=10, tokens_out=10, cost_cents=1)
 
-
 @pytest.fixture
 def storage(tmp_path):
     db_path = tmp_path / "lab.db"
@@ -60,15 +57,12 @@ def storage(tmp_path):
     yield s
     s.close()
 
-
 # ── Score parser tests ────────────────────────────────────────────────────
-
 
 def test_parse_review_scores_clean():
     txt = "novelty: 6\nrigor: 7.5\nclarity: 8\nevidence: 5"
     out = parse_review_scores(txt)
     assert out == {"novelty": 6.0, "rigor": 7.5, "clarity": 8.0, "evidence": 5.0}
-
 
 def test_parse_review_scores_clamps_range():
     txt = "novelty: 11\nrigor: -1\nclarity: 5\nevidence: 5"
@@ -80,17 +74,14 @@ def test_parse_review_scores_clamps_range():
     assert out["clarity"] == 5.0
     assert out["evidence"] == 5.0
 
-
 def test_parse_review_scores_missing_dim_defaults_to_5():
     txt = "novelty: 7"
     out = parse_review_scores(txt)
     assert out == {"novelty": 7.0, "rigor": 5.0, "clarity": 5.0, "evidence": 5.0}
 
-
 def test_parse_review_scores_empty():
     assert parse_review_scores("") == {d: 5.0 for d in DIMENSIONS}
     assert parse_review_scores("garbage no dims here") == {d: 5.0 for d in DIMENSIONS}
-
 
 def test_aggregate_and_overall():
     per_reviewer = [
@@ -102,14 +93,11 @@ def test_aggregate_and_overall():
     assert by_dim["rigor"] == 7.0
     assert overall_score(by_dim) == pytest.approx(6.5)
 
-
 def test_weakest_dimension():
     by_dim = {"novelty": 8, "rigor": 5, "clarity": 9, "evidence": 7}
     assert weakest_dimension(by_dim) == "rigor"
 
-
 # ── State reconstruction tests ────────────────────────────────────────────
-
 
 def _seed_run(storage, *, stage: Stage = Stage.FINALIZATION):
     """Create a fully-populated run record so resume has something to read."""
@@ -131,7 +119,6 @@ def _seed_run(storage, *, stage: Stage = Stage.FINALIZATION):
     storage.put_artifact(rec.run_id, "report", "# FINAL REPORT\n…")
     return rec
 
-
 def test_reconstruct_state_full(storage):
     rec = _seed_run(storage)
     state = resume.reconstruct_state(storage, rec.run_id)
@@ -148,7 +135,6 @@ def test_reconstruct_state_full(storage):
     assert state.results_section.startswith("## Results")
     assert state.section_drafts.get("full_body", "").startswith("# Paper")
 
-
 def test_reconstruct_state_rewind_to_drafting(storage):
     """Rewinding to DRAFTING should drop the draft + verification artifacts
     (so the orchestrator regenerates them) but keep everything earlier."""
@@ -160,7 +146,6 @@ def test_reconstruct_state_rewind_to_drafting(storage):
     assert state.results_section           # produced by ANALYSIS, before DRAFTING — kept
     assert state.section_drafts == {}      # produced by DRAFTING itself — dropped
 
-
 def test_reconstruct_state_rewind_to_questioning(storage):
     rec = _seed_run(storage)
     state = resume.reconstruct_state(storage, rec.run_id, start_stage=Stage.QUESTIONING)
@@ -171,14 +156,11 @@ def test_reconstruct_state_rewind_to_questioning(storage):
     assert state.experiment_code == ""
     assert state.section_drafts == {}
 
-
 def test_reconstruct_state_unknown_run_raises(storage):
     with pytest.raises(ValueError):
         resume.reconstruct_state(storage, "lab_does_not_exist")
 
-
 # ── Iteration: scoring ────────────────────────────────────────────────────
-
 
 def test_score_report_aggregates_across_reviewers(storage):
     rec = _seed_run(storage)
@@ -206,9 +188,7 @@ def test_score_report_aggregates_across_reviewers(storage):
     assert by_dim["rigor"] == pytest.approx(7.333, abs=0.01)
     assert by_dim["evidence"] == 6.0
 
-
 # ── Iteration: end-to-end (with rewind to weakest) ────────────────────────
-
 
 def test_run_one_iteration_converges_when_score_is_high(storage, monkeypatch):
     rec = _seed_run(storage)
@@ -230,7 +210,6 @@ def test_run_one_iteration_converges_when_score_is_high(storage, monkeypatch):
     assert len(rows) == 1
     assert rows[0]["status"] == "done"
     assert rows[0]["score_avg"] == 8.0
-
 
 def test_run_one_iteration_routes_low_evidence_to_experiment(storage, monkeypatch):
     rec = _seed_run(storage)
@@ -258,7 +237,6 @@ def test_run_one_iteration_routes_low_evidence_to_experiment(storage, monkeypatc
     assert result.revise_stage == Stage.EXPERIMENT
     assert called["start_stage"] == Stage.EXPERIMENT
     assert called["run_id"] == rec.run_id
-
 
 def test_iterate_until_converged_stops_at_target(storage, monkeypatch):
     rec = _seed_run(storage)
@@ -291,7 +269,6 @@ def test_iterate_until_converged_stops_at_target(storage, monkeypatch):
     assert history[0].revise_stage is not None       # iter 1 needed revision
     assert history[1].revise_stage is None           # iter 2 converged
 
-
 def test_iterate_until_converged_stops_at_max(storage, monkeypatch):
     rec = _seed_run(storage)
     class LowLLM:
@@ -309,9 +286,7 @@ def test_iterate_until_converged_stops_at_max(storage, monkeypatch):
     assert len(history) == 3   # hit the cap
     assert all(r.revise_stage is not None for r in history)
 
-
 # ── Backlog tests ─────────────────────────────────────────────────────────
-
 
 def test_backlog_add_list_remove(storage):
     mgr = backlog.BacklogManager(storage)
@@ -327,7 +302,6 @@ def test_backlog_add_list_remove(storage):
     assert mgr.remove(99999) is False
     assert len(mgr.list()) == 2
 
-
 def test_claim_next_backlog_atomic(storage):
     storage.add_backlog(topic="A", priority=0)
     storage.add_backlog(topic="B", priority=10)
@@ -342,7 +316,6 @@ def test_claim_next_backlog_atomic(storage):
     statuses = sorted(it["status"] for it in items)
     assert statuses == ["running", "running"]
 
-
 def test_reset_running_backlog(storage):
     storage.add_backlog(topic="A")
     storage.claim_next_backlog()
@@ -351,9 +324,7 @@ def test_reset_running_backlog(storage):
     items = storage.list_backlog()
     assert items[0]["status"] == "pending"
 
-
 # ── Worker loop (with stubbed orchestrator) ───────────────────────────────
-
 
 def test_worker_picks_up_pending_item_and_marks_done(storage, monkeypatch):
     """Worker should claim → run → mark done; idempotent on stop."""
@@ -394,7 +365,6 @@ def test_worker_picks_up_pending_item_and_marks_done(storage, monkeypatch):
     assert items[0]["status"] == "done"
     assert items[0]["run_id"] is not None
 
-
 def test_worker_stops_promptly_on_empty_queue(storage):
     stop = threading.Event()
     t = threading.Thread(
@@ -408,7 +378,6 @@ def test_worker_stops_promptly_on_empty_queue(storage):
     stop.set()
     t.join(timeout=2)
     assert not t.is_alive()
-
 
 def test_daemon_singleton(storage, monkeypatch):
     """start_daemon is idempotent; stop_daemon clears the slot."""

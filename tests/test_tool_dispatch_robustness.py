@@ -24,7 +24,6 @@ import pytest
 
 from tools import execute_tool
 
-
 @pytest.mark.parametrize("name,empty_inputs,must_contain", [
     ("Write",        {},                              "missing required parameter"),
     ("Write",        {"file_path": ""},               "missing required parameter"),
@@ -48,7 +47,6 @@ def test_missing_required_args_returns_friendly_error(name, empty_inputs, must_c
         f"{name}({empty_inputs}) leaked KeyError to caller: {out!r}"
     )
 
-
 def test_bash_empty_command_returns_friendly_error():
     """Bash with empty command — the wrapper's _is_safe_bash gate must not
     crash on empty input, and the inner ToolDef must surface the friendly
@@ -58,7 +56,6 @@ def test_bash_empty_command_returns_friendly_error():
     assert "KeyError" not in out
     # The inner lambda's exact phrasing.
     assert "non-empty" in out.lower() or "command" in out.lower()
-
 
 def test_notebookedit_empty_args_does_not_keyerror():
     """NotebookEdit's permission description previously did

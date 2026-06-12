@@ -17,12 +17,10 @@ from cc_daemon.server import make_tcp_server
 from cc_kernel import register_with_daemon
 from cc_kernel.integration import detach
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def daemon(tmp_path):
@@ -51,7 +49,6 @@ def daemon(tmp_path):
     server.server_close()
     t.join(timeout=2)
 
-
 def _rpc(host, port, token, method, params, *, kind="test"):
     body = json.dumps({
         "jsonrpc": "2.0", "id": str(uuid.uuid4()),
@@ -71,7 +68,6 @@ def _rpc(host, port, token, method, params, *, kind="test"):
         return r.status, json.loads(r.read())
     finally:
         c.close()
-
 
 def test_enqueue_claim_complete_via_rpc(daemon):
     h, p, t = daemon
@@ -96,7 +92,6 @@ def test_enqueue_claim_complete_via_rpc(daemon):
     assert s == 200
     assert r["result"]["state"] == "completed"
 
-
 def test_priority_order_via_rpc(daemon):
     h, p, t = daemon
     pid = _rpc(h, p, t, "kernel.agent.create",
@@ -108,7 +103,6 @@ def test_priority_order_via_rpc(daemon):
     r = _rpc(h, p, t, "kernel.sched.claim",
              {"worker_id": "sup-1", "max_n": 2})[1]["result"]
     assert [e["sched_id"] for e in r["entries"]] == [s_hi, s_lo]
-
 
 def test_admission_via_rpc(daemon):
     h, p, t = daemon
@@ -130,7 +124,6 @@ def test_admission_via_rpc(daemon):
     assert len(r2["entries"]) == 1
     assert r2["entries"][0]["sched_id"] == sid
 
-
 def test_cancel_dispatched_returns_error(daemon):
     h, p, t = daemon
     pid = _rpc(h, p, t, "kernel.agent.create",
@@ -144,7 +137,6 @@ def test_cancel_dispatched_returns_error(daemon):
     assert "error" in r
     assert "SchedIllegalTransition" in r["error"]["message"]
 
-
 def test_gc_expired_via_rpc(daemon):
     h, p, t = daemon
     pid = _rpc(h, p, t, "kernel.agent.create",
@@ -155,7 +147,6 @@ def test_gc_expired_via_rpc(daemon):
     s, r = _rpc(h, p, t, "kernel.sched.gc_expired", {"now": 200})
     assert s == 200
     assert r["result"]["swept"] == 1
-
 
 def test_list_filters_via_rpc(daemon):
     h, p, t = daemon

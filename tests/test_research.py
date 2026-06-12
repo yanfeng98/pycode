@@ -23,7 +23,6 @@ from unittest import mock
 
 import pytest
 
-
 # ─── 1. types ──────────────────────────────────────────────────────────────
 
 def test_result_defaults():
@@ -33,7 +32,6 @@ def test_result_defaults():
     assert r.engagement_score == 0.0
     assert r.domain == "web"
     assert r.extra == {}
-
 
 def test_brief_by_domain_groups_and_sorts():
     from research.types import Brief, Result
@@ -46,7 +44,6 @@ def test_brief_by_domain_groups_and_sorts():
     g = b.by_domain()
     assert list(g["tech"][0].title) == list("t3")
     assert g["academic"][0].title == "t2"
-
 
 # ─── 2. classifier ─────────────────────────────────────────────────────────
 
@@ -61,18 +58,15 @@ def test_classifier_routes_obvious_topics(topic, want_top):
     from research.classifier import classify
     assert classify(topic)[0] == want_top
 
-
 def test_classifier_empty_topic_returns_web():
     from research.classifier import classify
     assert classify("") == ["web"]
     assert classify("   ") == ["web"]
 
-
 def test_classifier_never_empty():
     from research.classifier import classify
     # Gibberish should still yield a nonempty list
     assert classify("zxqvn mrtwk pfj") != []
-
 
 # ─── 3. ranker ─────────────────────────────────────────────────────────────
 
@@ -95,7 +89,6 @@ def test_ranker_normalizes_engagement():
     assert 0 <= gh.engagement_score <= 1.0
     assert 0 <= hn_low.engagement_score <= 1.0
 
-
 def test_ranker_recency_bonus_for_fresh_results():
     from datetime import datetime, timezone
     from research.ranker import rank
@@ -111,7 +104,6 @@ def test_ranker_recency_bonus_for_fresh_results():
     stale = next(r for r in rs if r.title == "stale")
     assert fresh.engagement_score > stale.engagement_score
 
-
 def test_ranker_dedupe_keeps_highest_engagement():
     from research.ranker import dedupe
     from research.types import Result
@@ -124,7 +116,6 @@ def test_ranker_dedupe_keeps_highest_engagement():
     assert len(out) == 2
     same = next(r for r in out if r.url.startswith("https://same"))
     assert same.engagement_raw == 500
-
 
 # ─── 4. cache ──────────────────────────────────────────────────────────────
 
@@ -140,7 +131,6 @@ def test_cache_roundtrip(tmp_path, monkeypatch):
     assert got[0].title == "t"
     assert got[0].engagement_raw == 7
 
-
 def test_cache_expires(tmp_path, monkeypatch):
     from research import cache
     from research.types import Result
@@ -152,12 +142,10 @@ def test_cache_expires(tmp_path, monkeypatch):
     got = cache.get("s", "q", 5, ttl_seconds=0)
     assert got is None
 
-
 def test_cache_miss_returns_none(tmp_path, monkeypatch):
     from research import cache
     monkeypatch.setattr(cache, "_db_path", lambda: tmp_path / "c.db")
     assert cache.get("s", "nope", 10) is None
-
 
 # ─── 5. Per-source happy paths (HTTP mocked) ───────────────────────────────
 
@@ -168,7 +156,6 @@ def _patch_http_get(monkeypatch, payload):
     monkeypatch.setattr("research.http.get", fake_get, raising=False)
     # Sources import get directly — patch the imported reference too
     return fake_get
-
 
 def test_hackernews_parses_algolia():
     from research.sources import hackernews
@@ -182,7 +169,6 @@ def test_hackernews_parses_algolia():
     assert len(rs) == 1
     assert rs[0].engagement_raw == 420 + 16   # 33 // 2
     assert "420 pts" in rs[0].engagement_label
-
 
 def test_semantic_scholar_parses_tldr():
     from research.sources import semantic_scholar as ss
@@ -205,7 +191,6 @@ def test_semantic_scholar_parses_tldr():
     assert "42 citations" in rs[0].engagement_label
     assert rs[0].snippet.startswith("The short summary")
 
-
 def test_reddit_builds_permalink_url():
     from research.sources import reddit as rd
     fixture = {"data": {"children": [{"data": {
@@ -222,7 +207,6 @@ def test_reddit_builds_permalink_url():
     assert len(rs) == 1
     assert rs[0].url.endswith("/r/programming/comments/abc/x/")
     assert "r/programming" in rs[0].title
-
 
 def test_github_splits_repos_and_issues():
     from research.sources import github as gh
@@ -262,7 +246,6 @@ def test_github_splits_repos_and_issues():
     assert any("foo/bar" in r.title for r in rs)
     assert any(r.title.startswith("[issue]") for r in rs)
 
-
 def test_arxiv_parses_atom_feed(monkeypatch):
     from research.sources import arxiv
     feed = b"""<?xml version="1.0" encoding="UTF-8"?>
@@ -293,7 +276,6 @@ def test_arxiv_parses_atom_feed(monkeypatch):
     assert rs[0].title == "A Paper"
     assert "Alice, Bob" in rs[0].author
 
-
 def test_google_news_parses_rss(monkeypatch):
     from research.sources import google_news
     rss = b"""<?xml version="1.0"?>
@@ -322,7 +304,6 @@ def test_google_news_parses_rss(monkeypatch):
     assert rs[0].title == "Story headline"
     assert rs[0].author == "Example News"
 
-
 def test_openalex_reconstructs_inverted_abstract():
     from research.sources import openalex
     # Abstract: "The quick brown fox"
@@ -339,7 +320,6 @@ def test_openalex_reconstructs_inverted_abstract():
     with mock.patch("research.sources.openalex.get", return_value=fixture):
         rs = openalex.search("x", 1)
     assert rs[0].snippet == "The quick brown fox"
-
 
 def test_stackoverflow_strips_html_in_body():
     from research.sources import stackoverflow as so
@@ -358,20 +338,17 @@ def test_stackoverflow_strips_html_in_body():
         rs = so.search("t", 1)
     assert rs[0].snippet == "Some code here."
 
-
 def test_tavily_skips_without_key(monkeypatch):
     from research.sources import SourceSkipped, tavily
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
     with pytest.raises(SourceSkipped):
         tavily.search("q", 5, {})
 
-
 def test_brave_skips_without_key(monkeypatch):
     from research.sources import SourceSkipped, brave
     monkeypatch.delenv("BRAVE_API_KEY", raising=False)
     with pytest.raises(SourceSkipped):
         brave.search("q", 5, {})
-
 
 def test_sec_edgar_builds_filing_url():
     from research.sources import sec_edgar
@@ -392,7 +369,6 @@ def test_sec_edgar_builds_filing_url():
     assert "APPLE INC" in rs[0].author
     assert "sec.gov" in rs[0].url
 
-
 def test_polymarket_filters_by_substring():
     from research.sources import polymarket
     # Gamma returns [] or market list
@@ -410,7 +386,6 @@ def test_polymarket_filters_by_substring():
     assert len(rs) == 1
     assert "NVIDIA" in rs[0].title
     assert "Yes 62%" in rs[0].snippet
-
 
 # ─── 6. aggregator ─────────────────────────────────────────────────────────
 
@@ -440,7 +415,6 @@ def test_aggregator_fans_out_and_returns_brief(monkeypatch):
     assert brief.results
     assert any(s.ok for s in brief.statuses)
 
-
 def test_aggregator_reports_source_failures(monkeypatch):
     from research import aggregator
     from research.sources import SOURCES
@@ -457,7 +431,6 @@ def test_aggregator_reports_source_failures(monkeypatch):
     assert not brief.results
     assert all(not s.ok for s in brief.statuses)
     assert any("scripted failure" in (s.error or "") for s in brief.statuses)
-
 
 def test_aggregator_caches_results(tmp_path, monkeypatch):
     from research import aggregator, cache
@@ -486,7 +459,6 @@ def test_aggregator_caches_results(tmp_path, monkeypatch):
     # Second call should have hit cache — no additional upstream call
     assert call_count["n"] == first_calls
 
-
 # ─── 7. synthesizer ────────────────────────────────────────────────────────
 
 def test_synthesizer_fallback_without_model():
@@ -503,7 +475,6 @@ def test_synthesizer_fallback_without_model():
     assert "## TL;DR" in out
     assert "hn" in out
 
-
 def test_synthesizer_citation_numbering():
     from research.synthesizer import render_citations
     from research.types import Brief, Result
@@ -516,7 +487,6 @@ def test_synthesizer_citation_numbering():
     cites = render_citations(brief)
     assert "[1] (arxiv) Paper A" in cites
     assert "[2] (hackernews) Post B — 100 pts" in cites
-
 
 # ─── 8. HTTP helper resilience ─────────────────────────────────────────────
 
@@ -547,7 +517,6 @@ def test_http_get_retries_on_5xx(monkeypatch):
     assert data == {"ok": True}
     assert calls["n"] == 2
 
-
 def test_http_get_fails_after_retries_exhausted(monkeypatch):
     from research import http
 
@@ -559,7 +528,6 @@ def test_http_get_fails_after_retries_exhausted(monkeypatch):
 
     with pytest.raises(TimeoutError):
         http.get("https://example.com/api", retries=2)
-
 
 # ─── 9. tools/research.py integration ──────────────────────────────────────
 
@@ -579,7 +547,6 @@ def test_research_tool_returns_brief_markdown(monkeypatch):
     assert "# Research Brief: hello" in out
     assert "## Citations" in out
     assert "## Cross-platform attention" in out
-
 
 # ─── 10. HuggingFace / alphaXiv / Zhihu / Twitter ──────────────────────────
 
@@ -610,13 +577,11 @@ def test_huggingface_filters_by_topic_substring():
     assert rs[0].title == "A Transformer Study"
     assert rs[0].engagement_raw == 49   # 42 upvotes + 7 comments
 
-
 def test_huggingface_empty_query_still_filters():
     from research.sources import huggingface_papers as hf
     with mock.patch("research.sources.huggingface_papers.get", return_value=[]):
         rs = hf.search("x", 5)
     assert rs == []
-
 
 def test_alphaxiv_wraps_arxiv_and_generates_discussion_urls(monkeypatch):
     from research.sources import alphaxiv
@@ -636,13 +601,11 @@ def test_alphaxiv_wraps_arxiv_and_generates_discussion_urls(monkeypatch):
     assert rs[1].url == "https://www.alphaxiv.org/abs/1706.03762"
     assert rs[0].extra["arxiv_url"] == "http://arxiv.org/abs/2401.12345v2"
 
-
 def test_zhihu_skips_without_cookie(monkeypatch):
     from research.sources import SourceSkipped, zhihu
     monkeypatch.delenv("ZHIHU_COOKIE", raising=False)
     with pytest.raises(SourceSkipped):
         zhihu.search("q", 5, {})
-
 
 def test_zhihu_parses_answer_type(monkeypatch):
     from research.sources import zhihu
@@ -669,7 +632,6 @@ def test_zhihu_parses_answer_type(monkeypatch):
     assert r.engagement_raw == 1234 + 28
     assert "[answer]" in r.title
 
-
 def test_zhihu_parses_article_type(monkeypatch):
     from research.sources import zhihu
     monkeypatch.setenv("ZHIHU_COOKIE", "cookie_val")
@@ -688,14 +650,12 @@ def test_zhihu_parses_article_type(monkeypatch):
     assert rs[0].url == "https://zhuanlan.zhihu.com/p/123"
     assert "[article]" in rs[0].title
 
-
 def test_twitter_skips_without_token(monkeypatch):
     from research.sources import SourceSkipped, twitter
     monkeypatch.delenv("X_API_BEARER_TOKEN", raising=False)
     monkeypatch.delenv("TWITTER_BEARER_TOKEN", raising=False)
     with pytest.raises(SourceSkipped):
         twitter.search("q", 5, {})
-
 
 def test_twitter_parses_v2_response(monkeypatch):
     from research.sources import twitter
@@ -720,7 +680,6 @@ def test_twitter_parses_v2_response(monkeypatch):
     assert r.author == "@alice"
     # engagement = 500 + 20*3 + 15 + 3*2 = 581
     assert r.engagement_raw == 581
-
 
 # ─── 11. Heat table renderer ───────────────────────────────────────────────
 
@@ -757,7 +716,6 @@ def test_format_heat_table_shows_counts_and_domains():
     assert "| twitter | 0" in table
     assert "failed" in table
 
-
 def test_format_heat_table_escapes_pipes_in_labels():
     from research.synthesizer import format_heat_table
     from research.types import Brief, Result, SourceStatus
@@ -770,7 +728,6 @@ def test_format_heat_table_escapes_pipes_in_labels():
     table = format_heat_table(brief)
     assert "a\\|b\\|c" in table  # pipes escaped so markdown table stays valid
 
-
 def test_heat_table_age_formatting():
     from research.synthesizer import _fmt_age
     assert _fmt_age(0.2) == "4h"
@@ -778,7 +735,6 @@ def test_heat_table_age_formatting():
     assert _fmt_age(27.0) == "27d"
     assert _fmt_age(60.0) == "2mo"
     assert _fmt_age(400.0) == "1.1y"
-
 
 # ─── 12. TimeRange parsing ─────────────────────────────────────────────────
 
@@ -789,13 +745,11 @@ def test_time_range_preset_tokens():
     assert tr.since is not None
     assert "last 1 months" in tr.label or "last 30" in tr.label
 
-
 def test_time_range_natural_language():
     from research.time_range import parse_range
     tr = parse_range("6months")
     assert tr.is_bounded
     assert tr.since is not None
-
 
 def test_time_range_all_means_unbounded():
     from research.time_range import parse_range
@@ -803,19 +757,16 @@ def test_time_range_all_means_unbounded():
     assert not tr.is_bounded
     assert tr.since is None and tr.until is None
 
-
 def test_time_range_bad_token_raises():
     from research.time_range import parse_range
     with pytest.raises(ValueError):
         parse_range("zorp")
-
 
 def test_time_range_iso_date_parsed():
     from research.time_range import parse_iso
     dt = parse_iso("2024-01-15")
     assert dt.year == 2024 and dt.month == 1 and dt.day == 15
     assert dt.tzinfo is not None
-
 
 def test_time_range_build_combines():
     from research.time_range import build
@@ -824,7 +775,6 @@ def test_time_range_build_combines():
     assert tr.since.year == 2024 and tr.since.month == 1
     assert tr.until.year == 2024 and tr.until.month == 6
     assert "since 2024-01-01" in tr.label
-
 
 # ─── 13. Sources honor time_range ──────────────────────────────────────────
 
@@ -851,7 +801,6 @@ def test_arxiv_uses_submittedDate_when_ranged():
     # URL-encoded as `submittedDate%3A`
     assert "submittedDate" in captured["url"]
 
-
 def test_hackernews_uses_numericFilters_when_ranged():
     from research.sources import hackernews
     from research.time_range import parse_range
@@ -864,7 +813,6 @@ def test_hackernews_uses_numericFilters_when_ranged():
         hackernews.search("test", 5, time_range=parse_range("7d"))
     assert "numericFilters" in captured["params"]
     assert "created_at_i>" in captured["params"]["numericFilters"]
-
 
 def test_github_adds_pushed_qualifier_when_ranged():
     from research.sources import github
@@ -881,7 +829,6 @@ def test_github_adds_pushed_qualifier_when_ranged():
     assert any("pushed:>" in q for q in qs)
     assert any("updated:>" in q for q in qs)
 
-
 def test_openalex_uses_filter_when_ranged():
     from research.sources import openalex
     from research.time_range import parse_range
@@ -894,7 +841,6 @@ def test_openalex_uses_filter_when_ranged():
         openalex.search("x", 3, time_range=parse_range("1y"))
     assert "filter" in captured["params"]
     assert "from_publication_date:" in captured["params"]["filter"]
-
 
 def test_reddit_maps_range_to_t():
     from research.sources import reddit
@@ -910,7 +856,6 @@ def test_reddit_maps_range_to_t():
         assert captured["params"]["t"] == "week"
         reddit.search("x", 3, time_range=parse_range("1y"))
         assert captured["params"]["t"] == "year"
-
 
 # ─── 14. Reports save/load ─────────────────────────────────────────────────
 
@@ -942,7 +887,6 @@ def test_report_save_and_read(tmp_path, monkeypatch):
     got = _rep.read_markdown(report_id=listed[0]["id"])
     assert "saved content here" in got
 
-
 def test_report_save_as_copies_file(tmp_path, monkeypatch):
     from research import reports as _rep
     from research.types import Brief
@@ -955,7 +899,6 @@ def test_report_save_as_copies_file(tmp_path, monkeypatch):
     assert target.exists()
     assert target.read_text() == "# body"
 
-
 def test_report_delete(tmp_path, monkeypatch):
     from research import reports as _rep
     from research.types import Brief
@@ -966,7 +909,6 @@ def test_report_delete(tmp_path, monkeypatch):
     assert len(_rep.list_reports()) == 1
     assert _rep.delete(1)
     assert len(_rep.list_reports()) == 0
-
 
 # ─── 15. Publication trend / sparkline ─────────────────────────────────────
 
@@ -985,7 +927,6 @@ def test_publication_trend_bars():
     assert "Publication trend" in out
     assert "```" in out
 
-
 def test_publication_sparkline_uses_unicode_bars():
     from datetime import datetime, timezone, timedelta
     from research.synthesizer import format_publication_sparkline
@@ -1002,7 +943,6 @@ def test_publication_sparkline_uses_unicode_bars():
     # Should contain at least one of the spark block characters
     assert any(c in spark for c in "▁▂▃▄▅▆▇█")
 
-
 # ─── 16. Citations helper ──────────────────────────────────────────────────
 
 def test_citation_extract_ss_id():
@@ -1014,7 +954,6 @@ def test_citation_extract_ss_id():
     assert _extract_ss_id(r2) == "arXiv:2401.12345"
     r3 = Result(source="semantic_scholar", title="T", url="https://doi.org/10.1/x")
     assert _extract_ss_id(r3) == "DOI:10.1/x"
-
 
 def test_notable_citers_rendering():
     from research.citations import NotableCiter, render_notable_section
@@ -1028,7 +967,6 @@ def test_notable_citers_rendering():
     assert "Yoshua Bengio" in out
     assert "450,000" in out
     assert "230" in out
-
 
 # ─── 17. Google Scholar graceful skip ──────────────────────────────────────
 
@@ -1049,7 +987,6 @@ def test_google_scholar_skips_without_scholarly(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
     with pytest.raises(SourceSkipped):
         google_scholar.search("anything", 5)
-
 
 # ─── 18. Aggregator passes time_range through ──────────────────────────────
 
@@ -1089,7 +1026,6 @@ def test_bilibili_parses_video_group():
     # HTML <em> should be stripped from the title
     assert "<em" not in r.title
 
-
 def test_bilibili_skips_non_ok_code():
     from research.sources import bilibili
     fixture = {"code": -401, "message": "anti-bot", "data": None}
@@ -1097,13 +1033,11 @@ def test_bilibili_skips_non_ok_code():
         rs = bilibili.search("x", 5)
     assert rs == []
 
-
 def test_weibo_skips_without_cookie(monkeypatch):
     from research.sources import SourceSkipped, weibo
     monkeypatch.delenv("WEIBO_COOKIE", raising=False)
     with pytest.raises(SourceSkipped):
         weibo.search("x", 5, {})
-
 
 def test_weibo_parses_mblog(monkeypatch):
     from research.sources import weibo
@@ -1133,7 +1067,6 @@ def test_weibo_parses_mblog(monkeypatch):
     assert r.engagement_raw == 3829
     assert "3,500 赞" in r.engagement_label
 
-
 def test_weibo_date_parser_relative():
     from research.sources.weibo import _parse_weibo_date
     import re
@@ -1143,14 +1076,12 @@ def test_weibo_date_parser_relative():
                     _parse_weibo_date("2小时前"))
     assert _parse_weibo_date("") == ""
 
-
 def test_xiaohongshu_skips_without_cookie(monkeypatch):
     from research.sources import SourceSkipped, xiaohongshu
     monkeypatch.delenv("XHS_COOKIE", raising=False)
     monkeypatch.delenv("XIAOHONGSHU_COOKIE", raising=False)
     with pytest.raises(SourceSkipped):
         xiaohongshu.search("x", 5, {})
-
 
 def test_xiaohongshu_parses_localized_counts(monkeypatch):
     from research.sources import xiaohongshu
@@ -1161,7 +1092,6 @@ def test_xiaohongshu_parses_localized_counts(monkeypatch):
     assert _parse_count("8.5k") == 8500
     assert _parse_count(None) == 0
     assert _parse_count("") == 0
-
 
 def test_xiaohongshu_parses_success_response(monkeypatch):
     from research.sources import xiaohongshu
@@ -1194,7 +1124,6 @@ def test_xiaohongshu_parses_success_response(monkeypatch):
     assert r.engagement_raw == 15810
     assert "15,000 赞" in r.engagement_label
 
-
 # ─── 20. Monitor research:<topic> fetcher ──────────────────────────────────
 
 def test_monitor_fetcher_dispatches_research_prefix(monkeypatch, tmp_path):
@@ -1217,7 +1146,6 @@ def test_monitor_fetcher_dispatches_research_prefix(monkeypatch, tmp_path):
     assert data["items"]
     assert "heat" in data["items"][0]["title"].lower() or "Cross-platform" in data["items"][0]["title"]
 
-
 def test_monitor_fetcher_research_with_range_prefix(monkeypatch, tmp_path):
     from monitor import fetchers
     from research import cache as _cache
@@ -1239,7 +1167,6 @@ def test_monitor_fetcher_research_with_range_prefix(monkeypatch, tmp_path):
     assert data["topic"] == "research:30d:LLM benchmarks"
     bounded = [r for r in captured.get("ranges", []) if r and r.is_bounded]
     assert bounded, "Expected a bounded TimeRange from research:30d: prefix"
-
 
 # ─── 21. Entity extraction ─────────────────────────────────────────────────
 
@@ -1267,7 +1194,6 @@ def test_entity_extraction_picks_up_known_models():
     assert "HumanEval" in bench_names
     assert "SWE-bench".upper() in [b.upper() for b in bench_names]
 
-
 def test_entity_extraction_orgs():
     from research.entities import extract
     from research.types import Result
@@ -1286,7 +1212,6 @@ def test_entity_extraction_orgs():
     assert any("DeepMind" in n for n in org_names)
     assert any(n.startswith("Hugging") or n == "HuggingFace" for n in org_names)
 
-
 def test_entity_extraction_dedupes_within_single_result():
     """A result mentioning the same model 10 times should count as 1."""
     from research.entities import extract
@@ -1299,7 +1224,6 @@ def test_entity_extraction_dedupes_within_single_result():
     # Find whatever canonical form GPT-5 normalizes to
     gpt5_key = next(k for k in counts if k.startswith("GPT") and "5" in k)
     assert counts[gpt5_key] == 1
-
 
 def test_entity_extraction_people_from_author():
     from research.entities import extract
@@ -1314,7 +1238,6 @@ def test_entity_extraction_people_from_author():
     people = dict(e.people)
     # Alice Smith appears in 2 papers → count 2
     assert people.get("Alice Smith") == 2
-
 
 def test_entity_table_renders_markdown():
     from research.entities import Entities, render_entities_table
@@ -1331,18 +1254,15 @@ def test_entity_table_renders_markdown():
     assert "OpenAI ×5" in out
     assert "Ilya Sutskever" in out
 
-
 def test_entity_table_empty_returns_empty_string():
     from research.entities import Entities, render_entities_table
     assert render_entities_table(Entities()) == ""
-
 
 # ─── 22. Multi-query expansion ─────────────────────────────────────────────
 
 def test_expand_subqueries_no_model_returns_empty():
     from research.aggregator import _expand_subqueries
     assert _expand_subqueries("topic", 4, config={}) == []
-
 
 def test_expand_subqueries_parses_model_lines(monkeypatch):
     from research import aggregator
@@ -1387,7 +1307,6 @@ def test_expand_subqueries_parses_model_lines(monkeypatch):
     assert len(out) == 4
     assert all(5 < len(ln) < 150 for ln in out)
 
-
 def test_aggregator_expand_produces_multi_query_cache_keys(monkeypatch, tmp_path):
     from research import aggregator, cache as _cache
     from research.sources import SOURCES
@@ -1420,7 +1339,6 @@ def test_aggregator_expand_produces_multi_query_cache_keys(monkeypatch, tmp_path
     assert "subq B" in seen_queries
     assert "subq C" in seen_queries
 
-
 # ─── 23. Compare mode ──────────────────────────────────────────────────────
 
 def test_compare_runs_two_queries(monkeypatch, tmp_path):
@@ -1445,7 +1363,6 @@ def test_compare_runs_two_queries(monkeypatch, tmp_path):
     # Without a model config → fallback comparison (empty) is used
     assert result.get("comparison") == ""
 
-
 def test_compare_three_topics(monkeypatch, tmp_path):
     from research import aggregator, cache as _cache
     from research.sources import SOURCES
@@ -1465,7 +1382,6 @@ def test_compare_three_topics(monkeypatch, tmp_path):
     assert result["topics"] == ["A", "B", "C"]
     assert len(result["briefs"]) == 3
 
-
 def test_render_compare_brief_has_all_topics_cited():
     from research.synthesizer import render_compare_brief
     from research.types import Brief, Result, SourceStatus
@@ -1484,7 +1400,6 @@ def test_render_compare_brief_has_all_topics_cited():
     assert "**A**" in md and "**B**" in md
     assert "[A1]" in md
     assert "[B1]" in md
-
 
 def test_aggregator_threads_time_range_into_sources(monkeypatch):
     from research import aggregator

@@ -20,7 +20,6 @@ from cc_kernel.store import (
     RECOVERY_SUSPEND,
 )
 
-
 def _seed_stale(db_path):
     """Open the DB, leave one RUNNING and one WAITING agent behind, close."""
     s = KernelStore.open(db_path)
@@ -40,7 +39,6 @@ def _seed_stale(db_path):
         return a1.pid, a2.pid, a3.pid, a4.pid
     finally:
         s.close()
-
 
 def test_suspend_default_marks_running_and_waiting(tmp_path):
     db = tmp_path / "kernel.db"
@@ -63,7 +61,6 @@ def test_suspend_default_marks_running_and_waiting(tmp_path):
     finally:
         s2.close()
 
-
 def test_mark_dead_policy_terminates(tmp_path):
     db = tmp_path / "kernel.db"
     p1, p2, p3, p4 = _seed_stale(db)
@@ -81,7 +78,6 @@ def test_mark_dead_policy_terminates(tmp_path):
         assert s2.get(p4).state == AgentState.DEAD
     finally:
         s2.close()
-
 
 def test_recover_emits_recovered_event_per_row(tmp_path):
     db = tmp_path / "kernel.db"
@@ -101,7 +97,6 @@ def test_recover_emits_recovered_event_per_row(tmp_path):
     finally:
         s2.close()
 
-
 def test_recover_idempotent(tmp_path):
     db = tmp_path / "kernel.db"
     _seed_stale(db)
@@ -116,7 +111,6 @@ def test_recover_idempotent(tmp_path):
     finally:
         s.close()
 
-
 def test_recover_unknown_policy_raises(tmp_path):
     s = KernelStore.open(tmp_path / "kernel.db")
     try:
@@ -124,7 +118,6 @@ def test_recover_unknown_policy_raises(tmp_path):
             s.recover(policy="bogus")
     finally:
         s.close()
-
 
 def test_recover_with_no_stale_rows_is_noop(tmp_path):
     s = KernelStore.open(tmp_path / "kernel.db")

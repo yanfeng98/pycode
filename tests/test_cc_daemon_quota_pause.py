@@ -26,9 +26,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
-
 
 # Runner that pauses, waits for `resume`, sends `resumed`, then waits for stop.
 _PAUSE_RESUME_RUNNER = textwrap.dedent("""
@@ -49,7 +47,6 @@ _PAUSE_RESUME_RUNNER = textwrap.dedent("""
         if json.loads(raw).get("op") == "stop":
             sys.exit(0)
 """).strip()
-
 
 class TestQuotaPauseIPC(unittest.TestCase):
 
@@ -178,7 +175,6 @@ class TestQuotaPauseIPC(unittest.TestCase):
     def test_resume_unknown_runner_returns_false(self):
         from cc_daemon import runner_supervisor as rs
         self.assertFalse(rs.resume("no-such-runner"))
-
 
 if __name__ == "__main__":
     unittest.main()

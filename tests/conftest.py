@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import pytest
 
-
 @pytest.fixture(autouse=True)
 def _isolate_lab_output_dir(tmp_path, monkeypatch):
     """Redirect DEFAULT_OUTPUT_DIR to a tmp dir for the duration of the

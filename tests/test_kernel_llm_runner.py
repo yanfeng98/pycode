@@ -25,18 +25,9 @@ from cc_kernel.runner.llm import (
     ProviderUnavailable,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="LLM runner spawns POSIX subprocesses",
-)
-
-
 LLM_RUNNER_ARGV = [sys.executable, "-m", "cc_kernel.runner.llm"]
 
-
 # ── Dataclass round-trip ────────────────────────────────────────────────
-
 
 def test_llm_request_minimum():
     r = LlmRequest(model="m", user="hi")
@@ -44,7 +35,6 @@ def test_llm_request_minimum():
     assert r.user == "hi"
     assert r.system == ""
     assert r.max_tokens == 1024
-
 
 def test_llm_request_to_from_dict():
     r = LlmRequest(model="m", user="hi", system="be brief",
@@ -54,31 +44,25 @@ def test_llm_request_to_from_dict():
     r2 = LlmRequest.from_dict(d)
     assert r == r2
 
-
 def test_llm_request_rejects_empty_user():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest(model="m", user="")
-
 
 def test_llm_request_rejects_bad_temperature():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest(model="m", user="x", temperature=5.0)
 
-
 def test_llm_request_rejects_zero_max_tokens():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest(model="m", user="x", max_tokens=0)
-
 
 def test_llm_request_from_dict_missing_model():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest.from_dict({"user": "hi"})
 
-
 def test_llm_request_from_dict_missing_user():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest.from_dict({"model": "m"})
-
 
 def test_llm_response_round_trip():
     r = LlmResponse(text="hi", tokens_input=5, tokens_output=2,
@@ -89,15 +73,12 @@ def test_llm_response_round_trip():
     assert r == r2
     assert r.tokens_total == 7
 
-
 def test_llm_response_rejects_negative_tokens():
     with pytest.raises(ProviderInvalidRequest):
         LlmResponse(text="x", tokens_input=-1, tokens_output=0,
                      cost_micro=0, model="m")
 
-
 # ── MockProvider ────────────────────────────────────────────────────────
-
 
 def test_mock_provider_returns_fixed_response():
     resp = LlmResponse(text="four", tokens_input=5, tokens_output=1,
@@ -107,7 +88,6 @@ def test_mock_provider_returns_fixed_response():
     assert p(LlmRequest(model="m", user="anything")) is resp
     assert len(p.calls) == 2
 
-
 def test_mock_provider_records_calls():
     p = MockProvider(LlmResponse(text="x", tokens_input=1,
                                    tokens_output=1, cost_micro=10,
@@ -115,7 +95,6 @@ def test_mock_provider_records_calls():
     p(LlmRequest(model="m", user="hello"))
     p(LlmRequest(model="m", user="goodbye"))
     assert [c.user for c in p.calls] == ["hello", "goodbye"]
-
 
 def test_mock_provider_from_env(monkeypatch):
     payload = {
@@ -127,18 +106,15 @@ def test_mock_provider_from_env(monkeypatch):
     out = p(LlmRequest(model="m", user="x"))
     assert out.text == "from env"
 
-
 def test_mock_provider_from_env_unset_raises(monkeypatch):
     monkeypatch.delenv(MockProvider.ENV_RESPONSE, raising=False)
     with pytest.raises(ProviderUnavailable):
         MockProvider.from_env()
 
-
 def test_mock_provider_from_env_invalid_json_raises(monkeypatch):
     monkeypatch.setenv(MockProvider.ENV_RESPONSE, "not-json{{")
     with pytest.raises(ProviderUnavailable):
         MockProvider.from_env()
-
 
 def test_mock_provider_echo():
     p = MockProvider.echo()
@@ -147,9 +123,7 @@ def test_mock_provider_echo():
     assert out.model == "m"
     assert out.tokens_total >= 1
 
-
 # ── Subprocess: __main__ entry ──────────────────────────────────────────
-
 
 def _run_llm_runner(*, init_payload: dict, env: dict) -> dict:
     """Spawn `python -m cc_kernel.runner.llm`, send init, collect
@@ -180,14 +154,12 @@ def _run_llm_runner(*, init_payload: dict, env: dict) -> dict:
         "stderr": proc.stderr.read().decode("utf-8", "replace"),
     }
 
-
 def _mock_env(response: dict) -> dict:
     return {
         **os.environ,
         "CC_LLM_PROVIDER":           "mock",
         "CC_LLM_MOCK_RESPONSE_JSON": json.dumps(response),
     }
-
 
 def test_subprocess_happy_path():
     result = _run_llm_runner(
@@ -213,7 +185,6 @@ def test_subprocess_happy_path():
     exit_msg = [l for l in result["lines"] if l["op"] == "exit"][0]
     assert exit_msg["exit_kind"] == "completed"
 
-
 def test_subprocess_no_provider_set_exits_2(monkeypatch):
     env = {**os.environ}
     env.pop("CC_LLM_PROVIDER", None)
@@ -224,7 +195,6 @@ def test_subprocess_no_provider_set_exits_2(monkeypatch):
     assert result["exit_code"] == 2
     assert "CC_LLM_PROVIDER" in result["stderr"]
 
-
 def test_subprocess_unknown_provider_exits_2():
     env = {**os.environ, "CC_LLM_PROVIDER": "nonsense"}
     result = _run_llm_runner(
@@ -234,7 +204,6 @@ def test_subprocess_unknown_provider_exits_2():
     assert result["exit_code"] == 2
     assert "unknown CC_LLM_PROVIDER" in result["stderr"]
 
-
 def test_subprocess_mock_without_response_json_exits_2(monkeypatch):
     env = {**os.environ, "CC_LLM_PROVIDER": "mock"}
     env.pop("CC_LLM_MOCK_RESPONSE_JSON", None)
@@ -243,7 +212,6 @@ def test_subprocess_mock_without_response_json_exits_2(monkeypatch):
         env=env,
     )
     assert result["exit_code"] == 2
-
 
 def test_subprocess_invalid_init_payload_exits_failed():
     """Missing 'user' field → exit_kind='failed'."""
@@ -261,7 +229,6 @@ def test_subprocess_invalid_init_payload_exits_failed():
     assert len(exit_msgs) == 1
     assert exit_msgs[0]["exit_kind"] == "failed"
 
-
 def test_subprocess_zero_charges_emit_no_charge_messages():
     """When tokens=0 and cost=0, no charge messages should be emitted
     (avoids polluting the ledger with zero-amount charges)."""
@@ -278,9 +245,7 @@ def test_subprocess_zero_charges_emit_no_charge_messages():
     charges = [l for l in result["lines"] if l["op"] == "charge"]
     assert charges == []  # no zero-amount charges
 
-
 # ── End-to-end via supervisor ───────────────────────────────────────────
-
 
 @pytest.fixture
 def stack(tmp_path):
@@ -293,7 +258,6 @@ def stack(tmp_path):
         except Exception:
             pass
     k.close()
-
 
 def test_supervisor_runs_llm_runner_with_mock(stack):
     """The full kernel chain: spawn → handshake → mock provider →
@@ -330,7 +294,6 @@ def test_supervisor_runs_llm_runner_with_mock(stack):
     # wall_s also charged.
     assert by_dim["wall_s"]       >= 0
 
-
 def test_supervisor_no_double_charge(stack):
     """RFC 0019 §4: charge messages drive the actual ledger update;
     iteration_done's auto-charge is zeroed in the LLM runner. Verify
@@ -356,9 +319,7 @@ def test_supervisor_no_double_charge(stack):
     assert info.ledger_charged["tokens"] == 150
     assert info.ledger_charged["cost_micro"] == 1500
 
-
 # ── End-to-end via WorkerLoop ───────────────────────────────────────────
-
 
 def test_worker_loop_runs_llm_job(stack):
     """Enqueue an LLM work item; worker spawns; ledger gets charged
@@ -412,9 +373,7 @@ def test_worker_loop_runs_llm_job(stack):
     # factory to WorkerLoop.
     assert e.exit_kind in ("failed", "completed")
 
-
 # ── AnthropicProvider — defensive import ─────────────────────────────
-
 
 def test_anthropic_provider_lazy_imports():
     """Importing the module must NOT trigger the SDK import."""
@@ -422,14 +381,12 @@ def test_anthropic_provider_lazy_imports():
     # Class is importable without the SDK.
     assert hasattr(ap_mod, "AnthropicProvider")
 
-
 def test_anthropic_provider_construction_doesnt_import_sdk():
     """Instantiation alone doesn't import anthropic; the call does."""
     from cc_kernel.runner.llm.anthropic_provider import AnthropicProvider
     p = AnthropicProvider(api_key="dummy")
     # Client still None — not constructed yet.
     assert p._client is None
-
 
 def test_anthropic_provider_no_api_key_raises():
     from cc_kernel.runner.llm.anthropic_provider import AnthropicProvider

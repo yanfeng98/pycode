@@ -42,15 +42,12 @@ from cc_kernel.tools.registry import (
     dispatch_tool_call,
 )
 
-
 # ── Opt-in invariant ─────────────────────────────────────────────────
-
 
 def test_fetch_not_in_builtin():
     r = ToolRegistry()
     register_builtin_tools(r)
     assert "Fetch" not in r.list()
-
 
 def test_register_fetch_adds_it():
     r = ToolRegistry()
@@ -59,9 +56,7 @@ def test_register_fetch_adds_it():
     assert name == "Fetch"
     assert "Fetch" in r.list()
 
-
 # ── _is_private_ip ──────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("ip,expected", [
     ("127.0.0.1",         True),
@@ -87,23 +82,18 @@ def test_register_fetch_adds_it():
 def test_is_private_ip_classification(ip, expected):
     assert _is_private_ip(ip) is expected
 
-
 def test_is_private_ip_unparseable_is_private():
     """Defensively classify unparseable IPs as private."""
     assert _is_private_ip("not-an-ip") is True
     assert _is_private_ip("") is True
 
-
 # ── URL validation ──────────────────────────────────────────────────
-
 
 def test_url_valid_https():
     assert _validate_url("https://example.com/x") == "https://example.com/x"
 
-
 def test_url_valid_http():
     assert _validate_url("http://example.com/") == "http://example.com/"
-
 
 @pytest.mark.parametrize("bad", [
     "file:///etc/passwd",
@@ -116,24 +106,19 @@ def test_url_rejects_non_http_scheme(bad):
     with pytest.raises(ToolInvalidArgs):
         _validate_url(bad)
 
-
 def test_url_rejects_empty():
     with pytest.raises(ToolInvalidArgs):
         _validate_url("")
-
 
 def test_url_rejects_no_host():
     with pytest.raises(ToolInvalidArgs):
         _validate_url("https://")
 
-
 def test_url_rejects_non_string():
     with pytest.raises(ToolInvalidArgs):
         _validate_url(123)
 
-
 # ── Method validation ───────────────────────────────────────────────
-
 
 def test_method_get_post_head():
     assert _validate_method("GET")  == "GET"
@@ -141,76 +126,60 @@ def test_method_get_post_head():
     assert _validate_method("POST") == "POST"
     assert _validate_method("HEAD") == "HEAD"
 
-
 @pytest.mark.parametrize("bad", ["PUT", "DELETE", "PATCH", "OPTIONS",
                                     "CONNECT", "TRACE"])
 def test_method_rejects_others(bad):
     with pytest.raises(ToolInvalidArgs):
         _validate_method(bad)
 
-
 def test_method_rejects_non_string():
     with pytest.raises(ToolInvalidArgs):
         _validate_method(123)
 
-
 # ── Numeric validation ──────────────────────────────────────────────
-
 
 def test_max_bytes_default():
     assert _validate_max_bytes(None) == DEFAULT_MAX_BYTES
 
-
 def test_max_bytes_within_range():
     assert _validate_max_bytes(2048) == 2048
-
 
 def test_max_bytes_too_low():
     with pytest.raises(ToolInvalidArgs):
         _validate_max_bytes(100)
 
-
 def test_max_bytes_too_high():
     with pytest.raises(ToolInvalidArgs):
         _validate_max_bytes(100 * 1024 * 1024)
 
-
 def test_timeout_default():
     assert _validate_timeout(None) == DEFAULT_TIMEOUT_S
-
 
 def test_timeout_zero_rejected():
     with pytest.raises(ToolInvalidArgs):
         _validate_timeout(0)
 
-
 def test_timeout_too_high():
     with pytest.raises(ToolInvalidArgs):
         _validate_timeout(1000)
-
 
 def test_max_redirects_default():
     from cc_kernel.tools.fetch_tool import DEFAULT_MAX_REDIRECTS
     assert _validate_max_redirects(None) == DEFAULT_MAX_REDIRECTS
 
-
 def test_max_redirects_zero_ok():
     assert _validate_max_redirects(0) == 0
-
 
 def test_max_redirects_too_high():
     with pytest.raises(ToolInvalidArgs):
         _validate_max_redirects(100)
 
-
 # ── Local HTTP server fixture ───────────────────────────────────────
-
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 class _CannedHandler(http.server.BaseHTTPRequestHandler):
     """Echo + redirect + various status responses."""
@@ -294,7 +263,6 @@ class _CannedHandler(http.server.BaseHTTPRequestHandler):
         if body:
             self.wfile.write(data)
 
-
 @pytest.fixture
 def http_server():
     """Start a local HTTP server. Yields (port, base_url)."""
@@ -307,9 +275,7 @@ def http_server():
     server.server_close()
     t.join(timeout=2)
 
-
 # ── Capability + IP gates ───────────────────────────────────────────
-
 
 class _AllowAllKernel:
     """Minimal kernel-like stub: cap.check_net always True."""
@@ -319,7 +285,6 @@ class _AllowAllKernel:
         def check_fs(self, pid, path, mode): return True
     cap = _Cap()
 
-
 class _DenyKernel:
     class _Cap:
         def check_net(self, pid, host): return False
@@ -327,13 +292,11 @@ class _DenyKernel:
         def check_fs(self, pid, path, mode): return True
     cap = _Cap()
 
-
 def test_handler_capability_denied():
     """cap.check_net=False → ToolNetDenied."""
     ctx = ToolContext(pid=1, kernel=_DenyKernel())
     with pytest.raises(ToolNetDenied):
         fetch_handler({"url": "https://example.com/"}, ctx)
-
 
 def test_handler_localhost_blocked(monkeypatch):
     """Even with cap allow, resolving to 127.0.0.1 → ToolNetDenied."""
@@ -343,7 +306,6 @@ def test_handler_localhost_blocked(monkeypatch):
         fetch_handler({"url": "https://attacker.example/"}, ctx)
     assert "127.0.0.1" in str(e.value)
 
-
 def test_handler_metadata_endpoint_blocked(monkeypatch):
     """169.254.169.254 (AWS/GCP metadata) blocked."""
     monkeypatch.setattr(socket, "gethostbyname",
@@ -352,14 +314,12 @@ def test_handler_metadata_endpoint_blocked(monkeypatch):
     with pytest.raises(ToolNetDenied):
         fetch_handler({"url": "https://attacker.example/"}, ctx)
 
-
 def test_handler_private_ip_blocked(monkeypatch):
     """10.0.0.1 blocked."""
     monkeypatch.setattr(socket, "gethostbyname", lambda h: "10.0.0.1")
     ctx = ToolContext(pid=1, kernel=_AllowAllKernel())
     with pytest.raises(ToolNetDenied):
         fetch_handler({"url": "https://attacker.example/"}, ctx)
-
 
 def test_handler_dns_failure_raises(monkeypatch):
     def fail_dns(h):
@@ -369,9 +329,7 @@ def test_handler_dns_failure_raises(monkeypatch):
     with pytest.raises(ToolFailed):
         fetch_handler({"url": "https://nonexistent.example/"}, ctx)
 
-
 # ── End-to-end via local server ─────────────────────────────────────
-
 
 class _OverrideDnsKernel:
     """Kernel stub that allows the real localhost server. Used with
@@ -382,7 +340,6 @@ class _OverrideDnsKernel:
         def check_tool(self, pid, tool): return True
         def check_fs(self, pid, path, mode): return True
     cap = _Cap()
-
 
 @pytest.fixture
 def kernel_for_local(monkeypatch):
@@ -395,7 +352,6 @@ def kernel_for_local(monkeypatch):
     )
     return _OverrideDnsKernel()
 
-
 def test_e2e_get(http_server, kernel_for_local):
     port, base = http_server
     ctx = ToolContext(pid=1, kernel=kernel_for_local)
@@ -406,7 +362,6 @@ def test_e2e_get(http_server, kernel_for_local):
     assert "x-test-marker" in result["headers"]
     assert result["truncated"] is False
 
-
 def test_e2e_head(http_server, kernel_for_local):
     port, base = http_server
     ctx = ToolContext(pid=1, kernel=kernel_for_local)
@@ -415,7 +370,6 @@ def test_e2e_head(http_server, kernel_for_local):
     )
     assert result["status"] == 200
     assert result["body"] == ""           # HEAD has no body
-
 
 def test_e2e_post_with_body(http_server, kernel_for_local):
     port, base = http_server
@@ -427,7 +381,6 @@ def test_e2e_post_with_body(http_server, kernel_for_local):
     }, ctx)
     assert result["status"] == 200
     assert result["body"] == "ping"
-
 
 def test_e2e_size_cap_truncates(http_server, kernel_for_local):
     """/huge returns 1MB; cap at 1024 → truncated."""
@@ -442,7 +395,6 @@ def test_e2e_size_cap_truncates(http_server, kernel_for_local):
     # Body decoded as base64 since ‘X’ * N is text but with bytes it
     # might still decode UTF-8; the truncation is the assertion.
 
-
 def test_e2e_redirect_disabled_returns_30x(http_server, kernel_for_local):
     """follow_redirects=False → caller sees the 302 directly."""
     port, base = http_server
@@ -450,7 +402,6 @@ def test_e2e_redirect_disabled_returns_30x(http_server, kernel_for_local):
     result = fetch_handler({"url": f"{base}/redirect/1"}, ctx)
     assert result["status"] == 302
     assert result["redirects"] == []
-
 
 def test_e2e_redirect_followed(http_server, kernel_for_local):
     """follow_redirects=True with budget → final 200."""
@@ -462,7 +413,6 @@ def test_e2e_redirect_followed(http_server, kernel_for_local):
     }, ctx)
     assert result["status"] == 200
     assert len(result["redirects"]) == 2
-
 
 def test_e2e_redirect_to_private_blocked(http_server, monkeypatch):
     """Redirect to 127.0.0.1 → ToolNetDenied (DNS rebinding defence
@@ -500,7 +450,6 @@ def test_e2e_redirect_to_private_blocked(http_server, monkeypatch):
             "follow_redirects": True,
         }, ctx)
 
-
 def test_e2e_redirect_strips_auth(http_server, kernel_for_local):
     """Authorization header sent on first hop, redirected to
     /echo-headers — second hop's response shouldn't include it."""
@@ -521,7 +470,6 @@ def test_e2e_redirect_strips_auth(http_server, kernel_for_local):
     }, ctx)
     # The server echoed all headers including Authorization.
     assert "secret-shouldnt-leak" in result["body"]
-
 
 def test_strip_sensitive_headers_unit(http_server, monkeypatch):
     """Direct unit test on the strip logic: when the handler
@@ -581,9 +529,7 @@ def test_strip_sensitive_headers_unit(http_server, monkeypatch):
     # Custom header kept.
     assert received_headers[1].get("X-Custom") == "ok"
 
-
 # ── Headers validation ──────────────────────────────────────────────
-
 
 def test_headers_reject_reserved():
     ctx = ToolContext(pid=1, kernel=_AllowAllKernel())
@@ -593,7 +539,6 @@ def test_headers_reject_reserved():
             "headers": {"Host": "spoofed"},
         }, ctx)
 
-
 def test_headers_reject_crlf():
     ctx = ToolContext(pid=1, kernel=_AllowAllKernel())
     with pytest.raises(ToolInvalidArgs):
@@ -601,7 +546,6 @@ def test_headers_reject_crlf():
             "url":     "https://example.com/",
             "headers": {"X-Custom": "value\r\nHost: bad"},
         }, ctx)
-
 
 def test_headers_reject_non_string():
     ctx = ToolContext(pid=1, kernel=_AllowAllKernel())
@@ -611,9 +555,7 @@ def test_headers_reject_non_string():
             "headers": {"X-Custom": 123},
         }, ctx)
 
-
 # ── Body validation ─────────────────────────────────────────────────
-
 
 def test_body_only_with_post():
     ctx = ToolContext(pid=1, kernel=_AllowAllKernel())
@@ -623,7 +565,6 @@ def test_body_only_with_post():
             "method": "GET",
             "body":   "data",
         }, ctx)
-
 
 def test_body_b64_envelope_decoded(http_server, kernel_for_local):
     """body={'_b64': '...'} sends base64-decoded bytes."""
@@ -642,7 +583,6 @@ def test_body_b64_envelope_decoded(http_server, kernel_for_local):
     decoded_back = _b64.b64decode(result["body"])
     assert decoded_back == raw
 
-
 def test_body_b64_invalid():
     ctx = ToolContext(pid=1, kernel=_AllowAllKernel())
     with pytest.raises(ToolInvalidArgs):
@@ -652,9 +592,7 @@ def test_body_b64_invalid():
             "body":   {"_b64": "not-valid-base64!!!"},
         }, ctx)
 
-
 # ── Dispatch via supervisor (smoke) ─────────────────────────────────
-
 
 def test_dispatch_via_supervisor(tmp_path, http_server, monkeypatch):
     """The full kernel + dispatch path with a granted Fetch."""
@@ -680,7 +618,6 @@ def test_dispatch_via_supervisor(tmp_path, http_server, monkeypatch):
     finally:
         k.close()
 
-
 def test_dispatch_capability_denied(tmp_path):
     """Without Fetch in tool_grants → permission_denied."""
     k = Kernel.open(tmp_path / "kernel.db")
@@ -698,7 +635,6 @@ def test_dispatch_capability_denied(tmp_path):
         assert resp["error"] == "permission_denied"
     finally:
         k.close()
-
 
 def test_dispatch_net_denied(tmp_path):
     """net_grants doesn't cover host → net_denied via handler."""

@@ -20,7 +20,6 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 def _isolate_schema():
     """Point the schema at a fresh tmp DB. Returns (tmpdir, db_path)."""
     from cc_daemon import schema
@@ -33,7 +32,6 @@ def _isolate_schema():
     schema.init_schema(db)
     return tmp, db
 
-
 def _restore_schema():
     from cc_daemon import schema
     if hasattr(schema._local, "conn") and schema._local.conn is not None:
@@ -41,9 +39,7 @@ def _restore_schema():
         schema._local.conn = None
     schema._db_path = None
 
-
 # ── proactive_state: persistence ───────────────────────────────────────────
-
 
 class TestProactiveStateRoundTrip(unittest.TestCase):
     def setUp(self):
@@ -110,9 +106,7 @@ class TestProactiveStateRoundTrip(unittest.TestCase):
         self.assertFalse(enabled)
         self.assertEqual(iv, proactive_state.DEFAULT_INTERVAL_S)
 
-
 # ── proactive_scheduler: thread behaviour ──────────────────────────────────
-
 
 class TestProactiveScheduler(unittest.TestCase):
     def setUp(self):
@@ -234,9 +228,7 @@ class TestProactiveScheduler(unittest.TestCase):
         finally:
             ps.stop()
 
-
 # ── proactive_methods: RPC layer ───────────────────────────────────────────
-
 
 class TestProactiveRpc(unittest.TestCase):
     """End-to-end through the RPC dispatcher (no HTTP)."""
@@ -332,9 +324,7 @@ class TestProactiveRpc(unittest.TestCase):
         result2, _ = self._call(reg, "proactive.get")
         self.assertFalse(result2["scheduler_running"])
 
-
 # ── REPL step-aside ────────────────────────────────────────────────────────
-
 
 class TestReplStepAside(unittest.TestCase):
     """``_proactive_watcher_loop`` must skip firing when a foreign daemon
@@ -372,7 +362,6 @@ class TestReplStepAside(unittest.TestCase):
             self.assertFalse(pycode._proactive_foreign_daemon_running())
         finally:
             discovery.locate = orig
-
 
 if __name__ == "__main__":
     unittest.main()

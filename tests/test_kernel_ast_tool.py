@@ -16,13 +16,11 @@ from cc_kernel.tools.registry import (
     ToolRegistry,
 )
 
-
 class _AllowAll:
     class _Cap:
         def check_fs(self, pid, path, mode): return True
         def check_tool(self, pid, t):        return True
     cap = _Cap()
-
 
 class _DenyFs:
     class _Cap:
@@ -30,21 +28,17 @@ class _DenyFs:
         def check_tool(self, pid, t):        return True
     cap = _Cap()
 
-
 # ── Args validation ───────────────────────────────────────────────
-
 
 def test_neither_provided():
     ctx = ToolContext(pid=1, kernel=None)
     with pytest.raises(ToolInvalidArgs):
         ast_handler({}, ctx)
 
-
 def test_both_provided():
     ctx = ToolContext(pid=1, kernel=None)
     with pytest.raises(ToolInvalidArgs):
         ast_handler({"path": "/x", "text": "y"}, ctx)
-
 
 def test_include_unknown_kind():
     ctx = ToolContext(pid=1, kernel=None)
@@ -52,12 +46,10 @@ def test_include_unknown_kind():
         ast_handler({"text": "x = 1\n",
                       "include": ["function", "BOGUS"]}, ctx)
 
-
 def test_max_depth_too_deep():
     ctx = ToolContext(pid=1, kernel=None)
     with pytest.raises(ToolInvalidArgs):
         ast_handler({"text": "x = 1\n", "max_depth": 999}, ctx)
-
 
 def test_path_must_be_py(tmp_path):
     f = tmp_path / "x.txt"
@@ -66,9 +58,7 @@ def test_path_must_be_py(tmp_path):
     with pytest.raises(ToolInvalidArgs):
         ast_handler({"path": str(f)}, ctx)
 
-
 # ── Text mode ─────────────────────────────────────────────────────
-
 
 def test_text_function_top_level():
     ctx = ToolContext(pid=1, kernel=None)
@@ -79,7 +69,6 @@ def test_text_function_top_level():
     assert fns[0]["name"] == "foo"
     assert fns[0]["args"] == ["x", "y"]
     assert fns[0]["scope"] == []
-
 
 def test_text_class_with_method():
     src = (
@@ -96,7 +85,6 @@ def test_text_class_with_method():
                if n["kind"] == "function" and n["scope"] == ["Bar"]]
     assert methods[0]["name"] == "m"
     assert methods[0]["args"] == ["self", "n"]
-
 
 def test_text_imports():
     src = (
@@ -116,7 +104,6 @@ def test_text_imports():
     assert fims[1]["level"] == 1
     assert fims[1]["module"] == ""
 
-
 def test_text_async_function():
     src = "async def foo():\n    pass\n"
     ctx = ToolContext(pid=1, kernel=None)
@@ -126,7 +113,6 @@ def test_text_async_function():
     }, ctx)
     assert len(r["nodes"]) == 1
     assert r["nodes"][0]["kind"] == "async_function"
-
 
 def test_text_assign_and_annotation():
     src = "X: int = 1\nY = 2\n"
@@ -139,14 +125,12 @@ def test_text_assign_and_annotation():
     assert "annotation" in kinds
     assert "assign" in kinds
 
-
 def test_text_include_filter():
     src = "def f(): pass\nimport os\n"
     ctx = ToolContext(pid=1, kernel=None)
     r = ast_handler({"text": src, "include": ["function"]}, ctx)
     kinds = [n["kind"] for n in r["nodes"]]
     assert kinds == ["function"]
-
 
 def test_text_decorators():
     src = (
@@ -161,7 +145,6 @@ def test_text_decorators():
     assert "my.dec" in fn["decorators"]
     assert "other" in fn["decorators"]
 
-
 def test_text_syntax_error_does_not_raise():
     src = "def f(\n"     # truncated
     ctx = ToolContext(pid=1, kernel=None)
@@ -170,7 +153,6 @@ def test_text_syntax_error_does_not_raise():
     assert r["syntax_error"]["lineno"] >= 1
     assert r["nodes"] == []
     assert r["line_count"] >= 1
-
 
 def test_max_depth_caps_nesting():
     src = (
@@ -186,9 +168,7 @@ def test_max_depth_caps_nesting():
     assert len(classes) == 1
     assert classes[0]["name"] == "A"
 
-
 # ── Path mode ─────────────────────────────────────────────────────
-
 
 def test_path_mode_real_file(tmp_path):
     f = tmp_path / "m.py"
@@ -206,14 +186,12 @@ def test_path_mode_real_file(tmp_path):
     imps = [n for n in r["nodes"] if n["kind"] == "import"]
     assert imps[0]["names"] == ["os"]
 
-
 def test_path_fs_denied(tmp_path):
     f = tmp_path / "m.py"
     f.write_text("x = 1\n")
     ctx = ToolContext(pid=1, kernel=_DenyFs())
     with pytest.raises(ToolFsDenied):
         ast_handler({"path": str(f)}, ctx)
-
 
 def test_path_too_large(tmp_path, monkeypatch):
     f = tmp_path / "big.py"
@@ -225,9 +203,7 @@ def test_path_too_large(tmp_path, monkeypatch):
     with pytest.raises(ToolFailed):
         ast_handler({"path": str(f)}, ctx)
 
-
 # ── Registry ─────────────────────────────────────────────────────
-
 
 def test_ast_tool_in_register_builtin_tools():
     from cc_kernel.tools.builtin import register_builtin_tools
@@ -235,7 +211,6 @@ def test_ast_tool_in_register_builtin_tools():
     names = register_builtin_tools(reg)
     assert "AST" in names
     assert reg.has("AST")
-
 
 def test_ast_tool_metadata():
     assert AST_TOOL.name == "AST"

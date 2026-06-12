@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from cc_daemon import cli
 
-
 # ── --help / -h ─────────────────────────────────────────────────────────────
 
 def test_main_help_long_form_exits_zero(capsys):
@@ -22,20 +21,17 @@ def test_main_help_long_form_exits_zero(capsys):
     assert "serve" in captured.out
     assert "status" in captured.out
 
-
 def test_main_help_short_form_exits_zero(capsys):
     rc = cli.main(["-h"])
     captured = capsys.readouterr()
     assert rc == 0
     assert "usage" in captured.out.lower()
 
-
 def test_main_no_args_prints_usage_to_stderr(capsys):
     rc = cli.main([])
     captured = capsys.readouterr()
     assert rc == 2
     assert "usage" in captured.err.lower()
-
 
 def test_main_unknown_subcommand_includes_usage(capsys):
     rc = cli.main(["banana"])

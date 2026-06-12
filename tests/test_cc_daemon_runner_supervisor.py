@@ -31,9 +31,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
-
 
 # ── A tiny in-test runner that speaks the F-4 protocol ─────────────────────
 #
@@ -66,7 +64,6 @@ _MOCK_HANG_SOURCE = textwrap.dedent("""
     while True:
         time.sleep(60)
 """).strip()
-
 
 def _spawn_with_inline_runner(name, source):
     """Bypass start() and craft a RunnerHandle manually, since start()
@@ -103,7 +100,6 @@ def _spawn_with_inline_runner(name, source):
     handle._reader = t
     return handle
 
-
 class TestSupervisorBasics(unittest.TestCase):
     """Lifecycle, registry, and feature flag."""
 
@@ -136,7 +132,6 @@ class TestSupervisorBasics(unittest.TestCase):
     def test_stop_unknown_returns_false(self):
         from cc_daemon import runner_supervisor
         self.assertFalse(runner_supervisor.stop("does-not-exist"))
-
 
 class TestSupervisorLifecycle(unittest.TestCase):
     """Spawn → register → stop, with a tiny in-test runner."""
@@ -171,7 +166,6 @@ class TestSupervisorLifecycle(unittest.TestCase):
         self.assertLessEqual(elapsed, 6.0,
                              f"stop() took {elapsed:.2f}s on hung runner")
         self.assertFalse(handle.is_alive())
-
 
 class TestSupervisorMalformedInput(unittest.TestCase):
     """Regression for the self-review bug: a malformed IPC message
@@ -250,7 +244,6 @@ class TestSupervisorMalformedInput(unittest.TestCase):
         self.assertFalse(handle.is_alive())
         runner_supervisor._unregister("safety-net")
 
-
 class TestSupervisorCrashDetection(unittest.TestCase):
     """kill -9 on the child → status=crashed observed via get()."""
 
@@ -278,7 +271,6 @@ class TestSupervisorCrashDetection(unittest.TestCase):
         # Clean up registry for subsequent tests.
         runner_supervisor._unregister("crashy")
 
-
 class TestIpcShim(unittest.TestCase):
     """Confirm cc_daemon/runner_ipc.py re-exports the kernel implementation."""
 
@@ -287,7 +279,6 @@ class TestIpcShim(unittest.TestCase):
         from cc_kernel.runner import ipc as kernel_ipc
         self.assertIs(runner_ipc.JsonLineChannel, kernel_ipc.JsonLineChannel)
         self.assertIs(runner_ipc.IpcReadTimeout, kernel_ipc.IpcReadTimeout)
-
 
 class TestSqlitePersistence(unittest.TestCase):
     """agent_runs + agent_iterations rows reflect supervisor lifecycle.
@@ -488,7 +479,6 @@ class TestSqlitePersistence(unittest.TestCase):
                 handle, {"iteration": 1, "status": "ok",
                          "duration_s": 1.0, "summary": "x"}))
             self.assertFalse(rs._db_finalize_run(handle, status="stopped"))
-
 
 if __name__ == "__main__":
     unittest.main()

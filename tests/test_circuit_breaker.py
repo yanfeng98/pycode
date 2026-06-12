@@ -16,14 +16,11 @@ _CFG  = {"circuit_failure_threshold": 3,
           "circuit_window_seconds":    30,
           "circuit_cooldown_seconds":  60}
 
-
 def setup_function():
     reset_breaker(_PROV)
 
-
 def teardown_function():
     reset_breaker(_PROV)
-
 
 # ── State machine ─────────────────────────────────────────────────────────
 
@@ -135,7 +132,6 @@ class TestStateMachine:
             b.record_failure(); b.record_failure()  # 3 in window → open
             assert b.state == State.OPEN
 
-
 # ── Registry ──────────────────────────────────────────────────────────────
 
 class TestRegistry:
@@ -183,7 +179,6 @@ class TestRegistry:
             assert b.cooldown  == 5.0
         finally:
             reset_breaker("cfg_test")
-
 
 # ── CircuitOpenError ───────────────────────────────────────────────────────
 

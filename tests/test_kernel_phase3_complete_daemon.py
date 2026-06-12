@@ -21,12 +21,10 @@ from cc_daemon.server import make_tcp_server
 from cc_kernel import register_with_daemon
 from cc_kernel.integration import detach
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def daemon(tmp_path):
@@ -55,7 +53,6 @@ def daemon(tmp_path):
     server.server_close()
     t.join(timeout=2)
 
-
 def _rpc(host, port, token, method, params, *, kind="test"):
     body = json.dumps({"jsonrpc": "2.0", "id": str(uuid.uuid4()),
                        "method": method, "params": params}).encode()
@@ -74,9 +71,7 @@ def _rpc(host, port, token, method, params, *, kind="test"):
     finally:
         c.close()
 
-
 # ── Mailbox RPC ──────────────────────────────────────────────────────────
-
 
 def test_mbox_send_recv_via_rpc(daemon):
     h, p, t = daemon
@@ -99,7 +94,6 @@ def test_mbox_send_recv_via_rpc(daemon):
     assert msgs[0]["msg_id"] == msg_id
     assert msgs[0]["kind"] == "hello"
 
-
 def test_mbox_publish_fanout_via_rpc(daemon):
     h, p, t = daemon
     a = _rpc(h, p, t, "kernel.agent.create",
@@ -115,7 +109,6 @@ def test_mbox_publish_fanout_via_rpc(daemon):
     assert s == 200
     assert r["result"]["delivered"] == 2
 
-
 def test_mbox_full_returns_error(daemon):
     h, p, t = daemon
     pid = _rpc(h, p, t, "kernel.agent.create",
@@ -130,9 +123,7 @@ def test_mbox_full_returns_error(daemon):
     assert "error" in r
     assert "MailboxFull" in r["error"]["message"]
 
-
 # ── Registry RPC ─────────────────────────────────────────────────────────
-
 
 def test_registry_register_lookup_via_rpc(daemon):
     h, p, t = daemon
@@ -146,7 +137,6 @@ def test_registry_register_lookup_via_rpc(daemon):
                 {"name": "/agents/alice"})
     assert s == 200
     assert r["result"]["pid"] == pid
-
 
 def test_registry_list_filters_via_rpc(daemon):
     h, p, t = daemon
@@ -164,7 +154,6 @@ def test_registry_list_filters_via_rpc(daemon):
     assert r["result"]["total"] == 1
     assert r["result"]["entries"][0]["name"] == "/agents/x"
 
-
 def test_registry_duplicate_name_via_rpc(daemon):
     h, p, t = daemon
     pid = _rpc(h, p, t, "kernel.agent.create",
@@ -177,9 +166,7 @@ def test_registry_duplicate_name_via_rpc(daemon):
     assert "error" in r
     assert "RegistryNameExists" in r["error"]["message"]
 
-
 # ── Phase-3 surfaces don't break Phase-1/2 ───────────────────────────────
-
 
 def test_phase3_does_not_break_earlier_phases(daemon):
     h, p, t = daemon

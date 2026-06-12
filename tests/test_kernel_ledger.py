@@ -17,7 +17,6 @@ from cc_kernel import (
     UnknownPid,
 )
 
-
 @pytest.fixture
 def stores(tmp_path):
     """Open kernel + ledger sharing connection + lock."""
@@ -26,9 +25,7 @@ def stores(tmp_path):
     yield ks, ls
     ks.close()
 
-
 # ── create ────────────────────────────────────────────────────────────────
-
 
 def test_create_round_trip(stores):
     ks, ls = stores
@@ -41,12 +38,10 @@ def test_create_round_trip(stores):
     used_by_dim = {e.dim: e.used for e in led.entries}
     assert used_by_dim == {"tokens": 0, "cost_micro": 0}
 
-
 def test_create_with_unknown_pid(stores):
     _, ls = stores
     with pytest.raises(UnknownPid):
         ls.create(pid=9999, grants={"tokens": 1000})
-
 
 def test_create_rejects_zero_or_negative_grant(stores):
     ks, ls = stores
@@ -56,7 +51,6 @@ def test_create_rejects_zero_or_negative_grant(stores):
     with pytest.raises(LedgerInvalidAmount):
         ls.create(pid=a.pid, grants={"tokens": -5})
 
-
 def test_create_rejects_bad_warn_at(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
@@ -65,14 +59,12 @@ def test_create_rejects_bad_warn_at(stores):
     with pytest.raises(LedgerInvalidWarnAt):
         ls.create(pid=a.pid, grants={"tokens": 100}, warn_at=-0.1)
 
-
 def test_create_duplicate_dim_raises(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
     ls.create(pid=a.pid, grants={"tokens": 100})
     with pytest.raises(LedgerExists):
         ls.create(pid=a.pid, grants={"tokens": 200})
-
 
 def test_create_additive_over_separate_dims(stores):
     ks, ls = stores
@@ -82,9 +74,7 @@ def test_create_additive_over_separate_dims(stores):
     led = ls.get(a.pid)
     assert {e.dim for e in led.entries} == {"tokens", "cost_micro"}
 
-
 # ── charge: standard transitions ──────────────────────────────────────────
-
 
 def test_charge_under_budget(stores):
     ks, ls = stores
@@ -96,7 +86,6 @@ def test_charge_under_budget(stores):
     assert r.warned is False
     assert r.first_breach is False
 
-
 def test_charge_at_warn_threshold(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
@@ -105,7 +94,6 @@ def test_charge_at_warn_threshold(stores):
     assert r.warned is True       # crossed 500 (= 0.5 * 1000)
     assert r.over_limit is False
     assert r.first_breach is False
-
 
 def test_charge_warn_only_fires_once(stores):
     ks, ls = stores
@@ -116,7 +104,6 @@ def test_charge_warn_only_fires_once(stores):
     assert r1.warned is True
     assert r2.warned is False     # already crossed before this charge
 
-
 def test_charge_first_breach(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
@@ -125,7 +112,6 @@ def test_charge_first_breach(stores):
     assert r.over_limit   is True
     assert r.first_breach is True
     assert r.used == 150
-
 
 def test_charge_over_again_not_first_breach(stores):
     ks, ls = stores
@@ -136,7 +122,6 @@ def test_charge_over_again_not_first_breach(stores):
     assert r2.over_limit   is True
     assert r2.first_breach is False
 
-
 def test_charge_unknown_dim_raises(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
@@ -145,14 +130,12 @@ def test_charge_unknown_dim_raises(stores):
     assert e.value.pid == a.pid
     assert e.value.dim == "tokens"
 
-
 def test_charge_invalid_amount_raises(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
     ls.create(pid=a.pid, grants={"tokens": 100})
     with pytest.raises(LedgerInvalidAmount):
         ls.charge(pid=a.pid, dim="tokens", amount=-1)
-
 
 def test_charge_zero_amount_is_a_noop_charge(stores):
     """Charging 0 is allowed (idempotent ping)."""
@@ -163,9 +146,7 @@ def test_charge_zero_amount_is_a_noop_charge(stores):
     assert r.used == 0
     assert r.over_limit is False
 
-
 # ── check (read-only) ─────────────────────────────────────────────────────
-
 
 def test_check_does_not_mutate(stores):
     ks, ls = stores
@@ -179,7 +160,6 @@ def test_check_does_not_mutate(stores):
     # Confirm the actual used didn't change.
     assert ls.get(a.pid).entries[0].used == 30
 
-
 def test_check_predicts_breach(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
@@ -187,16 +167,13 @@ def test_check_predicts_breach(stores):
     chk = ls.check(pid=a.pid, dim="tokens", amount=200)
     assert chk.would_exceed is True
 
-
 def test_check_unknown_dim(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
     with pytest.raises(LedgerUnknownDim):
         ls.check(pid=a.pid, dim="cpu_s", amount=10)
 
-
 # ── refund ────────────────────────────────────────────────────────────────
-
 
 def test_refund_decrements(stores):
     ks, ls = stores
@@ -206,7 +183,6 @@ def test_refund_decrements(stores):
     e = ls.refund(pid=a.pid, dim="tokens", amount=20)
     assert e.used == 30
 
-
 def test_refund_over_used_rejected(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
@@ -215,9 +191,7 @@ def test_refund_over_used_rejected(stores):
     with pytest.raises(LedgerInvalidRefund):
         ls.refund(pid=a.pid, dim="tokens", amount=20)
 
-
 # ── update_grant ──────────────────────────────────────────────────────────
-
 
 def test_update_grant_extends_budget(stores):
     ks, ls = stores
@@ -230,16 +204,13 @@ def test_update_grant_extends_budget(stores):
     assert e.granted == 200
     assert e.used == 150
 
-
 def test_update_grant_unknown_dim(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
     with pytest.raises(LedgerUnknownDim):
         ls.update_grant(pid=a.pid, dim="tokens", new_grant=100)
 
-
 # ── list_breached ─────────────────────────────────────────────────────────
-
 
 def test_list_breached_only_returns_over(stores):
     ks, ls = stores
@@ -252,7 +223,6 @@ def test_list_breached_only_returns_over(stores):
     breached = ls.list_breached()
     assert {(e.pid, e.dim) for e in breached} == {(a1.pid, "tokens")}
 
-
 def test_list_breached_after_grant_update_clears(stores):
     ks, ls = stores
     a = ks.create(name="x", template="t")
@@ -262,9 +232,7 @@ def test_list_breached_after_grant_update_clears(stores):
     ls.update_grant(pid=a.pid, dim="tokens", new_grant=500)
     assert ls.list_breached() == []
 
-
 # ── concurrent charge atomicity ───────────────────────────────────────────
-
 
 def test_concurrent_charges_no_lost_update(stores):
     """100 charges of 1 across 4 threads must result in used == 100."""
@@ -287,9 +255,7 @@ def test_concurrent_charges_no_lost_update(stores):
     led = ls.get(a.pid)
     assert led.entries[0].used == 100
 
-
 # ── Full lifecycle integration ────────────────────────────────────────────
-
 
 def test_full_lifecycle(stores):
     """Create → charge → warn → breach → refund → update → check."""

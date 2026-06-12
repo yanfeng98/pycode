@@ -13,14 +13,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import quota
 from quota import QuotaExceeded, check_quota, record_usage, get_usage, reset_session
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 def _reset_session(sid):
     with quota._lock:
         quota._sess_tokens.pop(sid, None)
         quota._sess_cost.pop(sid, None)
-
 
 # ── QuotaExceeded ─────────────────────────────────────────────────────────
 
@@ -32,7 +30,6 @@ class TestQuotaExceeded:
         e = QuotaExceeded("limit hit")
         assert e.reason == "limit hit"
         assert "limit hit" in str(e)
-
 
 # ── check_quota ───────────────────────────────────────────────────────────
 
@@ -105,7 +102,6 @@ class TestCheckQuota:
     def test_missing_daily_file_treated_as_zero(self):
         check_quota(self.sid, {"daily_token_budget": 100000})
 
-
 # ── record_usage ──────────────────────────────────────────────────────────
 
 class TestRecordUsage:
@@ -152,12 +148,10 @@ class TestRecordUsage:
         with quota._lock:
             assert quota._sess_cost[self.sid] == pytest_approx(3.0, rel=0.01)
 
-
 def pytest_approx(value, rel=None):
     """Inline helper so we don't need to import pytest in helpers."""
     import pytest
     return pytest.approx(value, rel=rel)
-
 
 # ── get_usage ─────────────────────────────────────────────────────────────
 
@@ -185,7 +179,6 @@ class TestGetUsage:
         u = get_usage(self.sid)
         assert u["session_tokens"] == 300
         assert u["daily_tokens"]   == 300
-
 
 # ── reset_session ─────────────────────────────────────────────────────────
 
@@ -217,7 +210,6 @@ class TestResetSession:
 
     def test_reset_nonexistent_session_is_noop(self):
         reset_session("nonexistent_session_xyz")  # should not raise
-
 
 # ── Thread safety ─────────────────────────────────────────────────────────
 

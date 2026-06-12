@@ -25,15 +25,7 @@ from cc_kernel.runner.llm import (
     ProviderInvalidRequest,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="dialogue orchestrator spawns POSIX subprocesses",
-)
-
-
 # ── LlmRequest.messages extension ──────────────────────────────────────
-
 
 def test_llm_request_messages_only_works():
     """user can be empty if messages is provided."""
@@ -48,7 +40,6 @@ def test_llm_request_messages_only_works():
     assert r.user == ""
     assert len(r.messages) == 2
 
-
 def test_llm_request_user_only_still_works():
     """Single-turn callers (the MVP shape) keep working."""
     r = LlmRequest(model="m", user="hi")
@@ -56,11 +47,9 @@ def test_llm_request_user_only_still_works():
     assert r.messages == ()
     assert not r.has_messages
 
-
 def test_llm_request_neither_user_nor_messages_rejected():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest(model="m")
-
 
 def test_llm_request_invalid_role_rejected():
     with pytest.raises(ProviderInvalidRequest):
@@ -71,14 +60,12 @@ def test_llm_request_invalid_role_rejected():
             ),
         )
 
-
 def test_llm_request_message_without_content_rejected():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest(
             model="m",
             messages=({"role": "user"},),
         )
-
 
 def test_llm_request_to_from_dict_with_messages():
     r = LlmRequest(
@@ -91,7 +78,6 @@ def test_llm_request_to_from_dict_with_messages():
     r2 = LlmRequest.from_dict(d)
     assert r2.messages == r.messages
 
-
 def test_llm_request_from_dict_only_messages():
     """from_dict accepts payload with messages but no 'user' field."""
     r = LlmRequest.from_dict({
@@ -101,9 +87,7 @@ def test_llm_request_from_dict_only_messages():
     assert r.has_messages
     assert r.user == ""
 
-
 # ── MockProvider with messages ─────────────────────────────────────────
-
 
 def test_mock_provider_accepts_messages():
     """MockProvider returns its fixed response regardless of
@@ -125,9 +109,7 @@ def test_mock_provider_accepts_messages():
     assert len(p.calls) == 1
     assert p.calls[0].has_messages
 
-
 # ── RunnerExitInfo.text / metadata extensions ──────────────────────────
-
 
 def _spawn_llm(kernel: Kernel, response: dict, *,
                user_msg: str = "x") -> tuple[int, "RunnerExitInfo"]:
@@ -145,7 +127,6 @@ def _spawn_llm(kernel: Kernel, response: dict, *,
     )
     return a.pid, sup.wait(a.pid, timeout=20)
 
-
 def test_exit_info_carries_text(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         _, info = _spawn_llm(k, {
@@ -155,7 +136,6 @@ def test_exit_info_carries_text(tmp_path):
         })
         assert info.exit_kind == "completed"
         assert info.text == "the full response"
-
 
 def test_exit_info_carries_metadata(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -170,7 +150,6 @@ def test_exit_info_carries_metadata(tmp_path):
         assert info.metadata["tokens_output"]  == 3
         assert info.metadata["tokens_total"]   == 10
         assert info.metadata["cost_micro"]     == 130
-
 
 def test_existing_runner_text_defaults_empty(tmp_path):
     """Echo runner doesn't emit text — RunnerExitInfo.text=''."""
@@ -187,15 +166,12 @@ def test_existing_runner_text_defaults_empty(tmp_path):
         assert info.text == ""           # default
         assert info.metadata == {}       # default
 
-
 # ── DialogueOrchestrator: basic turn ───────────────────────────────────
-
 
 @pytest.fixture
 def kernel(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         yield k
-
 
 def _mock_response(text: str = "echo response", *,
                     tokens_in: int = 10, tokens_out: int = 5,
@@ -208,7 +184,6 @@ def _mock_response(text: str = "echo response", *,
         "model":         "claude-x",
         "finish_reason": "stop",
     }
-
 
 def _orchestrator(kernel: Kernel, owner_pid: int, *,
                    response: dict, **overrides) -> DialogueOrchestrator:
@@ -224,7 +199,6 @@ def _orchestrator(kernel: Kernel, owner_pid: int, *,
         **overrides,
     )
 
-
 def test_turn_basic_round_trip(kernel):
     owner = kernel.create_agent(name="chat-1", template="dialogue")
     orch = _orchestrator(kernel, owner.pid, response=_mock_response("hello"))
@@ -236,7 +210,6 @@ def test_turn_basic_round_trip(kernel):
         {"role": "assistant", "content": "hello"},
     ]
 
-
 def test_turn_owner_pid_unchanged(kernel):
     """The owner pid stays in its original state across turns —
     only children are spawned."""
@@ -246,7 +219,6 @@ def test_turn_owner_pid_unchanged(kernel):
     orch.turn("second")
     # Owner is still READY (never spawned into).
     assert kernel.process.get(owner.pid).state == AgentState.READY
-
 
 def test_turn_creates_child_per_turn(kernel):
     """Each turn = a fresh child agent."""
@@ -259,7 +231,6 @@ def test_turn_creates_child_per_turn(kernel):
     final_count = kernel.observability.summary()["agents"]["total"]
     assert final_count == initial_count + 3
 
-
 def test_turn_children_are_dead(kernel):
     """Children transition to DEAD after each turn."""
     owner = kernel.create_agent(name="x", template="t")
@@ -270,7 +241,6 @@ def test_turn_children_are_dead(kernel):
     assert len(agents) >= 1
     for c in agents:
         assert c.state == AgentState.DEAD
-
 
 def test_turn_history_persists_across_orchestrators(kernel):
     """A new orchestrator instance picks up the same conversation
@@ -285,7 +255,6 @@ def test_turn_history_persists_across_orchestrators(kernel):
     assert history[0]["content"] == "hi"
     assert history[1]["content"] == "first"
 
-
 def test_turn_messages_grow_each_turn(kernel):
     """The LLM runner sees a growing messages list as the
     conversation advances."""
@@ -295,9 +264,7 @@ def test_turn_messages_grow_each_turn(kernel):
         orch.turn(f"q{i}")
     assert len(orch.history()) == 6   # 3 user + 3 assistant
 
-
 # ── DialogueOrchestrator: stats ────────────────────────────────────────
-
 
 def test_stats_initial(kernel):
     owner = kernel.create_agent(name="x", template="t")
@@ -307,7 +274,6 @@ def test_stats_initial(kernel):
     assert stats["total_tokens"] == 0
     assert stats["total_cost_micro"] == 0
     assert stats["last_turn_at"] is None
-
 
 def test_stats_accumulate(kernel):
     owner = kernel.create_agent(name="x", template="t")
@@ -324,9 +290,7 @@ def test_stats_accumulate(kernel):
     assert stats["total_cost_micro"] == 3 * 180
     assert stats["last_turn_at"] is not None
 
-
 # ── reset ──────────────────────────────────────────────────────────────
-
 
 def test_reset_clears_history(kernel):
     owner = kernel.create_agent(name="x", template="t")
@@ -338,7 +302,6 @@ def test_reset_clears_history(kernel):
     assert orch.history() == []
     assert orch.stats()["turns"] == 0
 
-
 def test_reset_keeps_system_by_default(kernel):
     owner = kernel.create_agent(name="x", template="t")
     orch = _orchestrator(kernel, owner.pid, response=_mock_response())
@@ -346,7 +309,6 @@ def test_reset_keeps_system_by_default(kernel):
     orch.reset()
     state = orch._load_state()  # private — testing internal shape
     assert state["system"] == "You are helpful."
-
 
 def test_reset_drops_system_when_requested(kernel):
     owner = kernel.create_agent(name="x", template="t")
@@ -356,9 +318,7 @@ def test_reset_drops_system_when_requested(kernel):
     state = orch._load_state()
     assert state["system"] == ""
 
-
 # ── Validation ─────────────────────────────────────────────────────────
-
 
 def test_constructor_rejects_unknown_pid(kernel):
     with pytest.raises(UnknownPid):
@@ -367,11 +327,9 @@ def test_constructor_rejects_unknown_pid(kernel):
                                            "CC_LLM_PROVIDER": "mock",
                                            "CC_LLM_MOCK_RESPONSE_JSON": "{}"})
 
-
 def test_constructor_rejects_non_int_pid(kernel):
     with pytest.raises(ValueError):
         DialogueOrchestrator(kernel, agent_pid="not-int")  # type: ignore[arg-type]
-
 
 def test_turn_rejects_empty_message(kernel):
     owner = kernel.create_agent(name="x", template="t")
@@ -379,16 +337,13 @@ def test_turn_rejects_empty_message(kernel):
     with pytest.raises(ValueError):
         orch.turn("")
 
-
 def test_turn_rejects_non_string(kernel):
     owner = kernel.create_agent(name="x", template="t")
     orch = _orchestrator(kernel, owner.pid, response=_mock_response())
     with pytest.raises(ValueError):
         orch.turn(123)  # type: ignore[arg-type]
 
-
 # ── Failure paths ──────────────────────────────────────────────────────
-
 
 def test_turn_failed_when_runner_crashes(kernel):
     """If the runner can't get a response (CC_LLM_PROVIDER unset),
@@ -409,9 +364,7 @@ def test_turn_failed_when_runner_crashes(kernel):
     # History was NOT updated.
     assert orch.history() == []
 
-
 # ── Per-turn ledger budgets via child_grants ──────────────────────────
-
 
 def test_child_grants_create_per_turn_ledger(kernel):
     """When child_grants is set, each turn's child gets its own
@@ -433,9 +386,7 @@ def test_child_grants_create_per_turn_ledger(kernel):
     assert by_dim["tokens"] == 7
     assert "cost_micro" in by_dim
 
-
 # ── Custom history path ────────────────────────────────────────────────
-
 
 def test_custom_history_path(kernel):
     owner = kernel.create_agent(name="x", template="t")

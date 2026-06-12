@@ -18,7 +18,6 @@ import pytest
 
 from commands.monitor_cmd import _parse_subscribe_args
 
-
 @pytest.mark.parametrize("args,expected_topic,expected_schedule,expected_channels", [
     # Single-word topic, default schedule
     ("ai_research",                                 "ai_research",                         "daily",  []),
@@ -47,7 +46,6 @@ def test_parse_subscribe_args(args, expected_topic, expected_schedule, expected_
     assert topic == expected_topic, f"topic for {args!r}"
     assert schedule == expected_schedule, f"schedule for {args!r}"
     assert channels == expected_channels, f"channels for {args!r}"
-
 
 def test_schedule_keyword_in_middle_of_topic_NOT_extracted():
     """A schedule keyword in the middle of a multi-word topic must stay

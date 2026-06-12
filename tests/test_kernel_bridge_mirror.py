@@ -17,12 +17,10 @@ from cc_kernel import (
 )
 from cc_kernel.bridge_mirror import MESSAGE_KIND
 
-
 @pytest.fixture
 def kernel(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         yield k
-
 
 def _make_subscriber(kernel: Kernel, *, name: str, kind: str,
                       direction: str = "inbound") -> int:
@@ -34,18 +32,14 @@ def _make_subscriber(kernel: Kernel, *, name: str, kind: str,
     kernel.mailbox.subscribe(a.pid, topic)
     return a.pid
 
-
 # ── topic helpers ───────────────────────────────────────────────────────
-
 
 def test_inbound_topic_format():
     assert inbound_topic("telegram") == "bridge.telegram.inbound"
     assert inbound_topic("custom-kind") == "bridge.custom-kind.inbound"
 
-
 def test_outbound_topic_format():
     assert outbound_topic("slack") == "bridge.slack.outbound"
-
 
 @pytest.mark.parametrize("bad_kind", [
     "", "Telegram", "TELEGRAM", "tele.gram", "tele gram", "tele/gram",
@@ -57,7 +51,6 @@ def test_invalid_kind_rejected(bad_kind):
     with pytest.raises(ValueError):
         outbound_topic(bad_kind)
 
-
 def test_known_kinds_constants():
     assert BridgeKind.TELEGRAM == "telegram"
     assert BridgeKind.WECHAT   == "wechat"
@@ -65,9 +58,7 @@ def test_known_kinds_constants():
     assert BridgeKind.DISCORD  == "discord"
     assert BridgeKind.TELEGRAM in BridgeKind.KNOWN
 
-
 # ── BridgeMessage round-trip ────────────────────────────────────────────
-
 
 def test_bridge_message_to_dict_round_trip():
     msg = BridgeMessage(
@@ -85,16 +76,13 @@ def test_bridge_message_to_dict_round_trip():
     assert msg2.text == "hi"
     assert msg2.metadata == {"msg_id": 99}
 
-
 def test_bridge_message_from_payload_handles_missing():
     """Defensive: bad payload doesn't crash."""
     msg = BridgeMessage.from_payload({})
     assert msg.kind == ""
     assert msg.metadata == {}
 
-
 # ── mirror_inbound ──────────────────────────────────────────────────────
-
 
 def test_mirror_inbound_publishes_to_inbound_topic(kernel):
     pid = _make_subscriber(kernel, name="rx", kind="telegram",
@@ -116,7 +104,6 @@ def test_mirror_inbound_publishes_to_inbound_topic(kernel):
     assert payload["metadata"] == {"is_bot": False}
     assert payload["ts"] > 0
 
-
 def test_mirror_inbound_fan_out_three_subscribers(kernel):
     pids = [
         _make_subscriber(kernel, name=f"s{i}", kind="telegram")
@@ -137,7 +124,6 @@ def test_mirror_inbound_fan_out_three_subscribers(kernel):
         assert msgs[0].payload["text"] == "ping"
     assert kernel.mailbox.recv(pid=nobody.pid) == []
 
-
 def test_mirror_inbound_no_subscribers_yields_zero(kernel):
     mirror = BridgeMirror(kernel)
     result = mirror.mirror_inbound(
@@ -146,7 +132,6 @@ def test_mirror_inbound_no_subscribers_yields_zero(kernel):
     assert result["delivered"] == 0
     assert result["rejected"]  == 0
     assert result["msg_ids"]   == []
-
 
 def test_mirror_inbound_records_sender_pid(kernel):
     """When BridgeMirror is constructed with sender_pid, every
@@ -158,7 +143,6 @@ def test_mirror_inbound_records_sender_pid(kernel):
     msgs = kernel.mailbox.recv(pid=receiver)
     assert msgs[0].sender_pid == sender.pid
 
-
 def test_mirror_inbound_custom_kind_works(kernel):
     pid = _make_subscriber(kernel, name="r", kind="matrix")
     mirror = BridgeMirror(kernel)
@@ -168,15 +152,12 @@ def test_mirror_inbound_custom_kind_works(kernel):
     assert result["delivered"] == 1
     assert kernel.mailbox.recv(pid=pid)[0].payload["kind"] == "matrix"
 
-
 def test_mirror_inbound_invalid_kind_raises(kernel):
     mirror = BridgeMirror(kernel)
     with pytest.raises(ValueError):
         mirror.mirror_inbound(kind="BadCase", sender="x", text="x")
 
-
 # ── queue_outbound ──────────────────────────────────────────────────────
-
 
 def test_queue_outbound_publishes_to_outbound_topic(kernel):
     pid = _make_subscriber(kernel, name="bridge_worker",
@@ -193,9 +174,7 @@ def test_queue_outbound_publishes_to_outbound_topic(kernel):
     assert p["sender"] == "chat:7"        # recipient stored in 'sender' field
     assert p["metadata"] == {"reply_to": 99}
 
-
 # ── subscribe_* sugar ──────────────────────────────────────────────────
-
 
 def test_subscribe_inbound_sugar(kernel):
     a = kernel.create_agent(name="x", template="t")
@@ -205,7 +184,6 @@ def test_subscribe_inbound_sugar(kernel):
     topics = kernel.mailbox.list_subscriptions(a.pid)
     assert "bridge.wechat.inbound" in topics
 
-
 def test_subscribe_outbound_sugar(kernel):
     a = kernel.create_agent(name="x", template="t")
     kernel.mailbox.create(pid=a.pid)
@@ -214,9 +192,7 @@ def test_subscribe_outbound_sugar(kernel):
     topics = kernel.mailbox.list_subscriptions(a.pid)
     assert "bridge.slack.outbound" in topics
 
-
 # ── OutboundReceiver: drain_once ───────────────────────────────────────
-
 
 def test_receiver_drain_once_calls_send_fn(kernel):
     pid = _make_subscriber(kernel, name="bridge_worker",
@@ -241,7 +217,6 @@ def test_receiver_drain_once_calls_send_fn(kernel):
     # Cursor advanced — second drain returns 0.
     assert rx.drain_once() == 0
 
-
 def test_receiver_drain_skips_non_bridge_messages(kernel):
     """If something publishes a non-bridge.message kind to the same
     inbox (shouldn't happen but…), drain_once skips it."""
@@ -260,7 +235,6 @@ def test_receiver_drain_skips_non_bridge_messages(kernel):
     rx.drain_once()
     assert sent == []
 
-
 def test_receiver_drain_skips_inbound_direction(kernel):
     """An inbound bridge message shouldn't be drained as outbound
     even if the same agent happens to be subscribed to both."""
@@ -277,7 +251,6 @@ def test_receiver_drain_skips_inbound_direction(kernel):
     )
     rx.drain_once()
     assert sent == []
-
 
 def test_receiver_send_fn_error_is_isolated(kernel):
     """One failing send_fn shouldn't kill the drainer."""
@@ -308,9 +281,7 @@ def test_receiver_send_fn_error_is_isolated(kernel):
     assert successes == ["b"]
     assert errors == [("a", "RuntimeError")]
 
-
 # ── OutboundReceiver: start/stop ───────────────────────────────────────
-
 
 def test_receiver_start_drains_in_background(kernel):
     pid = _make_subscriber(kernel, name="r",
@@ -334,7 +305,6 @@ def test_receiver_start_drains_in_background(kernel):
     finally:
         rx.stop()
 
-
 def test_receiver_stop_is_graceful(kernel):
     pid = _make_subscriber(kernel, name="r",
                             kind="telegram", direction="outbound")
@@ -345,7 +315,6 @@ def test_receiver_stop_is_graceful(kernel):
     rx.start()
     rx.stop()
     # No assertion needed — just that stop returns within a few seconds.
-
 
 def test_receiver_start_idempotent(kernel):
     pid = _make_subscriber(kernel, name="r",
@@ -358,7 +327,6 @@ def test_receiver_start_idempotent(kernel):
     rx.start()  # No-op
     rx.stop()
 
-
 def test_receiver_stop_without_start_is_safe(kernel):
     pid = _make_subscriber(kernel, name="r",
                             kind="telegram", direction="outbound")
@@ -368,9 +336,7 @@ def test_receiver_stop_without_start_is_safe(kernel):
     )
     rx.stop()  # No error.
 
-
 # ── Validation ─────────────────────────────────────────────────────────
-
 
 def test_receiver_rejects_invalid_kind(kernel):
     pid = kernel.create_agent(name="r", template="t").pid
@@ -380,7 +346,6 @@ def test_receiver_rejects_invalid_kind(kernel):
             send_fn=lambda m: None,
         )
 
-
 def test_receiver_rejects_non_callable_send_fn(kernel):
     pid = kernel.create_agent(name="r", template="t").pid
     with pytest.raises(ValueError):
@@ -389,9 +354,7 @@ def test_receiver_rejects_non_callable_send_fn(kernel):
             send_fn="not callable",  # type: ignore[arg-type]
         )
 
-
 # ── End-to-end: inbound publish + outbound drain ──────────────────────
-
 
 def test_full_round_trip(kernel):
     """Simulate: bridge receives a message, mirror publishes inbound;

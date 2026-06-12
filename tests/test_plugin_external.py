@@ -20,7 +20,6 @@ from plugin.store import (
 )
 from plugin.types import PluginScope
 
-
 @pytest.fixture(autouse=True)
 def _isolate_user_cfg(tmp_path, monkeypatch):
     """Redirect the user-level config so tests don't touch ~/.pycode."""
@@ -29,13 +28,11 @@ def _isolate_user_cfg(tmp_path, monkeypatch):
     yield
     # No cleanup needed — tmp_path is auto-removed.
 
-
 def _write_plugin_json(dirpath, name, **extra):
     dirpath.mkdir(parents=True, exist_ok=True)
     data = {"name": name, "version": "0.1.0", "description": f"{name} plugin"}
     data.update(extra)
     (dirpath / "plugin.json").write_text(json.dumps(data))
-
 
 class TestExternalPluginDirs:
     def test_empty_when_env_unset(self, monkeypatch):
@@ -55,7 +52,6 @@ class TestExternalPluginDirs:
         b = tmp_path / "b"; b.mkdir()
         monkeypatch.setenv(PLUGIN_PATH_ENV, f"{b}{os.pathsep}{a}")
         assert _external_plugin_dirs() == [b, a]
-
 
 class TestScanExternalPlugins:
     def test_finds_plugin_json(self, monkeypatch, tmp_path):
@@ -105,7 +101,6 @@ class TestScanExternalPlugins:
         assert len(plugins) == 1
         assert plugins[0].manifest.description == "from-a"
 
-
 class TestListPluginsDedup:
     def test_installed_shadows_external(self, monkeypatch, tmp_path):
         # External plugin "shared"
@@ -126,7 +121,6 @@ class TestListPluginsDedup:
         plugins = list_plugins()
         scopes = [p.scope for p in plugins if p.name == "shared"]
         assert scopes == [PluginScope.USER]
-
 
 class TestEnableDisablePersistence:
     def test_enable_writes_external_state(self, monkeypatch, tmp_path):
@@ -152,7 +146,6 @@ class TestEnableDisablePersistence:
         assert ok
         cfg = store._read_cfg(store.USER_PLUGIN_CFG)
         assert cfg["external_enabled"]["foo"] is False
-
 
 class TestDepsHelpers:
     def test_distribution_name_strips_version(self):

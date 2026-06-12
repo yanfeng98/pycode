@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from cc_daemon import schema
 
-
 # ── Idempotent init ────────────────────────────────────────────────────────
 
 EXPECTED_TABLES = {
@@ -26,7 +25,6 @@ EXPECTED_TABLES = {
     "bridges",
 }
 
-
 def _table_names(db_path: Path) -> set[str]:
     conn = sqlite3.connect(str(db_path))
     try:
@@ -37,14 +35,12 @@ def _table_names(db_path: Path) -> set[str]:
         conn.close()
     return {r[0] for r in rows}
 
-
 def test_init_creates_all_expected_tables(tmp_path: Path):
     db = tmp_path / "sessions.db"
     schema.init_schema(db)
     present = _table_names(db)
     for t in EXPECTED_TABLES:
         assert t in present, f"missing table: {t}"
-
 
 def test_init_is_idempotent(tmp_path: Path):
     db = tmp_path / "sessions.db"
@@ -62,17 +58,14 @@ def test_init_is_idempotent(tmp_path: Path):
     assert len(rows) == 1
     assert rows[0][1] == str(schema.CURRENT_SCHEMA_VERSION)
 
-
 def test_init_records_schema_version(tmp_path: Path):
     db = tmp_path / "sessions.db"
     schema.init_schema(db)
     assert schema.get_schema_version(db) == schema.CURRENT_SCHEMA_VERSION
 
-
 def test_get_schema_version_on_virgin_db(tmp_path: Path):
     db = tmp_path / "absent.db"
     assert schema.get_schema_version(db) is None
-
 
 def test_init_stamps_updated_at(tmp_path: Path):
     db = tmp_path / "sessions.db"
@@ -88,7 +81,6 @@ def test_init_stamps_updated_at(tmp_path: Path):
     # ISO 8601 with Z suffix
     ts = row[0]
     assert ts.endswith("Z") and "T" in ts
-
 
 # ── Coexistence with session_store ────────────────────────────────────────
 
@@ -134,7 +126,6 @@ def test_init_does_not_drop_existing_sessions_table(tmp_path: Path):
     for t in EXPECTED_TABLES:
         assert t in present
 
-
 # ── Connection accessor ────────────────────────────────────────────────────
 
 def test_get_conn_returns_same_conn_per_thread(tmp_path: Path, monkeypatch):
@@ -143,7 +134,6 @@ def test_get_conn_returns_same_conn_per_thread(tmp_path: Path, monkeypatch):
     a = schema.get_conn()
     b = schema.get_conn()
     assert a is b
-
 
 def test_get_conn_auto_inits_schema(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(schema, "_db_path", tmp_path / "sessions.db")
@@ -156,7 +146,6 @@ def test_get_conn_auto_inits_schema(tmp_path: Path, monkeypatch):
     for t in EXPECTED_TABLES:
         assert t in names
 
-
 def test_set_db_path_drops_stale_thread_conn(tmp_path: Path, monkeypatch):
     db1 = tmp_path / "first.db"
     db2 = tmp_path / "second.db"
@@ -166,7 +155,6 @@ def test_set_db_path_drops_stale_thread_conn(tmp_path: Path, monkeypatch):
     schema.set_db_path(db2)
     conn2 = schema.get_conn()
     assert conn1 is not conn2
-
 
 # ── Schema-shape sanity (catches accidental column drift) ─────────────────
 
@@ -181,7 +169,6 @@ def test_daemon_events_columns(tmp_path: Path):
         conn.close()
     assert {"id", "ts", "kind", "payload_json"} <= cols
 
-
 def test_jobs_columns(tmp_path: Path):
     db = tmp_path / "sessions.db"
     schema.init_schema(db)
@@ -195,7 +182,6 @@ def test_jobs_columns(tmp_path: Path):
                 "started_at", "done_at", "duration_s", "steps_json",
                 "step_count", "current_step", "result", "error", "retry_of"}
     assert expected <= cols
-
 
 def test_monitor_subscriptions_columns(tmp_path: Path):
     db = tmp_path / "sessions.db"

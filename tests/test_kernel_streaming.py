@@ -12,15 +12,7 @@ from cc_kernel import (
     SandboxPolicy,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="streaming tests spawn POSIX subprocesses",
-)
-
-
 RUNNER_ARGV = [sys.executable, "-m", "cc_kernel.runner.runner_main"]
-
 
 @pytest.fixture
 def stack(tmp_path):
@@ -34,7 +26,6 @@ def stack(tmp_path):
             pass
     k.close()
 
-
 def _spawn_chunks(stack, n: int):
     a = stack["kernel"].create_agent(name=f"x{n}", template="t")
     stack["sup"].spawn(
@@ -45,9 +36,7 @@ def _spawn_chunks(stack, n: int):
     )
     return a.pid
 
-
 # ── Default: no chunks ──────────────────────────────────────────────────
-
 
 def test_no_chunks_when_runner_doesnt_emit(stack):
     """Echo runner doesn't emit chunks → info.chunks == ()."""
@@ -60,7 +49,6 @@ def test_no_chunks_when_runner_doesnt_emit(stack):
     assert info.exit_kind == "completed"
     assert info.chunks == ()
 
-
 def test_runner_exit_info_chunks_default():
     """RunnerExitInfo.chunks defaults to empty tuple — backward
     compatible default."""
@@ -71,9 +59,7 @@ def test_runner_exit_info_chunks_default():
     )
     assert info.chunks == ()
 
-
 # ── 5-chunk emission ────────────────────────────────────────────────────
-
 
 def test_chunks_appear_in_info(stack):
     pid = _spawn_chunks(stack, 5)
@@ -82,7 +68,6 @@ def test_chunks_appear_in_info(stack):
     assert len(info.chunks) == 5
     contents = [c["content"] for c in info.chunks]
     assert contents == ["chunk-1", "chunk-2", "chunk-3", "chunk-4", "chunk-5"]
-
 
 def test_chunks_carry_kind_and_metadata(stack):
     pid = _spawn_chunks(stack, 2)
@@ -93,9 +78,7 @@ def test_chunks_carry_kind_and_metadata(stack):
         assert c["metadata"]["i"]  == i
         assert c["metadata"]["of"] == 2
 
-
 # ── on_chunk callback ──────────────────────────────────────────────────
-
 
 def test_on_chunk_fires_per_chunk_in_order(stack):
     pid = _spawn_chunks(stack, 5)
@@ -106,7 +89,6 @@ def test_on_chunk_fires_per_chunk_in_order(stack):
     assert received == ["chunk-1", "chunk-2", "chunk-3", "chunk-4", "chunk-5"]
     # And info.chunks has the same.
     assert [c["content"] for c in info.chunks] == received
-
 
 def test_on_chunk_not_called_when_no_chunks(stack):
     a = stack["kernel"].create_agent(name="echo", template="t")
@@ -119,7 +101,6 @@ def test_on_chunk_not_called_when_no_chunks(stack):
                               on_chunk=lambda c: received.append(c))
     assert info.exit_kind == "completed"
     assert received == []
-
 
 def test_on_chunk_callback_exception_doesnt_break_loop(stack):
     """A bad callback shouldn't break the wait loop or lose
@@ -142,7 +123,6 @@ def test_on_chunk_callback_exception_doesnt_break_loop(stack):
     assert "chunk-2" in received
     assert "chunk-3" in received
 
-
 def test_on_chunk_default_none_works(stack):
     """on_chunk=None (default) shouldn't crash — same path as no
     callback."""
@@ -150,9 +130,7 @@ def test_on_chunk_default_none_works(stack):
     info = stack["sup"].wait(pid, timeout=15)
     assert len(info.chunks) == 3
 
-
 # ── Single chunk ────────────────────────────────────────────────────────
-
 
 def test_single_chunk(stack):
     pid = _spawn_chunks(stack, 1)
@@ -160,9 +138,7 @@ def test_single_chunk(stack):
     assert len(info.chunks) == 1
     assert info.chunks[0]["content"] == "chunk-1"
 
-
 # ── Many chunks ─────────────────────────────────────────────────────────
-
 
 def test_many_chunks(stack):
     """Stress: 50 chunks → all delivered in order."""
@@ -173,9 +149,7 @@ def test_many_chunks(stack):
     contents = [c["content"] for c in info.chunks]
     assert contents == [f"chunk-{i}" for i in range(1, 51)]
 
-
 # ── Mixed with regular IPC traffic ─────────────────────────────────────
-
 
 def test_chunks_dont_interfere_with_other_messages(stack):
     """Echo runner emits iteration_start, log, iteration_done, exit

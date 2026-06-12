@@ -15,7 +15,6 @@ from unittest.mock import patch
 
 import pycode
 
-
 def _make_handler(handle_slash_return, run_query_calls):
     """Build the handler under test with handle_slash mocked to a fixed return.
 
@@ -30,7 +29,6 @@ def _make_handler(handle_slash_return, run_query_calls):
         return pycode._make_bridge_slash_handler(state, config,
                                                         run_query), state, config
 
-
 def test_simple_command_returns_simple_and_does_not_invoke_run_query():
     """/help, /status, /model, /cost — handle_slash returns a non-tuple
     (typically True/False); the handler should report "simple" and not
@@ -44,7 +42,6 @@ def test_simple_command_returns_simple_and_does_not_invoke_run_query():
         assert handler("/help") == "simple"
         assert handler("/model") == "simple"
     assert calls == [], "run_query must not fire for simple commands"
-
 
 def test_brainstorm_sentinel_dispatches_payload_through_run_query(tmp_path):
     """A __brainstorm__ sentinel returns (sentinel, payload, out_file).
@@ -66,7 +63,6 @@ def test_brainstorm_sentinel_dispatches_payload_through_run_query(tmp_path):
     assert "todo_list.txt" in body
     assert "STRICT RULES" in body
 
-
 def test_worker_sentinel_dispatches_one_run_query_per_task():
     """A __worker__ sentinel returns (sentinel, [(idx, name, prompt), ...]).
     The handler should fire run_query once per task in order."""
@@ -84,7 +80,6 @@ def test_worker_sentinel_dispatches_one_run_query_per_task():
         assert handler("/worker") == "query"
     assert calls == ["PROMPT_A", "PROMPT_B", "PROMPT_C"]
 
-
 def test_unknown_sentinel_still_returns_query_without_running():
     """An unrecognised sentinel tuple shouldn't crash the handler — the
     bridge should still see "query" and the user gets no spurious reply.
@@ -98,7 +93,6 @@ def test_unknown_sentinel_still_returns_query_without_running():
         )
         assert handler("/whatever") == "query"
     assert calls == []
-
 
 def test_handler_is_assigned_in_headless_bridges_bootstrap(monkeypatch):
     """End-to-end pin: when _start_headless_bridges runs with bridge
@@ -128,7 +122,6 @@ def test_handler_is_assigned_in_headless_bridges_bootstrap(monkeypatch):
     assert callable(ctx.run_query), \
         "run_query must be wired in headless bootstrap"
 
-
 def test_headless_bootstrap_wires_tg_send(monkeypatch):
     """Issue #84 follow-up: ask_input_interactive only routes to Telegram when
     session_ctx.tg_send is non-None.  Headless bootstrap previously left it
@@ -154,7 +147,6 @@ def test_headless_bootstrap_wires_tg_send(monkeypatch):
     assert callable(ctx.tg_send), \
         "tg_send must be wired in headless bootstrap so ask_input_interactive " \
         "can render Telegram inline-keyboard prompts (issue #84)"
-
 
 def test_headless_run_query_handles_permission_request(monkeypatch):
     """Issue #84 follow-up: in headless mode the agent loop yields a
@@ -198,7 +190,6 @@ def test_headless_run_query_handles_permission_request(monkeypatch):
     assert captured[0].granted is True, \
         "_headless_run_query must consult ask_permission_interactive on " \
         "PermissionRequest events (issue #84)"
-
 
 def test_headless_run_query_promotes_telegram_incoming(monkeypatch):
     """When a Telegram message triggers the agent, _bg_runner sets

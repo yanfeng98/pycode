@@ -13,9 +13,7 @@ from cc_kernel import (
 )
 from cc_kernel.tools.registry import dispatch_tool_call
 
-
 # ── Helpers ──────────────────────────────────────────────────────────────
-
 
 def _make_kernel(tmp_path, *, fs_grants):
     k = Kernel.open(tmp_path / "kernel.db")
@@ -27,12 +25,10 @@ def _make_kernel(tmp_path, *, fs_grants):
     )
     return k, a.pid
 
-
 def _registry():
     r = ToolRegistry()
     register_builtin_tools(r)
     return r
-
 
 def _glob(k, pid, **args):
     r = _registry()
@@ -41,7 +37,6 @@ def _glob(k, pid, **args):
         pid=pid, registry=r, kernel=k,
     )
 
-
 def _list(k, pid, **args):
     r = _registry()
     return dispatch_tool_call(
@@ -49,9 +44,7 @@ def _list(k, pid, **args):
         pid=pid, registry=r, kernel=k,
     )
 
-
 # ── register_builtin_tools returns the standard set ─────────────────────
-
 
 def test_builtin_tools_returns_standard_set():
     r = ToolRegistry()
@@ -62,9 +55,7 @@ def test_builtin_tools_returns_standard_set():
     for n in names:
         assert r.has(n)
 
-
 # ── Glob: basic matching ────────────────────────────────────────────────
-
 
 def test_glob_simple_pattern(tmp_path):
     base = tmp_path / "proj"
@@ -83,7 +74,6 @@ def test_glob_simple_pattern(tmp_path):
     finally:
         k.close()
 
-
 def test_glob_recursive_pattern(tmp_path):
     base = tmp_path / "proj"
     (base / "src").mkdir(parents=True)
@@ -100,7 +90,6 @@ def test_glob_recursive_pattern(tmp_path):
     finally:
         k.close()
 
-
 def test_glob_truncation(tmp_path):
     base = tmp_path / "many"
     base.mkdir()
@@ -116,7 +105,6 @@ def test_glob_truncation(tmp_path):
     finally:
         k.close()
 
-
 def test_glob_no_matches(tmp_path):
     base = tmp_path / "empty"
     base.mkdir()
@@ -130,9 +118,7 @@ def test_glob_no_matches(tmp_path):
     finally:
         k.close()
 
-
 # ── Glob: validation ─────────────────────────────────────────────────────
-
 
 def test_glob_empty_pattern_rejected(tmp_path):
     base = tmp_path / "p"; base.mkdir()
@@ -144,7 +130,6 @@ def test_glob_empty_pattern_rejected(tmp_path):
         assert resp["error"] == "invalid_args"
     finally:
         k.close()
-
 
 def test_glob_traversal_rejected(tmp_path):
     base = tmp_path / "p"; base.mkdir()
@@ -159,7 +144,6 @@ def test_glob_traversal_rejected(tmp_path):
     finally:
         k.close()
 
-
 def test_glob_nul_in_pattern_rejected(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     k, pid = _make_kernel(tmp_path,
@@ -170,7 +154,6 @@ def test_glob_nul_in_pattern_rejected(tmp_path):
         assert resp["error"] == "invalid_args"
     finally:
         k.close()
-
 
 def test_glob_max_results_bounds(tmp_path):
     base = tmp_path / "p"; base.mkdir()
@@ -186,7 +169,6 @@ def test_glob_max_results_bounds(tmp_path):
     finally:
         k.close()
 
-
 def test_glob_cwd_must_be_dir(tmp_path):
     f = tmp_path / "afile.txt"
     f.write_text("not a dir")
@@ -199,7 +181,6 @@ def test_glob_cwd_must_be_dir(tmp_path):
     finally:
         k.close()
 
-
 def test_glob_cwd_must_be_string(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     k, pid = _make_kernel(tmp_path,
@@ -210,9 +191,7 @@ def test_glob_cwd_must_be_string(tmp_path):
     finally:
         k.close()
 
-
 # ── Glob: capability + fs_grants gating ─────────────────────────────────
-
 
 def test_glob_capability_denied(tmp_path):
     base = tmp_path / "p"; base.mkdir()
@@ -227,7 +206,6 @@ def test_glob_capability_denied(tmp_path):
     finally:
         k.close()
 
-
 def test_glob_fs_denied_on_cwd(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     k, pid = _make_kernel(tmp_path,
@@ -239,9 +217,7 @@ def test_glob_fs_denied_on_cwd(tmp_path):
     finally:
         k.close()
 
-
 # ── Glob: defense-in-depth (per-match fs filter) ─────────────────────────
-
 
 def test_glob_filters_matches_outside_fs_grants(tmp_path):
     """Two subdirs; fs_grants covers only one. Glob lists both
@@ -319,7 +295,6 @@ def test_glob_filters_matches_outside_fs_grants(tmp_path):
     finally:
         k2.close()
 
-
 def test_glob_filtered_out_count(tmp_path):
     """Glob with cwd granted, but the result paths fall outside the
     fs_grants scope due to a narrower grant — the filtered count
@@ -342,9 +317,7 @@ def test_glob_filtered_out_count(tmp_path):
     finally:
         k.close()
 
-
 # ── List: basic ─────────────────────────────────────────────────────────
-
 
 def test_list_basic(tmp_path):
     base = tmp_path / "p"
@@ -365,7 +338,6 @@ def test_list_basic(tmp_path):
     finally:
         k.close()
 
-
 def test_list_excludes_hidden_by_default(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     (base / ".hidden").write_text("h")
@@ -380,7 +352,6 @@ def test_list_excludes_hidden_by_default(tmp_path):
     finally:
         k.close()
 
-
 def test_list_includes_hidden_when_requested(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     (base / ".hidden").write_text("h")
@@ -393,7 +364,6 @@ def test_list_includes_hidden_when_requested(tmp_path):
         assert ".hidden" in names
     finally:
         k.close()
-
 
 def test_list_symlink_typed(tmp_path):
     base = tmp_path / "p"; base.mkdir()
@@ -411,7 +381,6 @@ def test_list_symlink_typed(tmp_path):
     finally:
         k.close()
 
-
 def test_list_truncation(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     for i in range(10):
@@ -426,9 +395,7 @@ def test_list_truncation(tmp_path):
     finally:
         k.close()
 
-
 # ── List: validation ────────────────────────────────────────────────────
-
 
 def test_list_path_must_be_dir(tmp_path):
     f = tmp_path / "afile.txt"
@@ -442,7 +409,6 @@ def test_list_path_must_be_dir(tmp_path):
     finally:
         k.close()
 
-
 def test_list_path_must_be_string(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     k, pid = _make_kernel(tmp_path,
@@ -453,7 +419,6 @@ def test_list_path_must_be_string(tmp_path):
     finally:
         k.close()
 
-
 def test_list_path_with_nul_rejected(tmp_path):
     k, pid = _make_kernel(tmp_path,
                             fs_grants=[{"prefix": "/", "mode": "r"}])
@@ -463,7 +428,6 @@ def test_list_path_with_nul_rejected(tmp_path):
         assert resp["error"] == "invalid_args"
     finally:
         k.close()
-
 
 def test_list_max_entries_bounds(tmp_path):
     base = tmp_path / "p"; base.mkdir()
@@ -477,7 +441,6 @@ def test_list_max_entries_bounds(tmp_path):
     finally:
         k.close()
 
-
 def test_list_include_hidden_must_be_bool(tmp_path):
     base = tmp_path / "p"; base.mkdir()
     k, pid = _make_kernel(tmp_path,
@@ -489,9 +452,7 @@ def test_list_include_hidden_must_be_bool(tmp_path):
     finally:
         k.close()
 
-
 # ── List: capability + fs gating ────────────────────────────────────────
-
 
 def test_list_capability_denied(tmp_path):
     base = tmp_path / "p"; base.mkdir()
@@ -505,7 +466,6 @@ def test_list_capability_denied(tmp_path):
         assert resp["error"] == "permission_denied"
     finally:
         k.close()
-
 
 def test_list_fs_denied(tmp_path):
     base = tmp_path / "p"; base.mkdir()

@@ -25,14 +25,7 @@ from cc_kernel import (
 )
 
 
-pytestmark_subprocess = pytest.mark.skipif(
-    os.name != "posix",
-    reason="end-to-end tests spawn POSIX subprocesses",
-)
-
-
 # ── Registry CRUD ───────────────────────────────────────────────────────
-
 
 def test_registry_register_and_get():
     r = ToolRegistry()
@@ -42,7 +35,6 @@ def test_registry_register_and_get():
     assert r.has("X")
     assert "X" in r.list()
 
-
 def test_registry_register_replaces():
     r = ToolRegistry()
     t1 = Tool(name="X", description="v1", handler=lambda a, c: {"v": 1})
@@ -51,12 +43,10 @@ def test_registry_register_replaces():
     r.register(t2)
     assert r.get("X") is t2
 
-
 def test_registry_get_missing_raises():
     r = ToolRegistry()
     with pytest.raises(ToolNotFound):
         r.get("nope")
-
 
 def test_registry_unregister():
     r = ToolRegistry()
@@ -66,20 +56,17 @@ def test_registry_unregister():
     assert r.unregister("X") is False  # idempotent
     assert not r.has("X")
 
-
 def test_registry_register_validates_name():
     r = ToolRegistry()
     with pytest.raises(ToolError):
         r.register(Tool(name="", description="x",
                           handler=lambda a, c: {}))
 
-
 def test_registry_register_validates_handler():
     r = ToolRegistry()
     with pytest.raises(ToolError):
         r.register(Tool(name="X", description="x",
                           handler="not callable"))  # type: ignore[arg-type]
-
 
 def test_registry_register_validates_requires_fs():
     r = ToolRegistry()
@@ -88,9 +75,7 @@ def test_registry_register_validates_requires_fs():
                           handler=lambda a, c: {},
                           requires_fs=(("write", "path"),)))  # bad mode
 
-
 # ── register_builtin_tools ─────────────────────────────────────────────
-
 
 def test_register_builtin_registers_standard_set():
     """Builtin set as of RFC 0031:
@@ -102,7 +87,6 @@ def test_register_builtin_registers_standard_set():
     for n in names:
         assert r.has(n)
 
-
 def test_register_builtin_idempotent():
     r = ToolRegistry()
     register_builtin_tools(r)
@@ -110,15 +94,12 @@ def test_register_builtin_idempotent():
     assert sorted(r.list()) == ["AST", "Diff", "Echo", "Glob",
                                  "List", "Read", "Write"]
 
-
 # ── dispatch_tool_call (pure) ─────────────────────────────────────────
-
 
 def _basic_registry():
     r = ToolRegistry()
     register_builtin_tools(r)
     return r
-
 
 class _FakeKernel:
     """Minimal kernel-like stub for dispatch tests that don't need
@@ -137,7 +118,6 @@ class _FakeKernel:
                 return True
         return False
 
-
 def test_dispatch_echo_success():
     r = _basic_registry()
     k = _FakeKernel(allowed_tools=["Echo"])
@@ -150,7 +130,6 @@ def test_dispatch_echo_success():
     assert resp["result"]["text"] == "hi"
     assert resp["tool_call_id"] == "T"
 
-
 def test_dispatch_unknown_tool():
     r = _basic_registry()
     k = _FakeKernel(allowed_tools=["Echo"])
@@ -160,7 +139,6 @@ def test_dispatch_unknown_tool():
     )
     assert resp["ok"] is False
     assert resp["error"] == "tool_not_found"
-
 
 def test_dispatch_missing_tool_field():
     r = _basic_registry()
@@ -172,7 +150,6 @@ def test_dispatch_missing_tool_field():
     assert resp["ok"] is False
     assert resp["error"] == "tool_not_found"
 
-
 def test_dispatch_capability_denied():
     r = _basic_registry()
     k = _FakeKernel(allowed_tools=())  # nothing allowed
@@ -183,7 +160,6 @@ def test_dispatch_capability_denied():
     )
     assert resp["ok"] is False
     assert resp["error"] == "permission_denied"
-
 
 def test_dispatch_fs_denied(tmp_path):
     r = _basic_registry()
@@ -199,7 +175,6 @@ def test_dispatch_fs_denied(tmp_path):
     assert resp["ok"] is False
     assert resp["error"] == "fs_denied"
 
-
 def test_dispatch_fs_required_arg_missing():
     r = _basic_registry()
     k = _FakeKernel(allowed_tools=["Read"],
@@ -210,7 +185,6 @@ def test_dispatch_fs_required_arg_missing():
     )
     assert resp["ok"] is False
     assert resp["error"] == "invalid_args"
-
 
 def test_dispatch_handler_raises_tool_failed():
     r = ToolRegistry()
@@ -226,7 +200,6 @@ def test_dispatch_handler_raises_tool_failed():
     assert resp["error"] == "tool_failed"
     assert "boom" in resp["message"]
 
-
 def test_dispatch_handler_raises_tool_invalid_args():
     r = ToolRegistry()
     def bad(args, ctx):
@@ -240,7 +213,6 @@ def test_dispatch_handler_raises_tool_invalid_args():
     assert resp["ok"] is False
     assert resp["error"] == "invalid_args"
 
-
 def test_dispatch_handler_returns_non_dict():
     r = ToolRegistry()
     r.register(Tool(name="X", description="x",
@@ -253,7 +225,6 @@ def test_dispatch_handler_returns_non_dict():
     assert resp["ok"] is False
     assert resp["error"] == "tool_failed"
 
-
 def test_dispatch_no_kernel_no_cap_check():
     """When kernel is None, capability checks pass through (useful
     for test setups). fs checks similarly skip."""
@@ -265,9 +236,7 @@ def test_dispatch_no_kernel_no_cap_check():
     )
     assert resp["ok"] is True
 
-
 # ── Built-in tool: Read ────────────────────────────────────────────────
-
 
 def test_builtin_read_success(tmp_path):
     target = tmp_path / "test.txt"
@@ -285,7 +254,6 @@ def test_builtin_read_success(tmp_path):
     assert resp["result"]["size"] == 11
     assert resp["result"]["encoding"] == "utf-8"
 
-
 def test_builtin_read_missing_file_returns_failed(tmp_path):
     r = _basic_registry()
     k = _FakeKernel(allowed_tools=["Read"],
@@ -298,7 +266,6 @@ def test_builtin_read_missing_file_returns_failed(tmp_path):
     assert resp["ok"] is False
     assert resp["error"] == "tool_failed"
 
-
 def test_builtin_read_directory_fails(tmp_path):
     r = _basic_registry()
     k = _FakeKernel(allowed_tools=["Read"],
@@ -310,7 +277,6 @@ def test_builtin_read_directory_fails(tmp_path):
     )
     assert resp["ok"] is False
     assert resp["error"] == "tool_failed"
-
 
 def test_builtin_read_binary_falls_back_to_base64(tmp_path):
     target = tmp_path / "bin.dat"
@@ -326,9 +292,7 @@ def test_builtin_read_binary_falls_back_to_base64(tmp_path):
     assert resp["ok"]
     assert resp["result"]["encoding"] == "base64"
 
-
 # ── Built-in tool: Write ───────────────────────────────────────────────
-
 
 def test_builtin_write_success(tmp_path):
     target = tmp_path / "out.txt"
@@ -343,7 +307,6 @@ def test_builtin_write_success(tmp_path):
     )
     assert resp["ok"]
     assert target.read_text() == "hello"
-
 
 def test_builtin_write_requires_rw_capability(tmp_path):
     """Write needs 'rw' fs grant; 'r'-only is not enough."""
@@ -360,7 +323,6 @@ def test_builtin_write_requires_rw_capability(tmp_path):
     assert resp["ok"] is False
     assert resp["error"] == "fs_denied"
 
-
 def test_builtin_write_invalid_content_type(tmp_path):
     r = _basic_registry()
     k = _FakeKernel(allowed_tools=["Write"],
@@ -373,7 +335,6 @@ def test_builtin_write_invalid_content_type(tmp_path):
     )
     assert resp["ok"] is False
     assert resp["error"] == "invalid_args"
-
 
 def test_builtin_write_missing_parent_dir(tmp_path):
     r = _basic_registry()
@@ -388,11 +349,8 @@ def test_builtin_write_missing_parent_dir(tmp_path):
     assert resp["ok"] is False
     assert resp["error"] == "tool_failed"
 
-
 # ── Supervisor end-to-end ─────────────────────────────────────────────
 
-
-@pytestmark_subprocess
 def test_supervisor_dispatches_echo_via_runner(tmp_path):
     """Spin up the kernel + supervisor with a registry, run runner_main
     in tool_call mode, verify the tool_response is correct."""
@@ -419,8 +377,6 @@ def test_supervisor_dispatches_echo_via_runner(tmp_path):
         assert tr["result"]["text"] == "hi from agent"
         assert tr["tool_call_id"] == "abc"
 
-
-@pytestmark_subprocess
 def test_supervisor_dispatches_read_with_fs_grant(tmp_path):
     target = tmp_path / "data.txt"
     target.write_text("on disk")
@@ -447,8 +403,6 @@ def test_supervisor_dispatches_read_with_fs_grant(tmp_path):
         assert tr["ok"] is True
         assert tr["result"]["content"] == "on disk"
 
-
-@pytestmark_subprocess
 def test_supervisor_capability_denied_via_runner(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         registry = ToolRegistry()
@@ -470,8 +424,6 @@ def test_supervisor_capability_denied_via_runner(tmp_path):
         assert tr["ok"] is False
         assert tr["error"] == "permission_denied"
 
-
-@pytestmark_subprocess
 def test_supervisor_without_registry_returns_tool_not_found(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         a = k.create_agent(name="x", template="t")
@@ -490,11 +442,8 @@ def test_supervisor_without_registry_returns_tool_not_found(tmp_path):
         assert tr["ok"] is False
         assert tr["error"] == "tool_not_found"
 
-
 # ── Audit events ───────────────────────────────────────────────────────
 
-
-@pytestmark_subprocess
 def test_supervisor_records_tool_dispatched_event(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         registry = ToolRegistry()
@@ -519,8 +468,6 @@ def test_supervisor_records_tool_dispatched_event(tmp_path):
         assert ev.payload["tool_call_id"] == "T"
         assert ev.payload["ok"] is True
 
-
-@pytestmark_subprocess
 def test_supervisor_records_tool_denied_event(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         registry = ToolRegistry()

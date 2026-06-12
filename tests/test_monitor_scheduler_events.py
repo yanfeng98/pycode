@@ -17,7 +17,6 @@ import monitor.store as store
 import monitor.scheduler as scheduler
 from cc_daemon import events, schema
 
-
 @pytest.fixture(autouse=True)
 def _isolated(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(store, "STORE_PATH",
@@ -43,7 +42,6 @@ def _isolated(tmp_path: Path, monkeypatch):
     schema._local.conn = None
     schema.set_db_path(schema.get_default_db_path())
 
-
 # ── run_one persistence path ──────────────────────────────────────────────
 
 def test_run_one_persists_report_to_monitor_reports():
@@ -54,7 +52,6 @@ def test_run_one_persists_report_to_monitor_reports():
     assert len(reports) == 1
     assert reports[0]["body"].startswith("SUMMARY:")
     assert reports[0]["sent_to"] == ["console"]
-
 
 def test_run_one_records_failed_delivery_in_report():
     store.add_subscription("arxiv", schedule="daily", channels=["telegram"])
@@ -71,13 +68,11 @@ def test_run_one_records_failed_delivery_in_report():
     # Successful sent_to is empty when all channels failed
     assert reports[0]["sent_to"] == []
 
-
 def test_run_one_updates_last_run_on_subscription_row():
     store.add_subscription("arxiv", schedule="daily", channels=["console"])
     assert store.get_subscription("arxiv")["last_run"] is None
     scheduler.run_one("arxiv", config={})
     assert store.get_subscription("arxiv")["last_run"] is not None
-
 
 # ── monitor_report SSE event ──────────────────────────────────────────────
 
@@ -98,7 +93,6 @@ def test_run_one_publishes_monitor_report_event():
     finally:
         bus.unsubscribe(sub)
 
-
 def test_event_report_id_matches_persisted_row():
     store.add_subscription("arxiv", schedule="daily", channels=["console"])
     bus = events.get_bus()
@@ -111,7 +105,6 @@ def test_event_report_id_matches_persisted_row():
         assert any(r["id"] == report_id for r in rows)
     finally:
         bus.unsubscribe(sub)
-
 
 def test_event_carries_error_list_on_partial_failure():
     store.add_subscription("arxiv", schedule="daily",
@@ -128,7 +121,6 @@ def test_event_carries_error_list_on_partial_failure():
         assert any("telegram" in e for e in evt["data"]["errors"])
     finally:
         bus.unsubscribe(sub)
-
 
 # ── Survives daemon restart (key F-3 win) ────────────────────────────────
 

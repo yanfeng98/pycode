@@ -34,16 +34,13 @@ from cc_kernel.store import (
     EV_PROCESS_TRANSITIONED,
 )
 
-
 @pytest.fixture
 def store(tmp_path):
     s = KernelStore.open(tmp_path / "kernel.db")
     yield s
     s.close()
 
-
 # ── Schema + open ──────────────────────────────────────────────────────────
-
 
 def test_open_creates_kernel_db_and_schema(tmp_path):
     db = tmp_path / "kernel.db"
@@ -63,7 +60,6 @@ def test_open_creates_kernel_db_and_schema(tmp_path):
     finally:
         s.close()
 
-
 def test_open_is_idempotent(tmp_path):
     s1 = KernelStore.open(tmp_path / "kernel.db")
     s1.create(name="a", template="t")
@@ -75,7 +71,6 @@ def test_open_is_idempotent(tmp_path):
         assert agents[0].name == "a"
     finally:
         s2.close()
-
 
 def test_get_schema_version_helper(tmp_path):
     s = KernelStore.open(tmp_path / "kernel.db")
@@ -89,9 +84,7 @@ def test_get_schema_version_helper(tmp_path):
     finally:
         s.close()
 
-
 # ── Create + get + list ────────────────────────────────────────────────────
-
 
 def test_create_returns_ready_agent_with_pid(store):
     a = store.create(name="alice", template="research/surveyor")
@@ -103,25 +96,21 @@ def test_create_returns_ready_agent_with_pid(store):
     assert a.state == AgentState.READY
     assert a.exit_kind is None
 
-
 def test_create_persists(store):
     a = store.create(name="bob", template="t")
     fetched = store.get(a.pid)
     assert fetched.pid == a.pid
     assert fetched.name == "bob"
 
-
 def test_create_with_metadata(store):
     meta = {"k": "v", "n": 42}
     a = store.create(name="c", template="t", metadata=meta)
     assert store.get(a.pid).metadata == meta
 
-
 def test_create_with_parent_pid_validates(store):
     parent = store.create(name="p", template="t")
     child = store.create(name="ch", template="t", parent_pid=parent.pid)
     assert child.parent_pid == parent.pid
-
 
 def test_create_with_unknown_parent_raises(store):
     with pytest.raises(UnknownPid) as e:
@@ -129,27 +118,22 @@ def test_create_with_unknown_parent_raises(store):
     assert e.value.code == KERNEL_UNKNOWN_PID
     assert e.value.pid == 9999
 
-
 def test_create_rejects_empty_name(store):
     with pytest.raises(InvalidPayload):
         store.create(name="", template="t")
-
 
 def test_create_rejects_non_string_template(store):
     with pytest.raises(InvalidPayload):
         store.create(name="a", template=42)  # type: ignore[arg-type]
 
-
 def test_get_unknown_pid_raises(store):
     with pytest.raises(UnknownPid):
         store.get(9999)
-
 
 def test_pids_are_monotonic(store):
     pids = [store.create(name=f"a{i}", template="t").pid for i in range(5)]
     assert pids == sorted(pids)
     assert len(set(pids)) == 5
-
 
 def test_list_filters(store):
     a1 = store.create(name="a1", template="t")
@@ -169,7 +153,6 @@ def test_list_filters(store):
     assert total == 1
     assert agents[0].pid == child.pid
 
-
 def test_list_pagination(store):
     for i in range(5):
         store.create(name=f"a{i}", template="t")
@@ -181,9 +164,7 @@ def test_list_pagination(store):
     pids = [a.pid for a in page1 + page2 + page3]
     assert pids == sorted(pids)
 
-
 # ── Transition ─────────────────────────────────────────────────────────────
-
 
 def test_transition_legal_path(store):
     a = store.create(name="x", template="t")
@@ -203,7 +184,6 @@ def test_transition_legal_path(store):
     assert a3.state == AgentState.WAITING
     assert a3.state_reason == "tool_call"
 
-
 def test_transition_illegal_raises(store):
     a = store.create(name="x", template="t")
     # READY -> WAITING is illegal (must go through RUNNING).
@@ -216,17 +196,14 @@ def test_transition_illegal_raises(store):
     # Row should be untouched.
     assert store.get(a.pid).state == AgentState.READY
 
-
 def test_transition_unknown_pid(store):
     with pytest.raises(UnknownPid):
         store.transition(9999, AgentState.RUNNING)
-
 
 def test_transition_to_invalid_state(store):
     a = store.create(name="x", template="t")
     with pytest.raises(InvalidPayload):
         store.transition(a.pid, "BOGUS")
-
 
 def test_dead_is_terminal(store):
     a = store.create(name="x", template="t")
@@ -240,9 +217,7 @@ def test_dead_is_terminal(store):
     with pytest.raises(IllegalTransition):
         store.terminate(a.pid, exit_kind="cancelled")
 
-
 # ── Terminate ──────────────────────────────────────────────────────────────
-
 
 def test_terminate_records_exit_kind(store):
     a = store.create(name="x", template="t")
@@ -257,15 +232,12 @@ def test_terminate_records_exit_kind(store):
     assert a2.exit_detail == {"err": "oom"}
     assert a2.ended_at is not None
 
-
 def test_terminate_invalid_exit_kind(store):
     a = store.create(name="x", template="t")
     with pytest.raises(InvalidPayload):
         store.terminate(a.pid, exit_kind="bogus")
 
-
 # ── Events ─────────────────────────────────────────────────────────────────
-
 
 def test_create_emits_one_event(store):
     a = store.create(name="x", template="t")
@@ -276,7 +248,6 @@ def test_create_emits_one_event(store):
     assert e.pid == a.pid
     assert e.payload["name"] == "x"
     assert e.payload["template"] == "t"
-
 
 def test_transition_emits_event(store):
     a = store.create(name="x", template="t")
@@ -290,7 +261,6 @@ def test_transition_emits_event(store):
         "reason": "manual_start",
     }
 
-
 def test_terminate_emits_terminated_event(store):
     a = store.create(name="x", template="t")
     store.transition(a.pid, AgentState.RUNNING)
@@ -299,7 +269,6 @@ def test_terminate_emits_terminated_event(store):
     kinds = [e.kind for e in events]
     assert kinds == [EV_PROCESS_CREATED, EV_PROCESS_TRANSITIONED,
                      EV_PROCESS_TERMINATED]
-
 
 def test_event_ids_are_monotonic_across_agents(store):
     a1 = store.create(name="a1", template="t")
@@ -312,14 +281,12 @@ def test_event_ids_are_monotonic_across_agents(store):
     assert ids == sorted(ids)
     assert len(set(ids)) == len(ids)
 
-
 def test_events_tail_filter_by_kind(store):
     a = store.create(name="x", template="t")
     store.transition(a.pid, AgentState.RUNNING)
     only_created = store.events_tail(kind=EV_PROCESS_CREATED)
     assert len(only_created) == 1
     assert only_created[0].kind == EV_PROCESS_CREATED
-
 
 def test_events_tail_since_cursor(store):
     a = store.create(name="x", template="t")  # event 1 (created)
@@ -332,7 +299,6 @@ def test_events_tail_since_cursor(store):
     assert len(rest) == 1
     assert rest[0].event_id > cursor
 
-
 def test_events_append_user_event(store):
     a = store.create(name="x", template="t")
     eid = store.events_append(pid=a.pid, kind="my.app.foo",
@@ -341,18 +307,15 @@ def test_events_append_user_event(store):
     assert any(e.event_id == eid and e.kind == "my.app.foo" for e in events)
     assert store.get(a.pid).last_event_id == eid
 
-
 def test_events_append_rejects_kernel_prefix(store):
     a = store.create(name="x", template="t")
     with pytest.raises(InvalidPayload):
         store.events_append(pid=a.pid, kind="kernel.something",
                             payload={})
 
-
 def test_events_append_unknown_pid(store):
     with pytest.raises(UnknownPid):
         store.events_append(pid=9999, kind="my.x", payload={})
-
 
 def test_events_append_with_causation_and_correlation(store):
     a = store.create(name="x", template="t")
@@ -365,9 +328,7 @@ def test_events_append_with_causation_and_correlation(store):
     assert events[1].causation_id == e1
     assert events[1].correlation_id == "trace-123"
 
-
 # ── Bus integration ────────────────────────────────────────────────────────
-
 
 class _FakeBus:
     def __init__(self):
@@ -376,7 +337,6 @@ class _FakeBus:
     def publish(self, ev_type: str, data: dict) -> int:
         self.published.append((ev_type, data))
         return len(self.published)
-
 
 def test_bus_receives_kernel_events_after_commit(tmp_path):
     bus = _FakeBus()
@@ -394,9 +354,7 @@ def test_bus_receives_kernel_events_after_commit(tmp_path):
     finally:
         store.close()
 
-
 # ── Info ───────────────────────────────────────────────────────────────────
-
 
 def test_info_reports_counts(store):
     assert store.info() == {
@@ -417,13 +375,11 @@ def test_info_reports_counts(store):
     assert info["next_pid"] >= 2
     assert info["next_event_id"] >= 3
 
-
 # ── Concurrency smoke test ─────────────────────────────────────────────────
 #
 # Not a stress test — just confirms that two writer threads don't crash
 # the lock or corrupt the table. Real fuzz/chaos testing belongs in
 # RFC 0012 (Observability + chaos suite).
-
 
 def test_concurrent_writers_do_not_corrupt(store):
     import threading

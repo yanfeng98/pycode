@@ -43,15 +43,7 @@ from cc_kernel.tools.registry import (
     dispatch_tool_call,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="Exec tool requires POSIX (RLIMIT + subprocess preexec_fn)",
-)
-
-
 # ── Discovery: find absolute paths to common binaries ────────────────
-
 
 def _find_bin(name: str) -> str:
     """Return absolute path to a system binary, skip test if missing."""
@@ -61,23 +53,19 @@ def _find_bin(name: str) -> str:
             return p
     pytest.skip(f"binary {name!r} not found in /bin or /usr/bin")
 
-
 ECHO_BIN  = _find_bin("echo")
 TRUE_BIN  = _find_bin("true")
 SLEEP_BIN = _find_bin("sleep")
 ENV_BIN   = _find_bin("env")
 CAT_BIN   = _find_bin("cat")
 
-
 # ── Opt-in invariant ─────────────────────────────────────────────────
-
 
 def test_exec_not_in_builtin():
     """register_builtin_tools MUST NOT include Exec — opt-in only."""
     r = ToolRegistry()
     register_builtin_tools(r)
     assert "Exec" not in r.list()
-
 
 def test_register_exec_adds_it():
     r = ToolRegistry()
@@ -86,7 +74,6 @@ def test_register_exec_adds_it():
     assert name == "Exec"
     assert "Exec" in r.list()
 
-
 def test_register_exec_idempotent():
     """Re-registering replaces silently per ToolRegistry contract."""
     r = ToolRegistry()
@@ -94,29 +81,23 @@ def test_register_exec_idempotent():
     register_exec_tool(r)
     assert r.list() == ["Exec"]
 
-
 # ── _validate_argv ───────────────────────────────────────────────────
-
 
 def test_validate_argv_basic():
     out = _validate_argv([ECHO_BIN, "hi"])
     assert out == [ECHO_BIN, "hi"]
 
-
 def test_validate_argv_rejects_non_list():
     with pytest.raises(ToolInvalidArgs):
         _validate_argv("not a list")
-
 
 def test_validate_argv_rejects_empty():
     with pytest.raises(ToolInvalidArgs):
         _validate_argv([])
 
-
 def test_validate_argv_rejects_non_str():
     with pytest.raises(ToolInvalidArgs):
         _validate_argv([ECHO_BIN, 123])
-
 
 def test_validate_argv_rejects_relative_path():
     """argv[0] must be absolute — no PATH lookup."""
@@ -124,32 +105,25 @@ def test_validate_argv_rejects_relative_path():
         _validate_argv(["echo", "hi"])
     assert "absolute" in str(e.value)
 
-
 def test_validate_argv_rejects_missing_binary(tmp_path):
     with pytest.raises(ToolFailed):
         _validate_argv([str(tmp_path / "nope")])
 
-
 # ── _validate_user_env ───────────────────────────────────────────────
-
 
 def test_validate_env_none_returns_empty():
     assert _validate_user_env(None) == {}
 
-
 def test_validate_env_basic():
     assert _validate_user_env({"FOO": "bar"}) == {"FOO": "bar"}
-
 
 def test_validate_env_rejects_non_dict():
     with pytest.raises(ToolInvalidArgs):
         _validate_user_env("not a dict")
 
-
 def test_validate_env_rejects_non_str_value():
     with pytest.raises(ToolInvalidArgs):
         _validate_user_env({"FOO": 123})
-
 
 def test_validate_env_rejects_underscore_prefix():
     """Reserved keys (kernel-internal) blocked."""
@@ -157,34 +131,26 @@ def test_validate_env_rejects_underscore_prefix():
         _validate_user_env({"_INTERNAL": "x"})
     assert "reserved" in str(e.value)
 
-
 # ── _validate_timeout ────────────────────────────────────────────────
-
 
 def test_timeout_default():
     assert _validate_timeout(None) == DEFAULT_TIMEOUT_S
 
-
 def test_timeout_int():
     assert _validate_timeout(30) == 30
 
-
 def test_timeout_float_rounds():
     assert _validate_timeout(30.7) == 30
-
 
 def test_timeout_too_low():
     with pytest.raises(ToolInvalidArgs):
         _validate_timeout(0)
 
-
 def test_timeout_too_high():
     with pytest.raises(ToolInvalidArgs):
         _validate_timeout(MAX_TIMEOUT_S + 1)
 
-
 # ── _scrub_env ───────────────────────────────────────────────────────
-
 
 def test_scrub_drops_secrets():
     parent = {
@@ -199,28 +165,23 @@ def test_scrub_drops_secrets():
     assert "AWS_SECRET_ACCESS_KEY" not in out
     assert "GITHUB_TOKEN"          not in out
 
-
 def test_scrub_keeps_safe_keys():
     parent = {"PATH": "/test", "HOME": "/test_home"}
     out = _scrub_env(parent, {})
     assert out["PATH"] == "/test"
     assert out["HOME"] == "/test_home"
 
-
 def test_scrub_user_env_overrides_defaults():
     parent = {}
     out = _scrub_env(parent, {"PATH": "/custom/bin"})
     assert out["PATH"] == "/custom/bin"
-
 
 def test_scrub_user_env_addition():
     parent = {}
     out = _scrub_env(parent, {"MY_VAR": "value"})
     assert out["MY_VAR"] == "value"
 
-
 # ── End-to-end via dispatch_tool_call (in-process) ───────────────────
-
 
 def _make_kernel_with_grants(tmp_path, *, tool_grants, fs_grants):
     k = Kernel.open(tmp_path / "kernel.db")
@@ -229,12 +190,10 @@ def _make_kernel_with_grants(tmp_path, *, tool_grants, fs_grants):
                  fs_grants=fs_grants)
     return k, a.pid
 
-
 def _registry_with_exec():
     r = ToolRegistry()
     register_exec_tool(r)
     return r
-
 
 def test_e2e_basic_exec(tmp_path):
     k, pid = _make_kernel_with_grants(
@@ -256,7 +215,6 @@ def test_e2e_basic_exec(tmp_path):
     finally:
         k.close()
 
-
 def test_e2e_no_shell_expansion(tmp_path):
     """Critical safety property: shell metachars in args are NOT
     interpreted. echo prints them literally."""
@@ -276,7 +234,6 @@ def test_e2e_no_shell_expansion(tmp_path):
         assert resp["result"]["stdout"] == "; rm -rf / && echo PWNED\n"
     finally:
         k.close()
-
 
 def test_e2e_no_path_expansion(tmp_path):
     """argv[0] is absolute — no PATH lookup. Setting PATH wonky
@@ -300,7 +257,6 @@ def test_e2e_no_path_expansion(tmp_path):
     finally:
         k.close()
 
-
 def test_e2e_capability_denied(tmp_path):
     """Without 'Exec' in tool_grants → permission_denied."""
     k, pid = _make_kernel_with_grants(
@@ -318,7 +274,6 @@ def test_e2e_capability_denied(tmp_path):
         assert resp["error"] == "permission_denied"
     finally:
         k.close()
-
 
 def test_e2e_fs_denied_on_argv0(tmp_path):
     """Exec capability granted but fs_grants doesn't cover argv[0]
@@ -339,7 +294,6 @@ def test_e2e_fs_denied_on_argv0(tmp_path):
     finally:
         k.close()
 
-
 def test_e2e_relative_path_rejected(tmp_path):
     k, pid = _make_kernel_with_grants(
         tmp_path, tool_grants=["Exec"],
@@ -356,7 +310,6 @@ def test_e2e_relative_path_rejected(tmp_path):
         assert resp["error"] == "invalid_args"
     finally:
         k.close()
-
 
 def test_e2e_exit_code_propagated(tmp_path):
     """An /bin/sh -c won't run via Exec because we forbid shell.
@@ -378,7 +331,6 @@ def test_e2e_exit_code_propagated(tmp_path):
         assert resp["result"]["exit_code"] == 1
     finally:
         k.close()
-
 
 def test_e2e_timeout_kills_long_command(tmp_path):
     """Sleep 30 with timeout_s=1 → wall-killer fires within seconds."""
@@ -402,7 +354,6 @@ def test_e2e_timeout_kills_long_command(tmp_path):
         assert resp["result"]["exit_code"] != 0
     finally:
         k.close()
-
 
 def test_e2e_env_scrub_secret_dropped(tmp_path, monkeypatch):
     """Set ANTHROPIC_API_KEY in parent; Exec'd `env` shouldn't see it."""
@@ -428,7 +379,6 @@ def test_e2e_env_scrub_secret_dropped(tmp_path, monkeypatch):
     finally:
         k.close()
 
-
 def test_e2e_user_env_visible(tmp_path):
     """args.env additions DO show up in the child's env."""
     k, pid = _make_kernel_with_grants(
@@ -448,7 +398,6 @@ def test_e2e_user_env_visible(tmp_path):
         assert "MYTESTVAR=hello123" in resp["result"]["stdout"]
     finally:
         k.close()
-
 
 def test_e2e_output_truncation(tmp_path):
     """A binary that prints more than max_output_bytes →
@@ -478,7 +427,6 @@ def test_e2e_output_truncation(tmp_path):
     finally:
         k.close()
 
-
 def test_e2e_invalid_max_output_bytes(tmp_path):
     k, pid = _make_kernel_with_grants(
         tmp_path, tool_grants=["Exec"],
@@ -498,7 +446,6 @@ def test_e2e_invalid_max_output_bytes(tmp_path):
     finally:
         k.close()
 
-
 def test_e2e_cwd_must_be_absolute(tmp_path):
     k, pid = _make_kernel_with_grants(
         tmp_path, tool_grants=["Exec"],
@@ -516,7 +463,6 @@ def test_e2e_cwd_must_be_absolute(tmp_path):
         assert resp["error"] == "invalid_args"
     finally:
         k.close()
-
 
 def test_e2e_cwd_fs_denied(tmp_path):
     """cwd not covered by fs_grants → fs_denied."""
@@ -537,7 +483,6 @@ def test_e2e_cwd_fs_denied(tmp_path):
         assert resp["error"] == "fs_denied"
     finally:
         k.close()
-
 
 def test_e2e_audit_event_recorded(tmp_path):
     """Successful Exec writes a tool.call.dispatched audit event
@@ -563,9 +508,7 @@ def test_e2e_audit_event_recorded(tmp_path):
     finally:
         k.close()
 
-
 # ── Argv schema bounds ───────────────────────────────────────────────
-
 
 def test_argv_with_dangerous_chars_runs_safely(tmp_path):
     """A range of shell-meaningful chars in args. None should

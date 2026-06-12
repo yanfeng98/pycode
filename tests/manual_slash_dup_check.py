@@ -25,7 +25,6 @@ except ImportError:
     print("Need: pip install websocket-client")
     sys.exit(2)
 
-
 def http(opener, method, url, body=None, headers=None):
     h = {"Content-Type": "application/json"}
     if headers:
@@ -33,7 +32,6 @@ def http(opener, method, url, body=None, headers=None):
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method, headers=h)
     return opener.open(req, timeout=10)
-
 
 def main(base_url):
     cj = CookieJar()
@@ -86,7 +84,6 @@ def main(base_url):
         ws_events.clear()
 
     ws.close()
-
 
 if __name__ == "__main__":
     main(sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080")

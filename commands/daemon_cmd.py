@@ -135,12 +135,9 @@ def _stop(argv: list[str]) -> int:
     # Preferred path: graceful shutdown via RPC.
     rpc_ok, rpc_result = _call_rpc("system.shutdown")
     if not rpc_ok and isinstance(pid, int) and pid > 0:
-        # Fallback: SIGTERM (POSIX) / TerminateProcess (Windows).
+        # Fallback: SIGTERM.
         try:
-            if os.name == "nt":
-                _terminate_windows(pid)
-            else:
-                os.kill(pid, signal.SIGTERM)
+            os.kill(pid, signal.SIGTERM)
         except (ProcessLookupError, PermissionError, OSError) as exc:
             print(f"warning: signal delivery failed: {exc}", file=sys.stderr)
 
@@ -329,16 +326,3 @@ def _format_duration(seconds: float) -> str:
     m, sec = divmod(rest, 60)
     return f"{h}h {m}m {sec}s"
 
-
-def _terminate_windows(pid: int) -> None:
-    """Best-effort TerminateProcess on Windows."""
-    import ctypes
-    PROCESS_TERMINATE = 0x0001
-    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-    handle = kernel32.OpenProcess(PROCESS_TERMINATE, False, pid)
-    if not handle:
-        return
-    try:
-        kernel32.TerminateProcess(handle, 1)
-    finally:
-        kernel32.CloseHandle(handle)

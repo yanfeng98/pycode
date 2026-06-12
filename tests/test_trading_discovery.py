@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-
 # Same skip pattern as test_trading_advanced.py — the stub_yfinance
 # fixture instantiates a FakeHist that imports pandas, so any test
 # that triggers `Ticker(sym).history()` needs pandas installed.
@@ -19,7 +18,6 @@ _skip_if_no_pandas = pytest.mark.skipif(
     importlib.util.find_spec("pandas") is None,
     reason="pandas not installed (needs [trading] extra)",
 )
-
 
 # ── Universe helpers ─────────────────────────────────────────────────────
 
@@ -30,12 +28,10 @@ def test_resolve_universe_default_returns_sp100():
     assert "AAPL" in out
     assert len(out) >= 100
 
-
 def test_resolve_universe_custom_overrides():
     from modular.trading.universe import resolve_universe
     out = resolve_universe(None, custom=["aapl", "  msft", "GOOG  ", ""])
     assert out == ["AAPL", "MSFT", "GOOG"]
-
 
 def test_resolve_universe_preset_name():
     from modular.trading.universe import resolve_universe
@@ -43,13 +39,11 @@ def test_resolve_universe_preset_name():
     assert "XLK" in sectors
     assert "XLF" in sectors
 
-
 def test_sector_top_holdings_keyed_by_etf():
     from modular.trading.universe import SECTOR_TOP_HOLDINGS
     assert "XLK" in SECTOR_TOP_HOLDINGS
     assert "AAPL" in SECTOR_TOP_HOLDINGS["XLK"]
     assert all(len(v) >= 5 for v in SECTOR_TOP_HOLDINGS.values())
-
 
 # ── Factor scoring (stub yfinance) ───────────────────────────────────────
 
@@ -108,7 +102,6 @@ def stub_yfinance(monkeypatch):
     monkeypatch.setitem(sys.modules, "yfinance", fake)
     return fake
 
-
 @_skip_if_no_pandas
 def test_factor_scan_and_score(stub_yfinance, tmp_path, monkeypatch):
     from modular.trading import factors
@@ -126,7 +119,6 @@ def test_factor_scan_and_score(stub_yfinance, tmp_path, monkeypatch):
     by_sym = {r.symbol: r for r in rows}
     assert by_sym["AAPL"].momentum_score >= by_sym["GOOG"].momentum_score
 
-
 @_skip_if_no_pandas
 def test_factor_render_table(stub_yfinance, tmp_path, monkeypatch):
     from modular.trading import factors
@@ -136,7 +128,6 @@ def test_factor_render_table(stub_yfinance, tmp_path, monkeypatch):
     md = factors.render_factor_table(rows)
     assert "Factor Scores" in md
     assert "AAPL" in md or "MSFT" in md
-
 
 # ── Discovery: insider cluster ───────────────────────────────────────────
 
@@ -166,7 +157,6 @@ def test_insider_cluster_flags_clusters(monkeypatch):
     assert "5 Form 4" in hits[0].reason or "5" in hits[0].reason
     assert hits[0].source == "insider"
 
-
 # ── Discovery: momentum-quality ──────────────────────────────────────────
 
 @_skip_if_no_pandas
@@ -179,7 +169,6 @@ def test_momentum_quality_filters_below_threshold(stub_yfinance, tmp_path, monke
                                  min_momentum=0.0, min_quality=0.0)
     assert len(hits) >= 1
     assert all(h.source == "momentum-quality" for h in hits)
-
 
 # ── Discovery: sector rotation ───────────────────────────────────────────
 
@@ -211,7 +200,6 @@ def test_sector_rotation_picks_top_sectors(monkeypatch):
     assert len(hits) > 0
     syms = [h.symbol for h in hits]
     assert any(s in syms for s in ["AAPL", "MSFT", "NVDA", "JPM", "V"])
-
 
 # ── Discovery orchestrator ───────────────────────────────────────────────
 
@@ -245,7 +233,6 @@ def test_orchestrator_merges_multi_source_hits(monkeypatch):
     # AAPL should rank above MSFT
     assert result["ranked"][0]["symbol"] == "AAPL"
 
-
 def test_orchestrator_render_report_handles_empty():
     from modular.trading.discover import orchestrator
     md = orchestrator.render_report({
@@ -253,7 +240,6 @@ def test_orchestrator_render_report_handles_empty():
         "n_total_hits": 0, "notes": ["test note"],
     })
     assert "test note" in md
-
 
 # ── Anomaly detector ────────────────────────────────────────────────────
 
@@ -275,7 +261,6 @@ def test_anomaly_volume_spike_detected(monkeypatch):
     types = [h.details.get("type") for h in hits]
     assert "volume_spike" in types
 
-
 def test_anomaly_price_gap_detected(monkeypatch):
     from modular.trading.discover import anomaly
     rows = [{"date": f"d{i}", "open": 100, "high": 101, "low": 99,
@@ -292,7 +277,6 @@ def test_anomaly_price_gap_detected(monkeypatch):
     types = [h.details.get("type") for h in hits]
     assert "price_gap" in types
 
-
 def test_anomaly_returns_empty_for_short_history(monkeypatch):
     from modular.trading.discover import anomaly
     short_rows = [{"date": f"d{i}", "open": 100, "high": 100, "low": 100,
@@ -303,7 +287,6 @@ def test_anomaly_returns_empty_for_short_history(monkeypatch):
     )
     hits = anomaly.scan(["X"], max_workers=1)
     assert hits == []
-
 
 # ── Ranker ─────────────────────────────────────────────────────────────
 
@@ -327,13 +310,11 @@ def test_ranker_combines_factor_and_discovery(stub_yfinance, tmp_path, monkeypat
     md = ranker.render_rank_report(rows)
     assert "Investment Ranking" in md
 
-
 def test_ranker_handles_empty_universe(monkeypatch):
     from modular.trading import ranker, factors
     monkeypatch.setattr(factors, "scan_universe", lambda syms, **k: [])
     out = ranker.rank(symbols=[], use_discovery=False, use_calibration=False)
     assert out == []
-
 
 # ── Monitor ──────────────────────────────────────────────────────────────
 
@@ -348,18 +329,15 @@ def test_monitor_alert_render():
     assert "Critical" in md and "NVDA" in md
     assert "STOP HIT" in md
 
-
 def test_monitor_render_alerts_empty():
     from modular.trading.monitor import render_alerts
     md = render_alerts([])
     assert "quiet" in md.lower()
 
-
 def test_monitor_dispatch_no_alerts_skips():
     from modular.trading.monitor import dispatch_to_bridges
     r = dispatch_to_bridges([])
     assert r["sent"] == 0
-
 
 def test_monitor_scan_with_no_data_returns_empty(monkeypatch, tmp_path):
     """End-to-end: no watchlist, no open trades → empty alert list."""
@@ -377,7 +355,6 @@ def test_monitor_scan_with_no_data_returns_empty(monkeypatch, tmp_path):
     last = monitor.last_run()
     assert last is not None
     assert last["n_symbols"] == 0
-
 
 def test_monitor_anomaly_detection_when_watchlist_set(monkeypatch, tmp_path):
     """Smoke: with synthetic anomaly data, scan produces an alert."""

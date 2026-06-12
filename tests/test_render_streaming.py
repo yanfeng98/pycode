@@ -1,7 +1,6 @@
 import pytest
 import ui.render as render
 
-
 class _FakeLive:
     def __init__(self, *args, **kwargs):
         self.started = False
@@ -17,7 +16,6 @@ class _FakeLive:
     def update(self, value, refresh=False):
         self.updates.append((value, refresh))
 
-
 class _FakeConsole:
     height = 100
     width = 80
@@ -28,7 +26,6 @@ class _FakeConsole:
 
     def print(self, value):
         self.printed.append(value)
-
 
 @pytest.fixture
 def patched_render(monkeypatch):
@@ -67,7 +64,6 @@ def patched_render(monkeypatch):
     render._plain_streaming_response = previous_state[2]
     render._live_shows_full = previous_state[3]
 
-
 def test_short_response_streams_full_in_one_live_and_freezes_on_flush(
     patched_render, monkeypatch, capsys
 ):
@@ -103,7 +99,6 @@ def test_short_response_streams_full_in_one_live_and_freezes_on_flush(
     assert render._current_live is None
     assert render._live_shows_full is False
 
-
 def test_long_response_uses_tail_window_then_commits_full_on_flush(
     patched_render, monkeypatch
 ):
@@ -135,7 +130,6 @@ def test_long_response_uses_tail_window_then_commits_full_on_flush(
     assert render._live_shows_full is False
     assert render._plain_streaming_response is False
 
-
 def test_transition_from_full_to_tail_window(patched_render, monkeypatch):
     """A response that starts within the limit and grows past it switches from a
     full frame to a tail window mid-stream, staying on one Live renderer."""
@@ -161,7 +155,6 @@ def test_transition_from_full_to_tail_window(patched_render, monkeypatch):
     assert fake_console.printed == ["ab"]       # full output committed
     assert render._live_shows_full is False
 
-
 def test_falls_back_to_plain_when_precise_render_fails(patched_render, monkeypatch, capsys):
     """If the precise render can't produce lines, this response degrades to plain
     streaming (the safety net) instead of risking a bad Live frame."""
@@ -184,7 +177,6 @@ def test_falls_back_to_plain_when_precise_render_fails(patched_render, monkeypat
     assert capsys.readouterr().out == "\n"
     assert render._plain_streaming_response is False
 
-
 def test_falls_back_to_plain_when_terminal_too_small_to_bound_window(
     patched_render, monkeypatch
 ):
@@ -200,7 +192,6 @@ def test_falls_back_to_plain_when_terminal_too_small_to_bound_window(
     assert render._accumulated_text == []
     assert render._plain_streaming_response is True
 
-
 def test_lines_renderable_joins_segment_lines_without_trailing_break():
     """Real _lines_renderable (no mocks) wraps rendered segment-lines into a
     Segments renderable, inserting a line break between lines but not after the
@@ -212,7 +203,6 @@ def test_lines_renderable_joins_segment_lines_without_trailing_break():
 
     assert isinstance(result, Segments)
     assert [seg.text for seg in result.segments] == ["alpha", "\n", "beta", "!"]
-
 
 def test_real_tail_window_end_to_end_commits_full_output(monkeypatch):
     """Integration: drive the real Live + Segments tail-window path with nothing

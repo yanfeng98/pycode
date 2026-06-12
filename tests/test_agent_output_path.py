@@ -18,7 +18,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import agent_runner
 from commands.agent_cmd import _resolve_output_path
 
-
 # ── _resolve_output_path ─────────────────────────────────────────────────
 
 class TestResolveOutputPath:
@@ -67,7 +66,6 @@ class TestResolveOutputPath:
         assert p1 != p2
         assert "research" in str(p1)
         assert "paper" in str(p2)
-
 
 # ── AgentRunner.output_dir ───────────────────────────────────────────────
 

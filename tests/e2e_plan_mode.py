@@ -12,14 +12,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 SEP = "=" * 60
 
-
 @dataclass
 class FakeState:
     messages: list = field(default_factory=list)
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     turn_count: int = 0
-
 
 def test_plan_mode():
     tmpdir = Path(tempfile.mkdtemp(prefix="plan_e2e_"))
@@ -180,7 +178,6 @@ def test_plan_mode():
     print(f"\n{SEP}")
     print("ALL 10 STEPS PASSED")
     print(SEP)
-
 
 if __name__ == "__main__":
     test_plan_mode()

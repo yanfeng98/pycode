@@ -15,7 +15,6 @@ import monitor.scheduler as scheduler
 from cc_daemon import events, monitor_methods, schema
 from cc_daemon.rpc import CallContext, RpcRegistry
 
-
 # ── Fakes / fixtures ──────────────────────────────────────────────────────
 
 class _FakeState:
@@ -23,17 +22,14 @@ class _FakeState:
         self.config = config or {}
         self.shutdown_event = threading.Event()
 
-
 def _ctx(client_id: str = "test-client") -> CallContext:
     return CallContext(client_id=client_id, transport="tcp", api_version="0")
-
 
 def _call(registry: RpcRegistry, method: str, params=None) -> dict:
     envelope = {"jsonrpc": "2.0", "id": 1, "method": method,
                 "params": params or {}}
     response, _status = registry.dispatch(envelope, _ctx())
     return response
-
 
 @pytest.fixture(autouse=True)
 def _isolated(tmp_path: Path, monkeypatch):
@@ -53,7 +49,6 @@ def _isolated(tmp_path: Path, monkeypatch):
     schema._local.conn = None
     schema.set_db_path(schema.get_default_db_path())
 
-
 # ── monitor.subscribe ─────────────────────────────────────────────────────
 
 def test_subscribe_creates_subscription():
@@ -67,7 +62,6 @@ def test_subscribe_creates_subscription():
     # Persisted in SQLite
     assert store.get_subscription("arxiv") is not None
 
-
 def test_subscribe_is_upsert():
     registry = RpcRegistry()
     monitor_methods.register(registry, _FakeState())
@@ -79,13 +73,11 @@ def test_subscribe_is_upsert():
     assert resp["result"]["schedule"] == "6h"
     assert len(store.list_subscriptions()) == 1
 
-
 def test_subscribe_rejects_missing_topic():
     registry = RpcRegistry()
     monitor_methods.register(registry, _FakeState())
     resp = _call(registry, "monitor.subscribe", {})
     assert "error" in resp
-
 
 def test_subscribe_rejects_non_list_channels():
     registry = RpcRegistry()
@@ -93,7 +85,6 @@ def test_subscribe_rejects_non_list_channels():
     resp = _call(registry, "monitor.subscribe",
                  {"topic": "arxiv", "channels": "telegram"})  # str, not list
     assert "error" in resp
-
 
 # ── monitor.unsubscribe ──────────────────────────────────────────────────
 
@@ -105,13 +96,11 @@ def test_unsubscribe_removes_existing():
     assert resp["result"] == {"topic": "arxiv", "removed": True}
     assert store.get_subscription("arxiv") is None
 
-
 def test_unsubscribe_idempotent_on_missing():
     registry = RpcRegistry()
     monitor_methods.register(registry, _FakeState())
     resp = _call(registry, "monitor.unsubscribe", {"topic": "never-was"})
     assert resp["result"] == {"topic": "never-was", "removed": False}
-
 
 # ── monitor.list ─────────────────────────────────────────────────────────
 
@@ -124,13 +113,11 @@ def test_list_returns_all_subscriptions():
     topics = {s["topic"] for s in resp["result"]["subscriptions"]}
     assert topics == {"arxiv", "news"}
 
-
 def test_list_when_empty_returns_empty_array():
     registry = RpcRegistry()
     monitor_methods.register(registry, _FakeState())
     resp = _call(registry, "monitor.list", {})
     assert resp["result"]["subscriptions"] == []
-
 
 # ── monitor.run ──────────────────────────────────────────────────────────
 
@@ -143,13 +130,11 @@ def test_run_returns_report_and_persists():
     assert resp["result"]["topic"] == "arxiv"
     assert len(store.list_reports("arxiv")) == 1
 
-
 def test_run_rejects_missing_topic():
     registry = RpcRegistry()
     monitor_methods.register(registry, _FakeState())
     resp = _call(registry, "monitor.run", {})
     assert "error" in resp
-
 
 def test_run_publishes_monitor_report_event():
     registry = RpcRegistry()
@@ -165,7 +150,6 @@ def test_run_publishes_monitor_report_event():
         assert evt["data"]["topic"] == "arxiv"
     finally:
         bus.unsubscribe(sub)
-
 
 # ── Coexistence with other registered methods ───────────────────────────
 

@@ -15,7 +15,6 @@ from types import SimpleNamespace
 
 import pytest
 
-
 # ---------- 1 & 2: AssistantTurn + AgentState ----------
 
 def test_assistant_turn_has_cache_fields():
@@ -27,14 +26,12 @@ def test_assistant_turn_has_cache_fields():
     assert turn.cache_read_tokens == 80
     assert turn.cache_write_tokens == 20
 
-
 def test_assistant_turn_cache_defaults_zero():
     """Older providers and ad-hoc callers construct AssistantTurn without cache fields."""
     from providers import AssistantTurn
     turn = AssistantTurn(text="hi", tool_calls=[], in_tokens=10, out_tokens=5)
     assert turn.cache_read_tokens == 0
     assert turn.cache_write_tokens == 0
-
 
 def test_agent_state_accumulates_cache_tokens():
     from agent import AgentState
@@ -48,7 +45,6 @@ def test_agent_state_accumulates_cache_tokens():
 
     assert state.total_cache_read_tokens == 140
     assert state.total_cache_write_tokens == 30
-
 
 # ---------- 3: Checkpoint persistence ----------
 
@@ -71,7 +67,6 @@ def test_checkpoint_snapshot_includes_cache(tmp_path, monkeypatch):
     assert snap.token_snapshot == {
         "input": 500, "output": 200, "cache_read": 300, "cache_write": 50,
     }
-
 
 def test_rewind_restores_cache_tokens_from_snapshot(tmp_path, monkeypatch):
     """Rewinding to an older snapshot must restore cache totals in lock-step
@@ -107,7 +102,6 @@ def test_rewind_restores_cache_tokens_from_snapshot(tmp_path, monkeypatch):
     assert state.total_cache_read_tokens  == 300
     assert state.total_cache_write_tokens == 50
 
-
 # ---------- 4: Provider extraction helpers ----------
 
 class TestAnthropicCacheExtraction:
@@ -136,7 +130,6 @@ class TestAnthropicCacheExtraction:
         )
         assert _anthropic_cache_tokens(usage) == (0, 0)
 
-
 class TestOpenAICacheExtraction:
     """_openai_cached_read_tokens must walk prompt_tokens_details.cached_tokens."""
 
@@ -161,7 +154,6 @@ class TestOpenAICacheExtraction:
         )
         assert _openai_cached_read_tokens(usage) == 0
 
-
 def test_ollama_stream_never_reports_cache_tokens():
     """Ollama has no prompt-caching; the path must yield 0/0 without raising."""
     from providers import AssistantTurn
@@ -171,7 +163,6 @@ def test_ollama_stream_never_reports_cache_tokens():
     turn = AssistantTurn("hi", [], 0, 0, 0, 0)
     assert turn.cache_read_tokens == 0
     assert turn.cache_write_tokens == 0
-
 
 # ---------- 5: End-to-end through agent.run ----------
 
@@ -206,7 +197,6 @@ def test_agent_run_propagates_cache_tokens_from_mocked_stream(monkeypatch, tmp_p
     snap = ck_store.make_snapshot("cache_e2e", state, "hello")
     assert snap.token_snapshot["cache_read"] == 700
     assert snap.token_snapshot["cache_write"] == 50
-
 
 def test_agent_run_accumulates_cache_across_multi_turn(monkeypatch):
     """Two consecutive agent.run calls must sum their cache counters in state."""

@@ -149,8 +149,7 @@ def run_python_in_sandbox(
         env.update(extra_env)
 
     # Linux/macOS only: apply rlimits via preexec_fn.
-    preexec = _make_preexec(rlimit_cpu_s, rlimit_as_bytes) \
-        if os.name != "nt" else None
+    preexec = _make_preexec(rlimit_cpu_s, rlimit_as_bytes)
 
     t0 = time.monotonic()
     timed_out = False

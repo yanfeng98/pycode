@@ -23,9 +23,7 @@ from tools.files import (
     _summarize_large_file,
 )
 
-
 # ── Token estimator ──────────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("text,expected_min,expected_max", [
     ("",                                  0,    0),
@@ -37,16 +35,13 @@ def test_estimate_text_tokens(text, expected_min, expected_max):
     n = _estimate_text_tokens(text)
     assert expected_min <= n <= expected_max
 
-
 # ── Chunk planner: adaptive to file size + model context ─────────────────
-
 
 def test_plan_chunks_tiny_file_single_chunk():
     """File that fits → 1 chunk (single-shot path)."""
     chunks = _plan_chunks("hello world this is small", 32768)
     assert len(chunks) == 1
     assert chunks[0] == "hello world this is small"
-
 
 def test_plan_chunks_scales_with_file_size():
     """Number of chunks should grow with file size, not be capped."""
@@ -62,7 +57,6 @@ def test_plan_chunks_scales_with_file_size():
     # 500KB should be quite a few chunks
     assert sizes_to_chunks[-1][1] >= 5
 
-
 def test_plan_chunks_larger_context_means_fewer_chunks():
     """Same file in a 200K-context model → fewer chunks than in 32K."""
     text = "x" * (200 * 1024)   # 200KB
@@ -71,7 +65,6 @@ def test_plan_chunks_larger_context_means_fewer_chunks():
     assert n_200k < n_32k, (
         f"expected larger context → fewer chunks, got 32K={n_32k}, 200K={n_200k}"
     )
-
 
 def test_plan_chunks_have_overlap():
     """Adjacent chunks should share characters (overlap for continuity)."""
@@ -84,7 +77,6 @@ def test_plan_chunks_have_overlap():
         total_chunk_chars = sum(len(c) for c in chunks)
         assert total_chunk_chars > len(text), "no overlap between chunks"
 
-
 def test_plan_chunks_covers_entire_content():
     """Every byte of input must be in at least one chunk."""
     text = "ABCDEFGH" * 10000  # 80K chars, deterministic content
@@ -94,9 +86,7 @@ def test_plan_chunks_covers_entire_content():
     assert text[:1000] in concat
     assert text[-1000:] in concat
 
-
 # ── File reader dispatch ─────────────────────────────────────────────────
-
 
 def test_read_file_for_summary_text_file(tmp_path):
     p = tmp_path / "notes.txt"
@@ -105,21 +95,17 @@ def test_read_file_for_summary_text_file(tmp_path):
     assert "hello world" in content
     assert "line 2" in content
 
-
 def test_read_file_for_summary_missing_file(tmp_path):
     out = _read_file_for_summary(str(tmp_path / "nope.txt"), {})
     assert out.startswith("Error")
     assert "not found" in out
-
 
 def test_read_file_for_summary_directory_rejected(tmp_path):
     out = _read_file_for_summary(str(tmp_path), {})
     assert out.startswith("Error")
     assert "directory" in out.lower()
 
-
 # ── Full pipeline (mocked LLM) ───────────────────────────────────────────
-
 
 def test_summarize_small_file_uses_single_shot(tmp_path, monkeypatch):
     """Tiny file → one LLM call with mode='single'."""
@@ -140,7 +126,6 @@ def test_summarize_small_file_uses_single_shot(tmp_path, monkeypatch):
     assert calls[0]["mode"] == "single"
     # Output mentions single-shot
     assert "single-shot" in out
-
 
 def test_summarize_large_file_does_map_then_reduce(tmp_path, monkeypatch):
     """Big file (relative to model context) → N map calls + 1 reduce call.
@@ -177,7 +162,6 @@ def test_summarize_large_file_does_map_then_reduce(tmp_path, monkeypatch):
     assert "map-reduce" in out.lower()
     assert f"{len(map_calls)} chunks" in out
 
-
 def test_summarize_missing_file_error(monkeypatch):
     """Missing file → Error: ... returned, NOT a crash."""
     out = _summarize_large_file(
@@ -186,15 +170,12 @@ def test_summarize_missing_file_error(monkeypatch):
     assert out.startswith("Error")
     assert "not found" in out
 
-
 def test_summarize_missing_required_param():
     out = _summarize_large_file({}, {"model": "claude-opus-4-7"})
     assert out.startswith("Error")
     assert "file_path" in out
 
-
 # ── Tool registration ────────────────────────────────────────────────────
-
 
 def test_summarize_large_file_tool_registered():
     import tool_registry
@@ -202,7 +183,6 @@ def test_summarize_large_file_tool_registered():
     assert tool is not None
     assert tool.read_only is True
     assert tool.concurrent_safe is True
-
 
 def test_summarize_large_file_schema_advertises_chunking():
     """The tool description must mention map-reduce / chunking so a model

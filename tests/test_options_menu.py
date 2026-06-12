@@ -23,16 +23,13 @@ import pytest
 import runtime
 from tools import interaction as itx
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────
-
 
 PERM_OPTIONS = [
     ("✅ Approve",       "y"),
     ("❌ Reject",        "n"),
     ("✅✅ Accept all",  "a"),
 ]
-
 
 def _fresh_session_ctx(sid: str):
     """Reset and return a clean RuntimeContext for the given session id."""
@@ -57,9 +54,7 @@ def _fresh_session_ctx(sid: str):
                 setattr(sctx, attr, None)
     return sctx
 
-
 # ── Pure helpers ──────────────────────────────────────────────────────────
-
 
 class TestFormatMenuBlock:
     def test_returns_empty_when_no_options(self):
@@ -79,7 +74,6 @@ class TestFormatMenuBlock:
         assert lines[2].startswith("  [3]")
         assert "✅✅ Accept all" in lines[2]
         assert "reply `3` or `a`" in lines[2]
-
 
 class TestBuildValueMap:
     def test_empty_options_yields_empty_map(self):
@@ -110,7 +104,6 @@ class TestBuildValueMap:
         # Each option still gets its digit + value alias.
         assert m["1"] == "f" and m["f"] == "f"
         assert m["2"] == "b" and m["b"] == "b"
-
 
 class TestResolveChoice:
     def test_empty_map_passes_through_unchanged(self):
@@ -150,9 +143,7 @@ class TestResolveChoice:
         assert itx._resolve_choice(None, m) is None
         assert itx._resolve_choice(42, m) == 42
 
-
 # ── Per-bridge end-to-end (worker-thread driven) ─────────────────────────
-
 
 def _drive_bridge(setup_ctx, deliver_reply, options=PERM_OPTIONS,
                   raw_reply="1", expected="y", timeout=2.0):
@@ -198,7 +189,6 @@ def _drive_bridge(setup_ctx, deliver_reply, options=PERM_OPTIONS,
     )
     return holder["v"], captured
 
-
 # Slack ─────────────────────────────────────────────────
 
 def _setup_slack(sctx, config, capture):
@@ -207,11 +197,9 @@ def _setup_slack(sctx, config, capture):
     config["slack_channel"] = "C1"
 _setup_slack.evt_attr = "slack_input_event"  # type: ignore[attr-defined]
 
-
 def _deliver_slack(sctx, raw):
     sctx.slack_input_value = raw
     sctx.slack_input_event.set()
-
 
 class TestSlackOptions:
     def test_digit_reply_resolves_to_value(self):
@@ -239,7 +227,6 @@ class TestSlackOptions:
         _drive_bridge(_setup_slack, _deliver_slack,
                       raw_reply="something else", expected="something else")
 
-
 # WeChat ────────────────────────────────────────────────
 
 def _setup_wechat(sctx, config, capture):
@@ -250,11 +237,9 @@ def _setup_wechat(sctx, config, capture):
     sctx.wx_current_user_id = "U1"
 _setup_wechat.evt_attr = "wx_input_event"  # type: ignore[attr-defined]
 
-
 def _deliver_wechat(sctx, raw):
     sctx.wx_input_value = raw
     sctx.wx_input_event.set()
-
 
 class TestWeChatOptions:
     def test_digit_reply_resolves_to_value(self):
@@ -270,9 +255,7 @@ class TestWeChatOptions:
         _drive_bridge(_setup_wechat, _deliver_wechat,
                       raw_reply="all", expected="a")
 
-
 # Terminal ──────────────────────────────────────────────
-
 
 class TestTerminalOptions:
     def test_input_resolves_digit_and_menu_printed(self):

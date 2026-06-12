@@ -16,11 +16,9 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 class _FakeDaemonState:
     def __init__(self, config=None):
         self.config = config or {}
-
 
 def _build_registry(state=None):
     from cc_daemon.rpc import RpcRegistry
@@ -29,18 +27,15 @@ def _build_registry(state=None):
     bridge_methods.register(reg, state or _FakeDaemonState())
     return reg
 
-
 def _ctx():
     from cc_daemon.rpc import CallContext
     return CallContext(client_id="tester", transport="unix", api_version="0")
-
 
 def _call(reg, method, params=None):
     envelope = {"jsonrpc": "2.0", "id": 1, "method": method,
                 "params": params or {}}
     response, _ = reg.dispatch(envelope, _ctx())
     return response.get("result"), response.get("error")
-
 
 class _BridgeMethodsBase(unittest.TestCase):
 
@@ -96,7 +91,6 @@ class _BridgeMethodsBase(unittest.TestCase):
         schema._db_path = None
         self._tmpdir.cleanup()
 
-
 class TestRegistration(_BridgeMethodsBase):
 
     def test_all_methods_registered(self):
@@ -105,7 +99,6 @@ class TestRegistration(_BridgeMethodsBase):
         expected = {"bridge.start", "bridge.stop", "bridge.list",
                     "bridge.send", "bridge.status"}
         self.assertTrue(expected.issubset(names))
-
 
 class TestParamValidation(_BridgeMethodsBase):
 
@@ -139,7 +132,6 @@ class TestParamValidation(_BridgeMethodsBase):
         result, err = _call(reg, "bridge.status", {"kind": "telegram"})
         self.assertIsNone(err)
         self.assertEqual(result, {"kind": "telegram", "found": False})
-
 
 class TestStartStopRoundTrip(_BridgeMethodsBase):
 
@@ -193,7 +185,6 @@ class TestStartStopRoundTrip(_BridgeMethodsBase):
             # second stop is a no-op but should not crash.
             self.assertIsNone(err)
 
-
 class TestSendOutbound(_BridgeMethodsBase):
 
     def test_send_with_no_bridge_returns_delivered_false(self):
@@ -225,7 +216,6 @@ class TestSendOutbound(_BridgeMethodsBase):
             finally:
                 ev.set()
                 bs.stop("telegram", timeout_s=3.0)
-
 
 if __name__ == "__main__":
     unittest.main()

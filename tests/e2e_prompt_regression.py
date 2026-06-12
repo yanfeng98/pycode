@@ -32,12 +32,10 @@ _MASKS = [
     (re.compile(r"^- Platform: .+$", re.M),             "- Platform: <MASKED>"),
 ]
 
-
 def _mask(prompt: str) -> str:
     for pattern, replacement in _MASKS:
         prompt = pattern.sub(replacement, prompt)
     return prompt.rstrip() + "\n"
-
 
 def _generate_masked_prompt(tmp_path, monkeypatch) -> str:
     """Build a prompt with all optional blocks forced off, then mask dynamics."""
@@ -57,7 +55,6 @@ def _generate_masked_prompt(tmp_path, monkeypatch) -> str:
     cfg = {"model": "kimi/moonshot-v1-128k", "_session_id": "regression-test"}
     return _mask(_context.build_system_prompt(cfg))
 
-
 def test_default_prompt_matches_golden(tmp_path, monkeypatch):
     if not _FIXTURE.exists():
         pytest.skip(
@@ -73,7 +70,6 @@ def test_default_prompt_matches_golden(tmp_path, monkeypatch):
         f"First 500 chars of actual:\n{actual[:500]}\n"
         f"First 500 chars of expected:\n{expected[:500]}"
     )
-
 
 def _regenerate() -> None:
     """Write the current output to the fixture.  Invoked by --regenerate."""
@@ -99,7 +95,6 @@ def _regenerate() -> None:
     _FIXTURE.parent.mkdir(parents=True, exist_ok=True)
     _FIXTURE.write_text(prompt, encoding="utf-8")
     print(f"Wrote {len(prompt)} chars to {_FIXTURE}")
-
 
 def test_env_block_separates_platform_from_git_info(tmp_path, monkeypatch):
     """Regression: the Platform line must end in \\n so a non-empty git_info
@@ -131,7 +126,6 @@ def test_env_block_separates_platform_from_git_info(tmp_path, monkeypatch):
         "_render_env_block must keep the trailing \\n on the Platform line.\n"
         f"Offending line(s): {glued}"
     )
-
 
 if __name__ == "__main__":
     if "--regenerate" in sys.argv:

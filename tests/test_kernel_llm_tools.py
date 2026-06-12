@@ -25,19 +25,11 @@ from cc_kernel.runner.llm import (
 )
 
 
-pytestmark_subprocess = pytest.mark.skipif(
-    os.name != "posix",
-    reason="end-to-end LLM runner tests spawn POSIX subprocesses",
-)
-
-
 # ── LlmRequest.tools ──────────────────────────────────────────────────
-
 
 def test_request_tools_default_empty():
     r = LlmRequest(model="m", user="hi")
     assert r.tools == ()
-
 
 def test_request_tools_round_trip():
     r = LlmRequest(
@@ -48,7 +40,6 @@ def test_request_tools_round_trip():
     assert d["tools"] == [{"name": "X", "description": "x"}]
     r2 = LlmRequest.from_dict(d)
     assert r2.tools == r.tools
-
 
 def test_request_messages_with_list_content_accepted():
     """Multi-content shape (text + tool_use blocks) must be valid."""
@@ -67,13 +58,11 @@ def test_request_messages_with_list_content_accepted():
     )
     assert len(r.messages) == 3
 
-
 def test_request_messages_content_must_be_str_or_list():
     with pytest.raises(ProviderInvalidRequest):
         LlmRequest(model="m", messages=(
             {"role": "user", "content": 42},
         ))
-
 
 def test_request_messages_list_blocks_must_be_dicts():
     with pytest.raises(ProviderInvalidRequest):
@@ -81,16 +70,13 @@ def test_request_messages_list_blocks_must_be_dicts():
             {"role": "user", "content": ["just a string"]},
         ))
 
-
 # ── LlmResponse.tool_calls ───────────────────────────────────────────
-
 
 def test_response_tool_calls_default_empty():
     r = LlmResponse(text="hi", tokens_input=1, tokens_output=1,
                      cost_micro=10, model="m")
     assert r.tool_calls == ()
     assert r.is_tool_use is False
-
 
 def test_response_tool_calls_field():
     r = LlmResponse(
@@ -101,20 +87,17 @@ def test_response_tool_calls_field():
     assert r.is_tool_use is True
     assert r.tool_calls[0]["name"] == "X"
 
-
 def test_response_tool_calls_validate_id():
     with pytest.raises(ProviderInvalidRequest):
         LlmResponse(text="", tokens_input=0, tokens_output=0,
                      cost_micro=0, model="m",
                      tool_calls=({"id": "", "name": "X", "input": {}},))
 
-
 def test_response_tool_calls_validate_name():
     with pytest.raises(ProviderInvalidRequest):
         LlmResponse(text="", tokens_input=0, tokens_output=0,
                      cost_micro=0, model="m",
                      tool_calls=({"id": "i", "name": "", "input": {}},))
-
 
 def test_response_tool_calls_round_trip():
     r = LlmResponse(
@@ -127,16 +110,13 @@ def test_response_tool_calls_round_trip():
     assert r2.tool_calls == r.tool_calls
     assert r2.is_tool_use is True
 
-
 # ── ScriptedMockProvider ────────────────────────────────────────────
-
 
 def _r(text="ok", **kw):
     defaults = dict(text=text, tokens_input=1, tokens_output=1,
                      cost_micro=10, model="m")
     defaults.update(kw)
     return LlmResponse(**defaults)
-
 
 def test_scripted_returns_in_order():
     p = ScriptedMockProvider([_r("first"), _r("second"), _r("third")])
@@ -145,13 +125,11 @@ def test_scripted_returns_in_order():
     assert p(req).text == "second"
     assert p(req).text == "third"
 
-
 def test_scripted_records_calls():
     p = ScriptedMockProvider([_r(), _r()])
     p(LlmRequest(model="m", user="a"))
     p(LlmRequest(model="m", user="b"))
     assert [c.user for c in p.calls] == ["a", "b"]
-
 
 def test_scripted_exhaustion_raises():
     p = ScriptedMockProvider([_r()])
@@ -159,23 +137,19 @@ def test_scripted_exhaustion_raises():
     with pytest.raises(ProviderUnavailable):
         p(LlmRequest(model="m", user="x"))
 
-
 def test_scripted_remaining():
     p = ScriptedMockProvider([_r(), _r(), _r()])
     assert p.remaining == 3
     p(LlmRequest(model="m", user="x"))
     assert p.remaining == 2
 
-
 def test_scripted_empty_rejected():
     with pytest.raises(ProviderInvalidRequest):
         ScriptedMockProvider([])
 
-
 def test_scripted_non_response_entries_rejected():
     with pytest.raises(ProviderInvalidRequest):
         ScriptedMockProvider([{"text": "not an LlmResponse"}])  # type: ignore[list-item]
-
 
 def test_scripted_from_env(monkeypatch):
     payload = [
@@ -189,12 +163,10 @@ def test_scripted_from_env(monkeypatch):
     assert p(LlmRequest(model="m", user="x")).text == "first"
     assert p(LlmRequest(model="m", user="x")).text == "second"
 
-
 def test_scripted_from_env_unset_raises(monkeypatch):
     monkeypatch.delenv(ScriptedMockProvider.ENV_RESPONSES, raising=False)
     with pytest.raises(ProviderUnavailable):
         ScriptedMockProvider.from_env()
-
 
 def test_mock_provider_scripted_factory():
     """MockProvider.scripted() is a convenience constructor."""
@@ -202,9 +174,7 @@ def test_mock_provider_scripted_factory():
     assert isinstance(p, ScriptedMockProvider)
     assert p(LlmRequest(model="m", user="q")).text == "x"
 
-
 # ── End-to-end via supervisor ─────────────────────────────────────────
-
 
 def _scripted_env(responses: list[dict]) -> dict:
     return {
@@ -213,8 +183,6 @@ def _scripted_env(responses: list[dict]) -> dict:
         "CC_LLM_SCRIPTED_RESPONSES_JSON": json.dumps(responses),
     }
 
-
-@pytestmark_subprocess
 def test_runner_tool_use_then_final(tmp_path):
     """Iter 1 returns tool_use(Echo); iter 2 returns final text."""
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -260,8 +228,6 @@ def test_runner_tool_use_then_final(tmp_path):
         assert len(events) == 1
         assert events[0].payload["tool"] == "Echo"
 
-
-@pytestmark_subprocess
 def test_runner_tool_use_no_tools_field_falls_back_to_text(tmp_path):
     """Even with no tools=[] in init payload, the runner handles
     plain text responses correctly (RFC 0019 path)."""
@@ -283,8 +249,6 @@ def test_runner_tool_use_no_tools_field_falls_back_to_text(tmp_path):
         assert info.text == "hello"
         assert info.metadata["iterations"] == 1
 
-
-@pytestmark_subprocess
 def test_runner_max_iterations_cap(tmp_path):
     """Provider that always returns tool_use → runner hits cap."""
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -324,8 +288,6 @@ def test_runner_max_iterations_cap(tmp_path):
                                          kind="tool.call.dispatched")
         assert len(events) == 3
 
-
-@pytestmark_subprocess
 def test_runner_tool_denied_continues_loop(tmp_path):
     """When a tool call is denied, the runner still appends the
     error result to messages and continues; the LLM can then
@@ -369,8 +331,6 @@ def test_runner_tool_denied_continues_loop(tmp_path):
                                          kind="tool.call.denied")
         assert len(denied) == 1
 
-
-@pytestmark_subprocess
 def test_runner_charges_accumulate_across_iterations(tmp_path):
     """ledger.tokens reflects all iterations, not just the last."""
     with Kernel.open(tmp_path / "kernel.db") as k:
@@ -409,9 +369,7 @@ def test_runner_charges_accumulate_across_iterations(tmp_path):
         assert used["tokens"]     == 45
         assert used["cost_micro"] == 300
 
-
 # ── Anthropic adapter compatibility (lazy import path) ───────────────
-
 
 def test_anthropic_provider_messages_with_tools_doesnt_import_sdk():
     """We can construct LlmRequest with tools without anthropic

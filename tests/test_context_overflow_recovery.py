@@ -26,9 +26,7 @@ import pytest
 
 from agent import _try_reduce_output_cap_from_error
 
-
 # ── _try_reduce_output_cap_from_error ───────────────────────────────────
-
 
 # OpenAI-style (the user's actual error):
 _OPENAI_OVERFLOW_ERR = (
@@ -37,7 +35,6 @@ _OPENAI_OVERFLOW_ERR = (
     "tokens and your prompt contains at least 24577 input tokens, for a "
     "total of 32769 tokens.\"}}"
 )
-
 
 def test_parse_reproduces_user_failure_case():
     """The user's exact error: max=32768, prompt=24577, requested=8192.
@@ -53,7 +50,6 @@ def test_parse_reproduces_user_failure_case():
     )
     assert new_cap == 5691
 
-
 def test_parse_returns_none_when_new_cap_not_smaller():
     """If current cap is already <= the safe cap (no reduction needed),
     return None — don't pretend to fix something that's already fine."""
@@ -62,7 +58,6 @@ def test_parse_returns_none_when_new_cap_not_smaller():
     assert _try_reduce_output_cap_from_error(
         _OPENAI_OVERFLOW_ERR, {"max_tokens": 4096},
     ) is None
-
 
 def test_parse_returns_none_when_safe_cap_is_too_small():
     """If the prompt is so big that fitting any reasonable output cap
@@ -76,7 +71,6 @@ def test_parse_returns_none_when_safe_cap_is_too_small():
     # Safe cap = 8192 - 6000 - 2500_buffer = -308 < 256 → None
     assert _try_reduce_output_cap_from_error(err, {"max_tokens": 4096}) is None
 
-
 def test_parse_returns_none_for_unrelated_errors():
     """Rate limit / connection / random errors → no parse, no reduction."""
     assert _try_reduce_output_cap_from_error(
@@ -84,7 +78,6 @@ def test_parse_returns_none_for_unrelated_errors():
     assert _try_reduce_output_cap_from_error(
         "connection refused", {}) is None
     assert _try_reduce_output_cap_from_error("", {}) is None
-
 
 def test_parse_anthropic_style_phrasing():
     """Anthropic phrases it slightly differently — make sure the
@@ -97,7 +90,6 @@ def test_parse_anthropic_style_phrasing():
     # 200000 - 195000 - 2500 = 2500
     assert new_cap == 2500
 
-
 def test_parse_no_current_cap_still_works():
     """If config doesn't have max_tokens set (None), we still return a
     safe cap rather than None — the caller can apply it."""
@@ -106,9 +98,7 @@ def test_parse_no_current_cap_still_works():
     )
     assert new_cap == 5691
 
-
 # ── Agent runner: circuit-breaker cooldown extraction ────────────────────
-
 
 def test_circuit_cooldown_regex_matches_real_error():
     """The agent_runner's _CIRCUIT_RE pattern must match the exact
@@ -127,7 +117,6 @@ def test_circuit_cooldown_regex_matches_real_error():
     m = pattern.search(text)
     assert m is not None
     assert m.group(1) == "120"
-
 
 def test_failure_marker_regex_matches_real_outputs():
     """Same idea — the runner's _FAILURE_RE must match the exact

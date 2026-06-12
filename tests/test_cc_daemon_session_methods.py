@@ -22,7 +22,6 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 def _setup_bus(tmp_path: Path):
     """Reinit the event bus on a tmpdir-backed SQLite so the in-memory
     LRU and the SSE feed don't bleed between tests."""
@@ -30,7 +29,6 @@ def _setup_bus(tmp_path: Path):
     schema.set_db_path(tmp_path / "test.db")
     schema._local.conn = None
     events.reset_bus_for_tests()
-
 
 def _teardown_bus():
     from cc_daemon import schema, events
@@ -43,11 +41,9 @@ def _teardown_bus():
         schema._local.conn = None
     schema._db_path = None
 
-
 class _FakeState:
     def __init__(self, config=None):
         self.config = config or {}
-
 
 def _build_registry():
     from cc_daemon.rpc import RpcRegistry
@@ -56,18 +52,15 @@ def _build_registry():
     session_methods.register(reg, _FakeState())
     return reg
 
-
 def _ctx(client_id="bridge:tg:99"):
     from cc_daemon.rpc import CallContext
     return CallContext(client_id=client_id, transport="unix", api_version="0")
-
 
 def _call(reg, method, params=None, ctx=None):
     envelope = {"jsonrpc": "2.0", "id": 1, "method": method,
                 "params": params or {}}
     response, _ = reg.dispatch(envelope, ctx or _ctx())
     return response.get("result"), response.get("error")
-
 
 class _SessionTestBase(unittest.TestCase):
     def setUp(self):
@@ -80,7 +73,6 @@ class _SessionTestBase(unittest.TestCase):
     def tearDown(self):
         _teardown_bus()
         self._tmpdir.cleanup()
-
 
 class TestSessionSend(_SessionTestBase):
 
@@ -151,7 +143,6 @@ class TestSessionSend(_SessionTestBase):
         })
         self.assertEqual(result["message_id"], "abc-123")
 
-
 class TestSessionReply(_SessionTestBase):
 
     def test_reply_publishes_session_outbound(self):
@@ -199,7 +190,6 @@ class TestSessionReply(_SessionTestBase):
         })
         self.assertIsNotNone(err)
 
-
 class TestSessionListRecent(_SessionTestBase):
 
     def test_list_recent_reflects_recent_sends(self):
@@ -226,7 +216,6 @@ class TestSessionListRecent(_SessionTestBase):
         _, err = _call(reg, "session.list_recent", {"limit": 0})
         self.assertIsNotNone(err)
         self.assertIn("limit", err["message"])
-
 
 if __name__ == "__main__":
     unittest.main()

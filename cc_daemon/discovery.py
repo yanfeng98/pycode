@@ -30,11 +30,7 @@ from typing import Optional
 SCHEMA_VERSION = 1
 DEFAULT_FILENAME = "daemon.json"
 
-
-# ── Path resolution ────────────────────────────────────────────────────────
-
 def get_default_path() -> Path:
-    """Default discovery-file location: ``~/.pycode/daemon.json``."""
     from cc_config import CONFIG_DIR
     return CONFIG_DIR / DEFAULT_FILENAME
 
@@ -100,13 +96,11 @@ def write(info: dict, *, path: Optional[Path] = None) -> None:
             pass
         raise
 
-    # On POSIX, re-assert mode in case umask or filesystem altered it.
-    if os.name != "nt":
-        os.chmod(str(p), 0o600)
+    # Re-assert mode in case umask or filesystem altered it.
+    os.chmod(str(p), 0o600)
 
 
 def read(*, path: Optional[Path] = None) -> Optional[dict]:
-    """Return the parsed discovery file, or ``None`` if absent / unreadable."""
     p = _resolve(path)
     try:
         text = p.read_text(encoding="utf-8")
@@ -130,11 +124,8 @@ def clear(*, path: Optional[Path] = None) -> None:
 # ── Liveness probe ─────────────────────────────────────────────────────────
 
 def pid_alive(pid: int) -> bool:
-    """Best-effort cross-platform check that *pid* is currently running."""
     if pid <= 0:
         return False
-    if os.name == "nt":
-        return _pid_alive_windows(pid)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -146,34 +137,7 @@ def pid_alive(pid: int) -> bool:
         return False
     return True
 
-
-def _pid_alive_windows(pid: int) -> bool:
-    import ctypes
-    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-    STILL_ACTIVE = 259
-    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
-                                   False, pid)
-    if not handle:
-        return False
-    try:
-        exit_code = ctypes.c_ulong()
-        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
-            return False
-        return exit_code.value == STILL_ACTIVE
-    finally:
-        kernel32.CloseHandle(handle)
-
-
-# ── Locate ─────────────────────────────────────────────────────────────────
-
 def locate(*, path: Optional[Path] = None) -> Optional[dict]:
-    """Return discovery info if a live daemon is registered.
-
-    If the file exists but the recorded pid is no longer running the file is
-    auto-cleared and ``None`` is returned, so callers do not need a separate
-    stale-file step.
-    """
     info = read(path=path)
     if info is None:
         return None

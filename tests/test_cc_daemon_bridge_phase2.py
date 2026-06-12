@@ -29,9 +29,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
-
 
 def _setup_isolated(tmp_path: Path):
     from cc_daemon import schema, events, bridge_supervisor as bs
@@ -45,7 +43,6 @@ def _setup_isolated(tmp_path: Path):
             except Exception:
                 pass
         bs._handles.clear()
-
 
 def _teardown_isolated():
     from cc_daemon import schema, events, bridge_supervisor as bs
@@ -69,7 +66,6 @@ def _teardown_isolated():
         schema._local.conn = None
     schema._db_path = None
 
-
 class _Phase2Base(unittest.TestCase):
     def setUp(self):
         self._tmpdir = tempfile.TemporaryDirectory()
@@ -88,9 +84,7 @@ class _Phase2Base(unittest.TestCase):
         _teardown_isolated()
         self._tmpdir.cleanup()
 
-
 # ── 1. session_id formatting ────────────────────────────────────────────
-
 
 class TestSessionIdFormat(unittest.TestCase):
 
@@ -124,9 +118,7 @@ class TestSessionIdFormat(unittest.TestCase):
         )
         self.assertEqual(h.session_id(), "wc:u_xyz")
 
-
 # ── 2. Outbound delivery via session.reply ──────────────────────────────
-
 
 class TestPhase2OutboundDelivery(_Phase2Base):
 
@@ -204,9 +196,7 @@ class TestPhase2OutboundDelivery(_Phase2Base):
             finally:
                 bs.stop("telegram", timeout_s=3.0)
 
-
 # ── 3. Inbound publishes session_inbound ────────────────────────────────
-
 
 class TestPhase2InboundPublish(_Phase2Base):
 
@@ -268,9 +258,7 @@ class TestPhase2InboundPublish(_Phase2Base):
                 bus.unsubscribe(q)
                 bs.stop("telegram", timeout_s=3.0)
 
-
 # ── 4. bridge.start RPC accepts daemon_phase2 ───────────────────────────
-
 
 class TestBridgeStartRpcPhase2(_Phase2Base):
 
@@ -303,7 +291,6 @@ class TestBridgeStartRpcPhase2(_Phase2Base):
                 self.assertEqual(response["result"]["session_id"], "tg:7")
             finally:
                 bs.stop("telegram", timeout_s=3.0)
-
 
 if __name__ == "__main__":
     unittest.main()

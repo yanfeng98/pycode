@@ -12,14 +12,12 @@ from tool_registry import (
     register_tool,
 )
 
-
 @pytest.fixture(autouse=True)
 def _clean_registry():
     """Reset registry before each test."""
     clear_registry()
     yield
     clear_registry()
-
 
 def _make_echo_tool(name: str = "echo", read_only: bool = False) -> ToolDef:
     """Helper to build a simple echo tool."""
@@ -46,7 +44,6 @@ def _make_echo_tool(name: str = "echo", read_only: bool = False) -> ToolDef:
         concurrent_safe=True,
     )
 
-
 # ------------------------------------------------------------------
 # register and get
 # ------------------------------------------------------------------
@@ -58,10 +55,8 @@ def test_register_and_get():
     assert result is not None
     assert result.name == "echo"
 
-
 def test_get_unknown_returns_none():
     assert get_tool("no_such_tool") is None
-
 
 # ------------------------------------------------------------------
 # get_all_tools
@@ -70,13 +65,11 @@ def test_get_unknown_returns_none():
 def test_get_all_tools_empty():
     assert get_all_tools() == []
 
-
 def test_get_all_tools():
     register_tool(_make_echo_tool("a"))
     register_tool(_make_echo_tool("b"))
     names = [t.name for t in get_all_tools()]
     assert sorted(names) == ["a", "b"]
-
 
 # ------------------------------------------------------------------
 # get_tool_schemas
@@ -88,7 +81,6 @@ def test_get_tool_schemas():
     assert len(schemas) == 1
     assert schemas[0]["name"] == "echo"
 
-
 # ------------------------------------------------------------------
 # execute_tool
 # ------------------------------------------------------------------
@@ -98,11 +90,9 @@ def test_execute_tool():
     result = execute_tool("echo", {"text": "hello"}, config={})
     assert result == "hello"
 
-
 def test_execute_unknown_tool():
     result = execute_tool("missing", {}, config={})
     assert "unknown" in result.lower() or "not found" in result.lower()
-
 
 # ------------------------------------------------------------------
 # output truncation
@@ -131,12 +121,10 @@ def test_output_truncation():
     assert result.startswith("x" * 20)
     assert result.endswith("x" * 10)
 
-
 def test_no_truncation_when_within_limit():
     register_tool(_make_echo_tool())
     result = execute_tool("echo", {"text": "short"}, config={})
     assert result == "short"
-
 
 # ------------------------------------------------------------------
 # duplicate register overwrites

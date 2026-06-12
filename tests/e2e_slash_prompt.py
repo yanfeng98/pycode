@@ -24,9 +24,7 @@ from ui.input import HAS_PROMPT_TOOLKIT
 if not HAS_PROMPT_TOOLKIT:
     pytest.skip("prompt_toolkit not installed", allow_module_level=True)
 
-
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 _CHILD_SCRIPT = r"""
 import sys
@@ -55,7 +53,6 @@ result = _ui.read_line("[test] > ")
 sys.stdout.write("RESULT=" + repr(result) + chr(10))
 sys.stdout.flush()
 """
-
 
 def _run_child(keystrokes: list[tuple[float, bytes]], timeout: float = 4.0) -> bytes:
     """Spawn the child under a PTY and play a sequence of (delay, bytes) writes.
@@ -109,12 +106,10 @@ def _run_child(keystrokes: list[tuple[float, bytes]], timeout: float = 4.0) -> b
 
     return bytes(collected)
 
-
 def test_enter_dispatches_typed_text():
     """Typing a command and pressing Enter returns that command verbatim."""
     output = _run_child([(0.3, b"/help"), (0.6, b"\r")])
     assert b"RESULT='/help'" in output, output[-500:]
-
 
 def test_typing_slash_c_renders_menu_with_matches():
     """Typing `/c` produces completion output containing at least one /c-prefixed command."""
@@ -126,7 +121,6 @@ def test_typing_slash_c_renders_menu_with_matches():
             b"/config", b"/copy", b"/cost", b"/context", b"/cloudsave",
         )
     ), output[-500:]
-
 
 def test_arrow_down_then_enter_picks_first_menu_entry():
     """Down-arrow selects the first completion, Enter accepts it.

@@ -25,7 +25,6 @@ from multi_agent.fanout import (
     should_fanout,
 )
 
-
 # ── should_fanout ────────────────────────────────────────────────────────
 
 class TestShouldFanout:
@@ -76,7 +75,6 @@ class TestShouldFanout:
         assert should_fanout("Read", None, 32768, cfg) is False
         assert should_fanout("Read", b"bytes", 32768, cfg) is False
 
-
 # ── chunk_text ───────────────────────────────────────────────────────────
 
 class TestChunkText:
@@ -126,7 +124,6 @@ class TestChunkText:
         # max_chars = max(1024, 500*2.8/1.1) ≈ 1272; small slack for boundaries.
         assert all(len(c) <= 1300 for c in chunks)
 
-
 # ── coalesce_chunks ──────────────────────────────────────────────────────
 
 class TestCoalesceChunks:
@@ -152,7 +149,6 @@ class TestCoalesceChunks:
         merged = " ".join(result)
         for i in range(20):
             assert f"item-{i}" in merged
-
 
 # ── fanout_summarize end-to-end with stubbed llm_call ────────────────────
 
@@ -249,7 +245,6 @@ class TestFanoutSummarize:
         # Header still present
         assert "Auto-fanout summary" in result
 
-
 # ── fanout_notice ────────────────────────────────────────────────────────
 
 class TestFanoutNotice:
@@ -259,7 +254,6 @@ class TestFanoutNotice:
         assert "70,000" in msg
         assert "5" in msg
         assert "32,768" in msg
-
 
 # ── End-to-end regression: 6.6MB PDF case ────────────────────────────────
 

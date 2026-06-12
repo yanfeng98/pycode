@@ -15,7 +15,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from cc_config import DEFAULTS
 
-
 class TestThinkingDefault:
     def test_default_is_none_not_false(self):
         # Tri-state sentinel: None = unset, True = ON, False = explicit OFF.
@@ -27,7 +26,6 @@ class TestThinkingDefault:
         # Anthropic path uses `if config.get("thinking"):` — None must be falsy
         # so existing Anthropic behaviour (thinking off unless toggled) survives.
         assert not DEFAULTS["thinking"]
-
 
 class TestThinkingDisablePredicate:
     """Mirrors providers.py:627 — `if config.get("thinking") is False:`."""
@@ -47,7 +45,6 @@ class TestThinkingDisablePredicate:
 
     def test_explicit_false_disables(self):
         assert self._should_disable({"thinking": False}) is True
-
 
 class TestThinkingToggle:
     """Mirrors commands/config_cmd.py:139 — first /thinking from default → ON."""

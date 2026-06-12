@@ -5,13 +5,11 @@ import time
 import types
 import pytest
 
-
 class _FakeRoute:
     def __init__(self, method, path, **kwargs):
         self.method = method
         self.path = path
         self.kwargs = kwargs
-
 
 @pytest.fixture
 def fake_botpy_route(monkeypatch):
@@ -22,7 +20,6 @@ def fake_botpy_route(monkeypatch):
     fake_botpy.http = fake_http
     monkeypatch.setitem(sys.modules, "botpy", fake_botpy)
     monkeypatch.setitem(sys.modules, "botpy.http", fake_http)
-
 
 def test_config_defaults(monkeypatch, tmp_path):
     """QQ config keys exist in DEFAULTS."""
@@ -36,7 +33,6 @@ def test_config_defaults(monkeypatch, tmp_path):
     assert cfg["qq_appid"] == ""
     assert cfg["qq_secret"] == ""
 
-
 def test_runtime_context_fields():
     """RuntimeContext has QQ fields with correct defaults."""
     from runtime import RuntimeContext
@@ -49,12 +45,10 @@ def test_runtime_context_fields():
     assert ctx.qq_current_target_id == ""
     assert ctx.qq_current_msg_type == ""
 
-
 def test_is_in_qq_turn_default():
     """Turn detection returns False when no QQ turn is active."""
     from tools.interaction import _is_in_qq_turn
     assert _is_in_qq_turn({}) is False
-
 
 def test_is_in_qq_turn_thread_local():
     """Turn detection returns True when thread-local flag is set."""
@@ -64,7 +58,6 @@ def test_is_in_qq_turn_thread_local():
         assert _is_in_qq_turn({}) is True
     finally:
         _qq_thread_local.active = False
-
 
 def test_is_in_qq_turn_runtime_ctx():
     """Turn detection returns True when RuntimeContext.in_qq_turn is True."""
@@ -78,13 +71,11 @@ def test_is_in_qq_turn_runtime_ctx():
         ctx.in_qq_turn = False
         runtime.release_session_ctx("_test_qq_turn")
 
-
 def test_qq_cmd_missing_config():
     """cmd_qq shows error when no args and no saved config."""
     from bridges.qq import cmd_qq
     result = cmd_qq("", None, {"qq_appid": "", "qq_secret": ""})
     assert result is True
-
 
 def test_qq_cmd_inline_config(tmp_path, monkeypatch):
     """cmd_qq saves appid/secret when provided inline."""
@@ -99,20 +90,17 @@ def test_qq_cmd_inline_config(tmp_path, monkeypatch):
     assert cfg["qq_appid"] == "myappid"
     assert cfg["qq_secret"] == "mysecret"
 
-
 def test_qq_cmd_status_not_running():
     """cmd_qq status reports not configured when empty."""
     from bridges.qq import cmd_qq
     result = cmd_qq("status", None, {"qq_appid": "", "qq_secret": ""})
     assert result is True
 
-
 def test_qq_cmd_status_configured():
     """cmd_qq status reports configured but not running."""
     from bridges.qq import cmd_qq
     result = cmd_qq("status", None, {"qq_appid": "test123", "qq_secret": "sec"})
     assert result is True
-
 
 def test_message_dedup_set_capped():
     """_qq_seen_msgids stays under 2000 entries."""
@@ -121,7 +109,6 @@ def test_message_dedup_set_capped():
         qq._qq_seen_msgids.add(f"msg_{i}")
     assert len(qq._qq_seen_msgids) <= 2100
     qq._qq_seen_msgids.clear()
-
 
 def test_reply_ctx_tracking():
     """Passive reply context stores msg_id, event_id, seq, timestamp, and msg_type."""
@@ -145,12 +132,10 @@ def test_reply_ctx_tracking():
         del _qq_reply_ctx["test_target"]
         del _qq_reply_ctx["test_target2"]
 
-
 def test_qq_send_no_api():
     """_qq_send is a no-op when no API is configured."""
     from bridges.qq import _qq_send
     _qq_send("some_target", "hello", {"qq_appid": "x"})
-
 
 def test_qq_pending_input_only_accepts_prompt_target():
     """A QQ permission reply from another target must not release the prompt."""
@@ -170,14 +155,12 @@ def test_qq_pending_input_only_accepts_prompt_target():
     assert evt.is_set()
     assert ctx.qq_input_value == "y"
 
-
 def test_qq_send_with_chunks():
     """_qq_send splits long text into chunks."""
     from bridges.qq import _qq_send, _QQ_MAX_MSG_LEN
     long_text = "A" * (_QQ_MAX_MSG_LEN * 2 + 100)
     # Should not raise even without API
     _qq_send("target", long_text, {})
-
 
 def test_passive_window_constants():
     """Passive reply window follows botpy's documented 5-minute validity."""
@@ -186,7 +169,6 @@ def test_passive_window_constants():
     assert _QQ_STREAM_INTERVAL == 2.0
     assert _QQ_MAX_MSG_LEN == 2000
     assert _QQ_STREAM_MIN_LEN == 80
-
 
 def test_send_future_exception_is_logged():
     """Errors raised by scheduled QQ HTTP sends should be surfaced."""
@@ -202,7 +184,6 @@ def test_send_future_exception_is_logged():
 
     warn.assert_called_once()
     assert warn.call_args.args[0] == "qq_send_api_error"
-
 
 def test_queue_or_dispatch_marks_busy_before_thread_dispatch():
     """A second same-target job should queue before worker thread starts."""
@@ -240,7 +221,6 @@ def test_queue_or_dispatch_marks_busy_before_thread_dispatch():
         qq._qq_busy.clear()
         qq._qq_queues.clear()
 
-
 def test_qq_thread_not_running_initially():
     """QQ bridge thread state is properly managed."""
     from bridges.qq import _qq_thread
@@ -248,12 +228,10 @@ def test_qq_thread_not_running_initially():
     # just verify the module-level variable exists and is accessible
     assert _qq_thread is None or isinstance(_qq_thread, threading.Thread)
 
-
 def test_qq_stop_event_cleared():
     """QQ stop event should not be set initially."""
     from bridges.qq import _qq_stop
     assert not _qq_stop.is_set()
-
 
 def test_post_group_clean_payload_no_msg_id(fake_botpy_route):
     """_qq_post_group builds clean payload without msg_id/event_id when empty."""
@@ -285,7 +263,6 @@ def test_post_group_clean_payload_no_msg_id(fake_botpy_route):
     assert "ark" not in payload
     assert "media" not in payload
 
-
 def test_post_group_clean_payload_with_msg_id(fake_botpy_route):
     """_qq_post_group includes msg_id/msg_seq when msg_id is provided."""
     import asyncio
@@ -306,7 +283,6 @@ def test_post_group_clean_payload_with_msg_id(fake_botpy_route):
     assert payload["msg_id"] == "msg456"
     assert payload["msg_seq"] == 2
     assert payload["content"] == "reply text"
-
 
 def test_post_group_clean_payload_with_event_id(fake_botpy_route):
     """_qq_post_group uses event_id when msg_id is None."""
@@ -330,7 +306,6 @@ def test_post_group_clean_payload_with_event_id(fake_botpy_route):
     assert payload["msg_seq"] == 1
     assert payload["content"] == "reply text"
 
-
 def test_post_c2c_clean_payload(fake_botpy_route):
     """_qq_post_c2c builds clean payload."""
     import asyncio
@@ -352,7 +327,6 @@ def test_post_c2c_clean_payload(fake_botpy_route):
     assert "event_id" not in payload
     assert "msg_seq" not in payload
     assert payload == {"openid": "user123", "msg_type": 0, "content": "hi"}
-
 
 def test_msg_seq_starts_at_1_for_new_message():
     """First send with reply context should use msg_seq=1."""
@@ -383,7 +357,6 @@ def test_msg_seq_starts_at_1_for_new_message():
     # Clean up
     with _qq_reply_lock:
         del _qq_reply_ctx["test_target"]
-
 
 def test_msg_seq_increments_correctly_for_chunks():
     """Multiple chunks should increment msg_seq properly."""
@@ -416,7 +389,6 @@ def test_msg_seq_increments_correctly_for_chunks():
     with _qq_reply_lock:
         del _qq_reply_ctx["test_target"]
 
-
 def test_no_duplicate_send_in_bg_runner():
     """_qq_bg_runner should not send duplicate messages."""
     from unittest.mock import MagicMock, patch
@@ -447,7 +419,6 @@ def test_no_duplicate_send_in_bg_runner():
     assert len(send_calls) < 50, f"Too many send calls: {len(send_calls)}, likely duplicate echo bug"
     # Verify the expected initial message is present
     assert any("执行中" in str(call[1]) for call in send_calls), "Missing initial status message"
-
 
 def test_qq_bg_runner_sets_pending_image_for_matching_job():
     """Downloaded QQ images should be attached to the job that owns them."""
@@ -485,7 +456,6 @@ def test_qq_bg_runner_sets_pending_image_for_matching_job():
 
     assert seen_pending == ["base64-image"]
 
-
 def test_qq_bg_runner_clears_pending_image_if_run_query_fails_before_consuming():
     """A failed image job must not leak its image into the next turn."""
     from unittest.mock import MagicMock, patch
@@ -518,7 +488,6 @@ def test_qq_bg_runner_clears_pending_image_if_run_query_fails_before_consuming()
         assert runtime.get_ctx(config).pending_image is None
     finally:
         runtime.release_session_ctx(session_id)
-
 
 def test_streaming_hook_idempotency():
     """Streaming hooks should handle duplicate calls gracefully."""
@@ -568,7 +537,6 @@ def test_streaming_hook_idempotency():
 
     # _qq_send should be called for: "执行中" + tool start message = 2 calls minimum
     assert len(send_calls) >= 2, f"Expected at least 2 send calls, got {len(send_calls)}"
-
 
 def test_qq_bg_runner_serializes_global_streaming_hooks():
     """Concurrent QQ jobs must not overwrite each other's session-level hooks."""

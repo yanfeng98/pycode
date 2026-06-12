@@ -19,7 +19,6 @@ from cc_kernel import (
     ScheduleSpec,
 )
 
-
 @pytest.fixture
 def stores(tmp_path):
     ks  = KernelStore.open(tmp_path / "kernel.db")
@@ -37,9 +36,7 @@ def stores(tmp_path):
     yield {"ks": ks, "mbx": mbx, "obs": obs}
     ks.close()
 
-
 # ── Determinism ──────────────────────────────────────────────────────────
-
 
 def test_chaos_kill_random_agent_is_deterministic(stores):
     ks = stores["ks"]
@@ -73,16 +70,13 @@ def test_chaos_kill_random_agent_is_deterministic(stores):
     # respective DBs).
     assert killed1 - pids[0] == killed2 - 1  # both DBs start at pid=1
 
-
 def test_chaos_kill_no_live_agents_returns_none(stores):
     ks = stores["ks"]
     monkey = ChaosMonkey(seed=0)
     assert monkey.kill_random_agent(ks) is None
     assert monkey.events[-1]["killed"] is None
 
-
 # ── kill_random_agent ────────────────────────────────────────────────────
-
 
 def test_chaos_kill_terminates_agent(stores):
     ks = stores["ks"]
@@ -93,9 +87,7 @@ def test_chaos_kill_terminates_agent(stores):
     assert ks.get(a.pid).state == AgentState.DEAD
     assert ks.get(a.pid).exit_kind == "crashed"
 
-
 # ── fill_mailbox ─────────────────────────────────────────────────────────
-
 
 def test_chaos_fill_mailbox(stores):
     ks, mbx = stores["ks"], stores["mbx"]
@@ -105,9 +97,7 @@ def test_chaos_fill_mailbox(stores):
     sent = monkey.fill_mailbox(mbx, a.pid)
     assert sent == 5
 
-
 # ── lose_event ───────────────────────────────────────────────────────────
-
 
 def test_chaos_lose_event_returns_true(stores):
     ks = stores["ks"]
@@ -117,9 +107,7 @@ def test_chaos_lose_event_returns_true(stores):
     assert monkey.lose_event(ks, eid) is True
     assert monkey.lose_event(ks, eid) is False  # already gone
 
-
 # ── simulate_disk_full ───────────────────────────────────────────────────
-
 
 def test_chaos_disk_full_triggers_oneshot(stores):
     ks = stores["ks"]
@@ -131,9 +119,7 @@ def test_chaos_disk_full_triggers_oneshot(stores):
     # Outside the context: writes work again.
     ks.create(name="z", template="t")
 
-
 # ── Headline: daemon survives chaos ──────────────────────────────────────
-
 
 def test_daemon_survives_chaos_smoke(stores):
     """3 chaos operations + observe.summary still works."""

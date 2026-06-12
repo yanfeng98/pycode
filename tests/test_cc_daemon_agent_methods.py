@@ -20,16 +20,13 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
-
 
 class _FakeDaemonState:
     """Minimal DaemonState stand-in — agent_methods only reads .config."""
 
     def __init__(self, config=None):
         self.config = config or {}
-
 
 def _build_registry(state=None):
     """Fresh RpcRegistry with agent.* methods registered."""
@@ -39,11 +36,9 @@ def _build_registry(state=None):
     agent_methods.register(reg, state or _FakeDaemonState())
     return reg
 
-
 def _ctx():
     from cc_daemon.rpc import CallContext
     return CallContext(client_id="test", transport="unix", api_version="0")
-
 
 def _call(reg, method, params=None):
     """Dispatch one RPC envelope and return (result, error) tuple."""
@@ -51,7 +46,6 @@ def _call(reg, method, params=None):
                 "params": params or {}}
     response, _http = reg.dispatch(envelope, _ctx())
     return response.get("result"), response.get("error")
-
 
 class TestRegistration(unittest.TestCase):
 
@@ -62,7 +56,6 @@ class TestRegistration(unittest.TestCase):
             names & {"agent.start", "agent.stop", "agent.list", "agent.status"},
             {"agent.start", "agent.stop", "agent.list", "agent.status"},
         )
-
 
 class TestParamValidation(unittest.TestCase):
 
@@ -102,7 +95,6 @@ class TestParamValidation(unittest.TestCase):
         result, err = _call(reg, "agent.status", {})
         self.assertEqual(err["code"], -32602)
 
-
 class TestListWhenEmpty(unittest.TestCase):
 
     def test_list_returns_empty(self):
@@ -115,7 +107,6 @@ class TestListWhenEmpty(unittest.TestCase):
         self.assertIsNone(err)
         self.assertEqual(result, {"runners": []})
 
-
 class TestStatusUnknown(unittest.TestCase):
 
     def test_status_returns_not_found(self):
@@ -125,7 +116,6 @@ class TestStatusUnknown(unittest.TestCase):
         self.assertEqual(result.get("found"), False)
         self.assertEqual(result.get("name"), "no-such")
 
-
 class TestStopUnknown(unittest.TestCase):
 
     def test_stop_unknown_returns_false(self):
@@ -134,9 +124,7 @@ class TestStopUnknown(unittest.TestCase):
         self.assertIsNone(err)
         self.assertEqual(result, {"name": "no-such", "stopped": False})
 
-
 # ── End-to-end with inline runner ─────────────────────────────────────────
-
 
 class TestStopRunningEndToEnd(unittest.TestCase):
     """Spawn an inline runner via the same helper used in the supervisor
@@ -220,7 +208,6 @@ class TestStopRunningEndToEnd(unittest.TestCase):
                     proc.wait(timeout=1.0)
                 except Exception:
                     proc.kill()
-
 
 if __name__ == "__main__":
     unittest.main()

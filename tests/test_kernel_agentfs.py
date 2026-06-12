@@ -19,7 +19,6 @@ from cc_kernel import (
     UnknownPid,
 )
 
-
 @pytest.fixture
 def stores(tmp_path):
     ks = KernelStore.open(tmp_path / "kernel.db")
@@ -29,9 +28,7 @@ def stores(tmp_path):
     yield ks, fs, led
     ks.close()
 
-
 # ── write / read round-trip ──────────────────────────────────────────────
-
 
 def test_write_read_round_trip(stores):
     ks, fs, _ = stores
@@ -47,14 +44,12 @@ def test_write_read_round_trip(stores):
     assert meta.size == 11
     assert meta.accessed_at is not None
 
-
 def test_write_string_encodes_utf8(stores):
     ks, fs, _ = stores
     a = ks.create(name="x", template="t")
     fs.write(pid=a.pid, path="/x", content="héllo")  # type: ignore[arg-type]
     content, _ = fs.read("/x")
     assert content == "héllo".encode("utf-8")
-
 
 def test_write_binary_payload(stores):
     ks, fs, _ = stores
@@ -64,12 +59,10 @@ def test_write_binary_payload(stores):
     content, _ = fs.read("/x")
     assert content == payload
 
-
 def test_write_unknown_pid(stores):
     _, fs, _ = stores
     with pytest.raises(UnknownPid):
         fs.write(pid=9999, path="/x", content=b"")
-
 
 def test_write_replaces(stores):
     ks, fs, _ = stores
@@ -80,7 +73,6 @@ def test_write_replaces(stores):
     assert content == b"v2-longer"
     assert meta.size == len(b"v2-longer")
 
-
 def test_write_owner_unchanged_on_replace(stores):
     ks, fs, _ = stores
     a = ks.create(name="a", template="t")
@@ -90,9 +82,7 @@ def test_write_owner_unchanged_on_replace(stores):
     obj = fs.stat("/shared/x")
     assert obj.owner_pid == a.pid   # original creator
 
-
 # ── path validation ──────────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("bad_path", [
     "",
@@ -110,16 +100,13 @@ def test_path_validation_rejects(stores, bad_path):
     with pytest.raises(FsInvalidPath):
         fs.write(pid=a.pid, path=bad_path, content=b"x")
 
-
 def test_path_unicode_accepted(stores):
     ks, fs, _ = stores
     a = ks.create(name="x", template="t")
     fs.write(pid=a.pid, path="/agents/中文/笔记", content=b"hi")
     assert fs.exists("/agents/中文/笔记")
 
-
 # ── content size cap ─────────────────────────────────────────────────────
-
 
 def test_oversize_rejected(stores):
     ks, fs, _ = stores
@@ -129,9 +116,7 @@ def test_oversize_rejected(stores):
     with pytest.raises(FsInvalidPath):
         fs.write(pid=a.pid, path="/x", content=too_big)
 
-
 # ── if_absent ────────────────────────────────────────────────────────────
-
 
 def test_if_absent_blocks_overwrite(stores):
     ks, fs, _ = stores
@@ -143,16 +128,13 @@ def test_if_absent_blocks_overwrite(stores):
     content, _ = fs.read("/x")
     assert content == b"v1"
 
-
 def test_if_absent_creates_when_missing(stores):
     ks, fs, _ = stores
     a = ks.create(name="x", template="t")
     fs.write(pid=a.pid, path="/x", content=b"v1", if_absent=True)
     assert fs.exists("/x")
 
-
 # ── ro mode ──────────────────────────────────────────────────────────────
-
 
 def test_ro_mode_blocks_subsequent_writes(stores):
     ks, fs, _ = stores
@@ -160,7 +142,6 @@ def test_ro_mode_blocks_subsequent_writes(stores):
     fs.write(pid=a.pid, path="/x", content=b"v1", mode="ro")
     with pytest.raises(FsReadOnly):
         fs.write(pid=a.pid, path="/x", content=b"v2")
-
 
 def test_set_mode_toggles(stores):
     ks, fs, _ = stores
@@ -172,12 +153,10 @@ def test_set_mode_toggles(stores):
     assert content == b"v2"
     assert meta.mode == "rw"
 
-
 def test_set_mode_unknown_path(stores):
     _, fs, _ = stores
     with pytest.raises(FsNotFound):
         fs.set_mode("/nope", "ro")
-
 
 def test_set_mode_invalid(stores):
     ks, fs, _ = stores
@@ -186,21 +165,17 @@ def test_set_mode_invalid(stores):
     with pytest.raises(FsInvalidPath):
         fs.set_mode("/x", "x")
 
-
 # ── stat / exists / read of missing ──────────────────────────────────────
-
 
 def test_stat_unknown(stores):
     _, fs, _ = stores
     with pytest.raises(FsNotFound):
         fs.stat("/nope")
 
-
 def test_read_unknown(stores):
     _, fs, _ = stores
     with pytest.raises(FsNotFound):
         fs.read("/nope")
-
 
 def test_exists(stores):
     ks, fs, _ = stores
@@ -209,9 +184,7 @@ def test_exists(stores):
     fs.write(pid=a.pid, path="/x", content=b"")
     assert fs.exists("/x") is True
 
-
 # ── list with prefix ─────────────────────────────────────────────────────
-
 
 def test_list_prefix_filter(stores):
     ks, fs, _ = stores
@@ -223,7 +196,6 @@ def test_list_prefix_filter(stores):
     paths = sorted(e.path for e in entries)
     assert paths == ["/memory/a/1", "/memory/a/2"]
 
-
 def test_list_prefix_escapes_wildcards(stores):
     ks, fs, _ = stores
     a = ks.create(name="x", template="t")
@@ -233,7 +205,6 @@ def test_list_prefix_escapes_wildcards(stores):
     entries, total = fs.list(prefix="/agents/100%")
     assert total == 1
     assert entries[0].path == "/agents/100%match"
-
 
 def test_list_owner_filter(stores):
     ks, fs, _ = stores
@@ -245,7 +216,6 @@ def test_list_owner_filter(stores):
     assert total == 1
     assert entries[0].owner_pid == a.pid
 
-
 def test_list_pagination(stores):
     ks, fs, _ = stores
     a = ks.create(name="x", template="t")
@@ -256,9 +226,7 @@ def test_list_pagination(stores):
     assert total == 5
     assert len(page1) == 2 and len(page2) == 2
 
-
 # ── delete + gc_orphaned ─────────────────────────────────────────────────
-
 
 def test_delete_removes(stores):
     ks, fs, _ = stores
@@ -267,11 +235,9 @@ def test_delete_removes(stores):
     assert fs.delete("/x") is True
     assert fs.exists("/x") is False
 
-
 def test_delete_idempotent(stores):
     _, fs, _ = stores
     assert fs.delete("/never") is False
-
 
 def test_gc_orphaned_clears_owner(stores):
     ks, fs, _ = stores
@@ -285,9 +251,7 @@ def test_gc_orphaned_clears_owner(stores):
     assert fs.exists("/x/1") is False
     assert fs.exists("/y/1") is True
 
-
 # ── ledger integration ──────────────────────────────────────────────────
-
 
 def test_ledger_charges_fs_w_bytes(stores):
     ks, fs, led = stores
@@ -298,7 +262,6 @@ def test_ledger_charges_fs_w_bytes(stores):
     # used should be 300.
     entry = led.get(a.pid).entries[0]
     assert entry.used == 300
-
 
 def test_ledger_quota_exceeded_rolls_back(stores):
     ks, fs, led = stores
@@ -311,7 +274,6 @@ def test_ledger_quota_exceeded_rolls_back(stores):
     # Used count must NOT have been incremented.
     assert led.get(a.pid).entries[0].used == 0
 
-
 def test_ledger_no_charge_when_dim_missing(stores):
     """With no ledger row for fs_w_bytes, writes succeed un-tracked."""
     ks, fs, led = stores
@@ -320,9 +282,7 @@ def test_ledger_no_charge_when_dim_missing(stores):
     led_obj = led.get(a.pid)
     assert led_obj.entries == ()
 
-
 # ── concurrent writes ───────────────────────────────────────────────────
-
 
 def test_concurrent_writes_to_distinct_paths_safe(stores):
     ks, fs, _ = stores

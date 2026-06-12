@@ -19,7 +19,6 @@ def _make_pcm(n_samples: int = 1600) -> bytes:
     """Return silent int16 PCM (all zeros)."""
     return b"\x00\x00" * n_samples
 
-
 # ── voice.keyterms ────────────────────────────────────────────────────────
 
 class TestSplitIdentifier:
@@ -53,7 +52,6 @@ class TestSplitIdentifier:
         assert "services" in result
         assert "voice" in result
 
-
 class TestGetVoiceKeyterms:
     def test_returns_list(self):
         from voice.keyterms import get_voice_keyterms
@@ -82,7 +80,6 @@ class TestGetVoiceKeyterms:
         terms = get_voice_keyterms(recent_files=["src/authentication_handler.py"])
         assert "authentication" in terms or "handler" in terms
 
-
 # ── voice.stt ─────────────────────────────────────────────────────────────
 
 class TestPcmToWav:
@@ -109,7 +106,6 @@ class TestPcmToWav:
         # WAV = 44-byte header + pcm data
         assert len(wav) == 44 + len(pcm)
 
-
 class TestKeytermsToPrompt:
     def test_empty(self):
         from voice.stt import _keyterms_to_prompt
@@ -129,7 +125,6 @@ class TestKeytermsToPrompt:
         # should not contain term40 or beyond
         assert "term40" not in prompt
         assert "term39" in prompt
-
 
 class TestSttAvailability:
     def test_returns_tuple(self):
@@ -162,7 +157,6 @@ class TestSttAvailability:
             if not ok:
                 assert reason is not None
 
-
 # ── voice.recorder ────────────────────────────────────────────────────────
 
 class TestRecorderAvailability:
@@ -180,7 +174,6 @@ class TestRecorderAvailability:
             assert ok is True
             assert reason is None
 
-
 # ── voice.__init__ ────────────────────────────────────────────────────────
 
 class TestVoiceInit:
@@ -196,7 +189,6 @@ class TestVoiceInit:
         assert hasattr(voice, "voice_input")
         assert hasattr(voice, "transcribe")
         assert hasattr(voice, "get_voice_keyterms")
-
 
 # ── REPL integration ──────────────────────────────────────────────────────
 

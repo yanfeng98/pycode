@@ -29,15 +29,7 @@ from cc_kernel import (
     UnknownPid,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="runner spawns POSIX-style subprocesses",
-)
-
-
 RUNNER_ARGV = [sys.executable, "-m", "cc_kernel.runner.runner_main"]
-
 
 @pytest.fixture
 def stores(tmp_path):
@@ -53,13 +45,10 @@ def stores(tmp_path):
             pass
     ks.close()
 
-
 def _make_agent(ks: KernelStore, name: str = "alice"):
     return ks.create(name=name, template="t")
 
-
 # ── JsonLineChannel unit tests ──────────────────────────────────────────
-
 
 def test_jsonline_send_recv_roundtrip():
     """Use BytesIO pairs to verify the protocol without a subprocess."""
@@ -74,14 +63,12 @@ def test_jsonline_send_recv_roundtrip():
     assert parsed["op"] == "init"
     assert parsed["pid"] == 1
 
-
 def test_jsonline_recv_parses_dict():
     inbound = io.BytesIO(b'{"op":"ready","pid":42}\n')
     outbound = io.BytesIO()
     chan = JsonLineChannel(inbound, outbound)
     msg = chan.recv()
     assert msg == {"op": "ready", "pid": 42}
-
 
 def test_jsonline_recv_eof_raises():
     inbound = io.BytesIO(b"")
@@ -90,14 +77,12 @@ def test_jsonline_recv_eof_raises():
     with pytest.raises(EOFError):
         chan.recv()
 
-
 def test_jsonline_recv_invalid_json_raises():
     inbound = io.BytesIO(b"not-json\n")
     outbound = io.BytesIO()
     chan = JsonLineChannel(inbound, outbound)
     with pytest.raises(ValueError):
         chan.recv()
-
 
 def test_jsonline_recv_non_dict_raises():
     inbound = io.BytesIO(b"42\n")
@@ -106,15 +91,12 @@ def test_jsonline_recv_non_dict_raises():
     with pytest.raises(ValueError):
         chan.recv()
 
-
 def test_jsonline_send_rejects_non_dict():
     chan = JsonLineChannel(io.BytesIO(), io.BytesIO())
     with pytest.raises(TypeError):
         chan.send("not a dict")  # type: ignore[arg-type]
 
-
 # ── Spawn → wait happy path ─────────────────────────────────────────────
-
 
 def test_spawn_transitions_ready_to_running(stores):
     sup, ks = stores["sup"], stores["ks"]
@@ -129,7 +111,6 @@ def test_spawn_transitions_ready_to_running(stores):
     sup.wait(a.pid, timeout=10)
     assert ks.get(a.pid).state == AgentState.DEAD
 
-
 def test_spawn_returns_handle(stores):
     sup, ks = stores["sup"], stores["ks"]
     a = _make_agent(ks)
@@ -142,7 +123,6 @@ def test_spawn_returns_handle(stores):
     assert handle.os_pid > 0
     assert handle.is_alive() is True
     sup.wait(a.pid, timeout=10)
-
 
 def test_clean_runner_exits_completed(stores):
     sup, ks = stores["sup"], stores["ks"]
@@ -160,9 +140,7 @@ def test_clean_runner_exits_completed(stores):
     assert agent.state == AgentState.DEAD
     assert agent.exit_kind == "completed"
 
-
 # ── Illegal state ───────────────────────────────────────────────────────
-
 
 def test_spawn_rejects_non_ready_agent(stores):
     sup, ks = stores["sup"], stores["ks"]
@@ -172,14 +150,12 @@ def test_spawn_rejects_non_ready_agent(stores):
         sup.spawn(pid=a.pid, argv=RUNNER_ARGV,
                   policy=SandboxPolicy(wall_seconds=10))
 
-
 def test_spawn_rejects_dead_agent(stores):
     sup, ks = stores["sup"], stores["ks"]
     a = _make_agent(ks)
     ks.terminate(a.pid, exit_kind="completed")
     with pytest.raises(RunnerIllegalState):
         sup.spawn(pid=a.pid, argv=RUNNER_ARGV)
-
 
 def test_spawn_rejects_double_spawn(stores):
     sup, ks = stores["sup"], stores["ks"]
@@ -190,15 +166,12 @@ def test_spawn_rejects_double_spawn(stores):
         sup.spawn(pid=a.pid, argv=RUNNER_ARGV)
     sup.wait(a.pid, timeout=10)
 
-
 def test_spawn_unknown_pid_raises(stores):
     sup = stores["sup"]
     with pytest.raises(UnknownPid):
         sup.spawn(pid=9999, argv=RUNNER_ARGV)
 
-
 # ── Crash isolation ─────────────────────────────────────────────────────
-
 
 def test_kill_9_does_not_kill_supervisor(stores):
     """Hard-kill the runner; supervisor + daemon must survive."""
@@ -220,7 +193,6 @@ def test_kill_9_does_not_kill_supervisor(stores):
               policy=SandboxPolicy(wall_seconds=10))
     sup.wait(b.pid, timeout=10)
 
-
 def test_runner_crash_exits_non_zero(stores):
     sup, ks = stores["sup"], stores["ks"]
     a = _make_agent(ks)
@@ -234,9 +206,7 @@ def test_runner_crash_exits_non_zero(stores):
     assert info.exit_code != 0
     assert info.exit_kind in ("crashed", "failed")
 
-
 # ── Sandbox / wall-clock kill ───────────────────────────────────────────
-
 
 def test_wall_seconds_kills_runaway(stores):
     """A loop runner must be killed by wall-clock enforcement."""
@@ -253,9 +223,7 @@ def test_wall_seconds_kills_runaway(stores):
     assert elapsed < 12, f"runner ran for {elapsed}s"
     assert info.exit_code != 0
 
-
 # ── stop() ───────────────────────────────────────────────────────────────
-
 
 def test_stop_kills_running_runner(stores):
     sup, ks = stores["sup"], stores["ks"]
@@ -272,15 +240,12 @@ def test_stop_kills_running_runner(stores):
     assert elapsed < 10, f"stop took {elapsed}s"
     assert ks.get(a.pid).state == AgentState.DEAD
 
-
 def test_stop_unknown_pid_raises(stores):
     sup = stores["sup"]
     with pytest.raises(Exception):  # RunnerUnknownPid
         sup.stop(9999)
 
-
 # ── Ledger integration ──────────────────────────────────────────────────
-
 
 def test_wall_s_charged_when_dim_exists(stores):
     sup, ks, led = stores["sup"], stores["ks"], stores["led"]
@@ -298,7 +263,6 @@ def test_wall_s_charged_when_dim_exists(stores):
     led_obj = led.get(a.pid)
     assert led_obj.entries[0].used >= 1
 
-
 def test_wall_s_silent_when_dim_missing(stores):
     """Without a wall_s ledger row, the supervisor doesn't charge."""
     sup, ks = stores["sup"], stores["ks"]
@@ -309,7 +273,6 @@ def test_wall_s_silent_when_dim_missing(stores):
     assert info.exit_kind == "completed"
     # No ledger; nothing charged.
     assert info.ledger_charged.get("wall_s", 0) == 0
-
 
 def test_runner_charge_message_translates_to_ledger(stores):
     """A runner that emits {op:'charge', dim, amount} must update the
@@ -326,7 +289,6 @@ def test_runner_charge_message_translates_to_ledger(stores):
     assert info.exit_kind == "completed"
     assert info.ledger_charged.get("tool_calls", 0) == 7
     assert led.get(a.pid).entries[0].used == 7
-
 
 def test_first_breach_records_event(stores):
     sup, ks, led = stores["sup"], stores["ks"], stores["led"]
@@ -345,9 +307,7 @@ def test_first_breach_records_event(stores):
     assert len(events) >= 1
     assert events[0].payload["dim"] == "tool_calls"
 
-
 # ── list / cleanup ──────────────────────────────────────────────────────
-
 
 def test_list_reports_active_handles(stores):
     sup, ks = stores["sup"], stores["ks"]
@@ -366,9 +326,7 @@ def test_list_reports_active_handles(stores):
     sup.wait(b.pid, timeout=10)
     assert sup.list() == []
 
-
 # ── Concurrent spawns ───────────────────────────────────────────────────
-
 
 def test_concurrent_spawn_distinct_agents(stores):
     """Two independent threads spawn + wait. No collision."""
@@ -395,9 +353,7 @@ def test_concurrent_spawn_distinct_agents(stores):
     for a in agents:
         assert ks.get(a.pid).state == AgentState.DEAD
 
-
 # ── Handshake failure ───────────────────────────────────────────────────
-
 
 def test_handshake_timeout_raises(stores, tmp_path):
     """Spawn a script that doesn't honour the protocol — handshake

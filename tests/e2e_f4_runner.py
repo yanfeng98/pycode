@@ -33,12 +33,9 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
 
-
 # ── Helpers ────────────────────────────────────────────────────────────────
-
 
 def _make_template(tmp_dir: Path, name: str = "e2e_stub") -> str:
     """Write a tiny template file and return its **absolute path** so the
@@ -49,7 +46,6 @@ def _make_template(tmp_dir: Path, name: str = "e2e_stub") -> str:
         encoding="utf-8",
     )
     return str(p)
-
 
 def _isolate_schema(tmp_path: Path) -> Path:
     """Point :mod:`cc_daemon.schema` at a fresh DB under tmp_path so the
@@ -64,7 +60,6 @@ def _isolate_schema(tmp_path: Path) -> Path:
     schema.init_schema(db)
     return db
 
-
 def _restore_schema_default():
     from cc_daemon import schema
 
@@ -73,7 +68,6 @@ def _restore_schema_default():
         schema._local.conn = None
     schema._db_path = None
 
-
 def _query(db_path: Path, sql: str, *params):
     conn = sqlite3.connect(str(db_path))
     try:
@@ -81,9 +75,7 @@ def _query(db_path: Path, sql: str, *params):
     finally:
         conn.close()
 
-
 # ── Tests ──────────────────────────────────────────────────────────────────
-
 
 @unittest.skipIf(pytestmark_skipif_windows, "F-4 is POSIX-only")
 class TestF4EndToEndRealRunner(unittest.TestCase):
@@ -314,7 +306,6 @@ class TestF4EndToEndRealRunner(unittest.TestCase):
                 rs.stop("e2e-perm", timeout_s=5.0)
         finally:
             store.stop()
-
 
 if __name__ == "__main__":
     unittest.main()

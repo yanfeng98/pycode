@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-
 def _have(*mods: str) -> bool:
     """True iff every module in *mods* is importable on the current install.
 
@@ -22,7 +21,6 @@ def _have(*mods: str) -> bool:
     instead of failing — a missing optional dep is not a regression.
     """
     return all(importlib.util.find_spec(m) is not None for m in mods)
-
 
 _skip_if_no_numpy = pytest.mark.skipif(
     not _have("numpy"),
@@ -37,7 +35,6 @@ _skip_if_no_sklearn = pytest.mark.skipif(
     reason="numpy/sklearn not installed (needs [trading] extra)",
 )
 
-
 # ── Alt-data: SEC EDGAR insider ───────────────────────────────────────────
 
 def test_insider_summary_soft_fails_when_sec_unreachable(monkeypatch):
@@ -45,7 +42,6 @@ def test_insider_summary_soft_fails_when_sec_unreachable(monkeypatch):
     monkeypatch.setattr(insider, "_http_get", lambda url: None)
     assert insider.fetch_recent_insider_filings("AAPL") == []
     assert insider.render_insider_summary("AAPL") == ""
-
 
 def test_insider_filters_to_form4_within_window(monkeypatch):
     from modular.trading.alt_data import insider
@@ -75,7 +71,6 @@ def test_insider_filters_to_form4_within_window(monkeypatch):
     # Old Form 4 (>90d) should be filtered out
     assert all("acc-4" != f["accession"] for f in filings)
 
-
 # ── Alt-data: trends soft-fail without pytrends ──────────────────────────
 
 def test_trends_soft_fail_when_pytrends_missing(monkeypatch):
@@ -86,12 +81,10 @@ def test_trends_soft_fail_when_pytrends_missing(monkeypatch):
     out = trends.fetch_interest("NVDA")
     assert isinstance(out, dict)
 
-
 def test_trends_render_empty_string_when_unavailable(monkeypatch):
     from modular.trading.alt_data import trends
     monkeypatch.setattr(trends, "fetch_interest", lambda s, lookback_days=90: {})
     assert trends.render_trends_block("NVDA") == ""
-
 
 # ── Alt-data: sentiment ──────────────────────────────────────────────────
 
@@ -99,7 +92,6 @@ def test_sentiment_returns_empty_when_no_headlines(monkeypatch):
     from modular.trading.alt_data import sentiment
     monkeypatch.setattr(sentiment, "fetch_recent_headlines", lambda *a, **k: [])
     assert sentiment.render_sentiment_block("NVDA") == ""
-
 
 def test_sentiment_renders_with_aux_scores(monkeypatch):
     from modular.trading.alt_data import sentiment
@@ -119,7 +111,6 @@ def test_sentiment_renders_with_aux_scores(monkeypatch):
     assert "MIXED" in block
     assert "antitrust" in block
 
-
 # ── Portfolio optimizer ──────────────────────────────────────────────────
 
 def _make_uptrend(n=120, start=100.0, drift=0.001, noise_seed: int = 0) -> list[float]:
@@ -137,7 +128,6 @@ def _make_uptrend(n=120, start=100.0, drift=0.001, noise_seed: int = 0) -> list[
         out.append(p)
     return out
 
-
 @_skip_if_no_scipy
 def test_optimizer_returns_long_only_caps_weight():
     from modular.trading.portfolio import Candidate, optimize
@@ -150,14 +140,12 @@ def test_optimizer_returns_long_only_caps_weight():
     assert all(0 <= w <= 0.40 + 1e-6 for w in r.weights.values())
     assert sum(r.weights.values()) <= 1.0 + 1e-6
 
-
 @_skip_if_no_scipy
 def test_optimizer_handles_too_short_history():
     from modular.trading.portfolio import Candidate, optimize
     cands = [Candidate("A", [100.0] * 10)]
     r = optimize(cands)
     assert "insufficient history" in r.diagnostics.get("reason", "")
-
 
 @_skip_if_no_scipy
 def test_optimizer_respects_sector_caps():
@@ -171,7 +159,6 @@ def test_optimizer_respects_sector_caps():
     tech_total = r.weights.get("A", 0.0) + r.weights.get("B", 0.0)
     assert tech_total <= 0.30 + 0.01  # small SLSQP slack
 
-
 @_skip_if_no_scipy
 def test_optimization_report_renders():
     from modular.trading.portfolio import Candidate, optimize, render_optimization_report
@@ -179,7 +166,6 @@ def test_optimization_report_renders():
     r = optimize(cands)
     md = render_optimization_report(r)
     assert "# Portfolio Optimization" in md
-
 
 # ── Broker abstraction (paper backend) ────────────────────────────────────
 
@@ -195,13 +181,11 @@ def fresh_broker(tmp_path, monkeypatch):
     monkeypatch.setattr(broker, "quote", lambda sym: {"AAPL": 50.0, "MSFT": 25.0}.get(sym))
     return broker
 
-
 def test_broker_initial_account_summary(fresh_broker):
     s = fresh_broker.account_summary()
     assert s.cash == 100.0
     assert s.equity == 100.0
     assert s.open_positions_count == 0
-
 
 def test_broker_buy_then_sell_round_trip(fresh_broker):
     r1 = fresh_broker.place_market_order("AAPL", "BUY", 1.0)
@@ -216,19 +200,16 @@ def test_broker_buy_then_sell_round_trip(fresh_broker):
     assert s_after_sell.cash == pytest.approx(100.0)
     assert s_after_sell.open_positions_count == 0
 
-
 def test_broker_rejects_buy_above_cash(fresh_broker):
     r = fresh_broker.place_market_order("AAPL", "BUY", 5.0)  # 5×50 = 250 > 100
     assert not r.success
     assert "Insufficient cash" in (r.error or "")
-
 
 def test_broker_rejects_sell_more_than_held(fresh_broker):
     fresh_broker.place_market_order("AAPL", "BUY", 1.0)
     r = fresh_broker.place_market_order("AAPL", "SELL", 2.0)
     assert not r.success
     assert "only hold" in (r.error or "")
-
 
 def test_broker_average_cost_updates_on_add(fresh_broker, monkeypatch):
     # 0.5 share @ $50 = $25; 0.5 share @ $60 = $30; total $55 → avg = $55
@@ -239,7 +220,6 @@ def test_broker_average_cost_updates_on_add(fresh_broker, monkeypatch):
     # Weighted avg cost: (0.5*50 + 0.5*60) / 1.0 = 55
     assert pos.avg_cost == pytest.approx(55.0)
 
-
 def test_ibkr_stub_reports_setup_required():
     from modular.trading.broker import IBKRBroker
     b = IBKRBroker()
@@ -247,7 +227,6 @@ def test_ibkr_stub_reports_setup_required():
     assert "ok" in diag
     r = b.place_market_order("AAPL", "BUY", 1.0)
     assert not r.success
-
 
 # ── Managed portfolio mode ───────────────────────────────────────────────
 
@@ -315,7 +294,6 @@ def test_managed_portfolio_lifecycle_with_mocked_quotes(tmp_path, monkeypatch):
     ports = managed.list_portfolios(db_path=db)
     assert any(p["name"] == "hundred" for p in ports)
 
-
 @_skip_if_no_scipy
 def test_managed_portfolio_dry_run_places_no_orders(tmp_path, monkeypatch):
     from modular.trading import managed
@@ -342,7 +320,6 @@ def test_managed_portfolio_dry_run_places_no_orders(tmp_path, monkeypatch):
     assert result.orders == []
     assert any("Dry run" in n for n in result.notes)
 
-
 # ── ML stacker ────────────────────────────────────────────────────────────
 
 def _synth_closed_trade(realized_pct: float, signal: str = "BUY",
@@ -361,7 +338,6 @@ def _synth_closed_trade(realized_pct: float, signal: str = "BUY",
         realized_return_pct=realized_pct, close_reason="manual",
     )
 
-
 def test_ml_features_build_dataset_correct_shape():
     from modular.trading.ml.features import build_dataset, feature_columns
     closed = [_synth_closed_trade(5, trade_id=i) for i in range(10)]
@@ -369,7 +345,6 @@ def test_ml_features_build_dataset_correct_shape():
     assert len(rows) == 10
     assert len(cols) == len(rows[0].features)
     assert all(r.label == 1 for r in rows)
-
 
 def test_ml_train_returns_diagnostic_when_too_few_samples():
     from modular.trading.ml.stacker import train
@@ -379,7 +354,6 @@ def test_ml_train_returns_diagnostic_when_too_few_samples():
     r = train(rows, cols=cols, min_samples=30)
     assert r.cv_auc_mean == 0.0
     assert any("≥ 30" in n for n in r.notes)
-
 
 @_skip_if_no_sklearn
 def test_ml_train_with_mixed_labels(tmp_path):
@@ -409,12 +383,10 @@ def test_ml_train_with_mixed_labels(tmp_path):
     assert "proba_hit" in pred
     assert 0.0 <= pred["proba_hit"] <= 1.0
 
-
 def test_ml_predict_returns_empty_when_no_model(tmp_path):
     from modular.trading.ml.stacker import predict_proba
     out = predict_proba([0.0] * 17, model_path=tmp_path / "nonexistent.pkl")
     assert out == {}
-
 
 # ── Review prompt builder ────────────────────────────────────────────────
 

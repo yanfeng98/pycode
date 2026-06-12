@@ -18,7 +18,6 @@ from modular.trading import paper_trader, calibration, verifier
 from modular.trading.engines.base import BaseEngine, BacktestConfig
 from modular.trading.engines.equity import EquityEngine
 
-
 # ── paper_trader ──────────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -27,7 +26,6 @@ def db(tmp_path) -> Path:
     p = tmp_path / "paper.db"
     paper_trader.init_db(p)
     return p
-
 
 def test_open_close_long_trade_realized_return(db):
     tid = paper_trader.open_trade(
@@ -39,7 +37,6 @@ def test_open_close_long_trade_realized_return(db):
     assert closed is not None
     assert closed.status == "closed"
     assert closed.realized_return_pct == pytest.approx(10.0)
-
 
 def test_short_signal_inverts_realized_return(db):
     """SELL/UNDERWEIGHT should profit when price drops."""
@@ -57,13 +54,11 @@ def test_short_signal_inverts_realized_return(db):
     closed2 = paper_trader.close_trade(tid2, close_price=110.0, db_path=db)
     assert closed2.realized_return_pct == pytest.approx(-10.0)  # underweight lost 10%
 
-
 def test_invalid_signal_or_confidence_rejected(db):
     with pytest.raises(ValueError):
         paper_trader.open_trade(symbol="X", signal="MOON", confidence="High", db_path=db)
     with pytest.raises(ValueError):
         paper_trader.open_trade(symbol="X", signal="BUY", confidence="Cosmic", db_path=db)
-
 
 def test_snapshot_records_unrealized(db):
     tid = paper_trader.open_trade(
@@ -71,7 +66,6 @@ def test_snapshot_records_unrealized(db):
     )
     unreal = paper_trader.add_snapshot(tid, price=60.0, db_path=db)
     assert unreal == pytest.approx(20.0)
-
 
 def test_open_position_summary_tracks_sector_exposure(db):
     paper_trader.open_trade(symbol="AAPL", signal="BUY", confidence="High",
@@ -86,7 +80,6 @@ def test_open_position_summary_tracks_sector_exposure(db):
     assert s["by_sector_pct"]["Tech"] == pytest.approx(7.0)
     assert s["by_sector_pct"]["Financials"] == pytest.approx(2.0)
 
-
 def test_watchlist_add_remove_list(db):
     paper_trader.watchlist_add("aapl", db_path=db)
     paper_trader.watchlist_add("NVDA", note="GPU thesis", db_path=db)
@@ -96,7 +89,6 @@ def test_watchlist_add_remove_list(db):
     assert paper_trader.watchlist_remove("AAPL", db_path=db) is True
     assert paper_trader.watchlist_remove("DOES_NOT_EXIST", db_path=db) is False
     assert len(paper_trader.watchlist_list(db_path=db)) == 1
-
 
 def test_phase5_parser_extracts_structured_fields():
     text = """
@@ -118,10 +110,8 @@ def test_phase5_parser_extracts_structured_fields():
     assert parsed["take_profit_pct"] == pytest.approx(15.0)
     assert "6 months" in parsed["time_horizon"]
 
-
 def test_phase5_parser_returns_none_without_rating():
     assert paper_trader._parse_phase5("just some text, no rating block") is None
-
 
 # ── calibration ───────────────────────────────────────────────────────────
 
@@ -140,14 +130,12 @@ def test_calibration_distinguishes_high_from_low(db):
     assert stats["by_confidence"]["Low"]["mean_return_pct"] == pytest.approx(-5.0)
     assert "High-conviction outperforms Low" in stats["calibration_check"]
 
-
 def test_calibration_handles_empty_db(db):
     stats = calibration.compute_calibration(db_path=db)
     assert stats["total_closed"] == 0
     assert "Insufficient" in stats["calibration_check"]
     rendered = calibration.render_calibration_report(stats)
     assert "No closed paper trades" in rendered
-
 
 def test_calibration_report_renders_markdown(db):
     for i in range(3):
@@ -160,7 +148,6 @@ def test_calibration_report_renders_markdown(db):
     assert "## By Signal" in report
     assert "BUY" in report
 
-
 # ── verifier ──────────────────────────────────────────────────────────────
 
 def test_verifier_caps_oversize_position(db):
@@ -171,7 +158,6 @@ def test_verifier_caps_oversize_position(db):
     )
     assert v.status == "adjust"
     assert v.adjustments["position_size_pct"] == 5.0
-
 
 def test_verifier_rejects_when_sector_full(db):
     paper_trader.open_trade("X", "BUY", "High", position_size_pct=23.0,
@@ -185,7 +171,6 @@ def test_verifier_rejects_when_sector_full(db):
     assert v.status == "adjust"
     assert v.adjustments["position_size_pct"] == pytest.approx(2.0, abs=0.1)
 
-
 def test_verifier_hard_rejects_when_no_sector_room(db):
     paper_trader.open_trade("X", "BUY", "High", position_size_pct=24.9,
                             sector="Tech", db_path=db)
@@ -197,7 +182,6 @@ def test_verifier_hard_rejects_when_no_sector_room(db):
     assert v.status == "reject"
     assert any("Sector 'Tech'" in r for r in v.reasons)
 
-
 def test_verifier_tightens_wide_stops(db):
     v = verifier.verify_proposal(
         symbol="X", signal="BUY",
@@ -206,7 +190,6 @@ def test_verifier_tightens_wide_stops(db):
     )
     assert v.status == "adjust"
     assert v.adjustments["stop_loss_pct"] == 10.0
-
 
 def test_verifier_flags_too_tight_stops(db):
     v = verifier.verify_proposal(
@@ -217,7 +200,6 @@ def test_verifier_flags_too_tight_stops(db):
     assert v.status == "adjust"
     assert v.adjustments["stop_loss_pct"] == 4.0
 
-
 def test_verifier_passes_through_hold_signals(db):
     v = verifier.verify_proposal(
         symbol="X", signal="HOLD",
@@ -225,7 +207,6 @@ def test_verifier_passes_through_hold_signals(db):
         db_path=db, skip_earnings_check=True,
     )
     assert v.status == "approve"
-
 
 def test_verifier_caps_size_during_earnings_blackout(db, monkeypatch):
     # Stub upcoming_earnings to claim earnings in 2 days
@@ -242,7 +223,6 @@ def test_verifier_caps_size_during_earnings_blackout(db, monkeypatch):
     assert v.adjustments["position_size_pct"] == 2.5  # earnings_blackout_size_pct
     assert any("Earnings in 2 days" in r for r in v.reasons)
 
-
 def test_verifier_rejects_when_total_exposure_capped(db):
     paper_trader.open_trade("A", "BUY", "High", position_size_pct=78.0,
                             sector="Mixed", db_path=db)
@@ -252,7 +232,6 @@ def test_verifier_rejects_when_total_exposure_capped(db):
         db_path=db, skip_earnings_check=True,
     )
     assert v.status == "reject"
-
 
 # ── walk-forward ─────────────────────────────────────────────────────────
 
@@ -274,7 +253,6 @@ def _synthetic_uptrend(n_bars: int = 500, drift: float = 0.0008) -> list[dict]:
         })
     return rows
 
-
 def test_walk_forward_produces_per_chunk_metrics():
     from modular.trading.tools import _build_strategy
     rows = _synthetic_uptrend(500)
@@ -287,7 +265,6 @@ def test_walk_forward_produces_per_chunk_metrics():
         assert "start_date" in s and "end_date" in s
     assert "verdict" in result["stability"]
 
-
 def test_walk_forward_too_short_returns_diagnostic():
     from modular.trading.tools import _build_strategy
     rows = _synthetic_uptrend(100)  # too short for 5×60-bar splits
@@ -297,12 +274,10 @@ def test_walk_forward_too_short_returns_diagnostic():
     # Either runs with fewer splits or returns "Not enough" — both are valid
     assert "verdict" in result["stability"]
 
-
 def test_strategy_factory_validates_unknown_name():
     from modular.trading.tools import _build_strategy
     with pytest.raises(ValueError, match="Unknown strategy"):
         _build_strategy("moonshot_2x")
-
 
 # ── Integration: analyze prompt absorbs macro/earnings/book context ───────
 

@@ -7,7 +7,6 @@ import skill.loader as _loader
 from skill.loader import _parse_skill_file, _parse_list_field, find_skill, SkillDef
 from skill import load_skills, substitute_arguments
 
-
 COMMIT_MD = """\
 ---
 name: commit
@@ -40,7 +39,6 @@ arguments: [env, version]
 Deploy $VERSION to $ENV environment. Full args: $ARGUMENTS
 """
 
-
 @pytest.fixture()
 def skill_dir(tmp_path, monkeypatch):
     """Create a temp skill directory with sample skills and patch _get_skill_paths."""
@@ -54,7 +52,6 @@ def skill_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(_loader, "_BUILTIN_SKILLS", [])
     return skills_dir
 
-
 # ------------------------------------------------------------------
 # _parse_list_field
 # ------------------------------------------------------------------
@@ -62,14 +59,11 @@ def skill_dir(tmp_path, monkeypatch):
 def test_parse_list_field_bracket():
     assert _parse_list_field("[a, b, c]") == ["a", "b", "c"]
 
-
 def test_parse_list_field_plain():
     assert _parse_list_field("a, b, c") == ["a", "b", "c"]
 
-
 def test_parse_list_field_single():
     assert _parse_list_field("solo") == ["solo"]
-
 
 # ------------------------------------------------------------------
 # _parse_skill_file
@@ -88,7 +82,6 @@ def test_parse_skill_file(skill_dir):
     assert "commit" in skill.prompt.lower()
     assert skill.file_path == str(path)
 
-
 def test_parse_skill_file_review(skill_dir):
     path = skill_dir / "review.md"
     skill = _parse_skill_file(path)
@@ -97,18 +90,15 @@ def test_parse_skill_file_review(skill_dir):
     assert "/review" in skill.triggers
     assert "/review-pr" in skill.triggers
 
-
 def test_parse_skill_file_invalid(tmp_path):
     bad = tmp_path / "bad.md"
     bad.write_text("no frontmatter here", encoding="utf-8")
     assert _parse_skill_file(bad) is None
 
-
 def test_parse_skill_file_no_name(tmp_path):
     no_name = tmp_path / "noname.md"
     no_name.write_text("---\ndescription: test\n---\nbody\n", encoding="utf-8")
     assert _parse_skill_file(no_name) is None
-
 
 def test_parse_skill_file_context_fork(tmp_path):
     fork_md = tmp_path / "fork.md"
@@ -117,7 +107,6 @@ def test_parse_skill_file_context_fork(tmp_path):
     assert skill is not None
     assert skill.context == "fork"
 
-
 def test_parse_skill_file_allowed_tools(tmp_path):
     md = tmp_path / "t.md"
     md.write_text("---\nname: myskill\ndescription: d\nallowed-tools: [Bash, Read]\n---\nbody\n")
@@ -125,7 +114,6 @@ def test_parse_skill_file_allowed_tools(tmp_path):
     assert skill is not None
     assert "Bash" in skill.tools
     assert "Read" in skill.tools
-
 
 # ------------------------------------------------------------------
 # load_skills
@@ -137,7 +125,6 @@ def test_load_skills(skill_dir):
     names = {s.name for s in skills}
     assert names == {"commit", "review"}
 
-
 def test_load_skills_empty_dir(tmp_path, monkeypatch):
     empty = tmp_path / "empty_skills"
     empty.mkdir()
@@ -145,12 +132,10 @@ def test_load_skills_empty_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(_loader, "_BUILTIN_SKILLS", [])
     assert load_skills() == []
 
-
 def test_load_skills_nonexistent_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(_loader, "_get_skill_paths", lambda: [tmp_path / "does_not_exist"])
     monkeypatch.setattr(_loader, "_BUILTIN_SKILLS", [])
     assert load_skills() == []
-
 
 def test_load_skills_builtins_present(monkeypatch):
     """Without patching, builtins (commit, review) should be present."""
@@ -159,7 +144,6 @@ def test_load_skills_builtins_present(monkeypatch):
     names = {s.name for s in skills}
     assert "commit" in names
     assert "review" in names
-
 
 def test_load_skills_project_overrides_builtin(tmp_path, monkeypatch):
     """A project skill with the same name overrides the builtin."""
@@ -174,7 +158,6 @@ def test_load_skills_project_overrides_builtin(tmp_path, monkeypatch):
     commit = next(s for s in skills if s.name == "commit")
     assert commit.description == "OVERRIDDEN"
 
-
 # ------------------------------------------------------------------
 # find_skill
 # ------------------------------------------------------------------
@@ -184,23 +167,19 @@ def test_find_skill_commit(skill_dir):
     assert skill is not None
     assert skill.name == "commit"
 
-
 def test_find_skill_review(skill_dir):
     skill = find_skill("/review")
     assert skill is not None
     assert skill.name == "review"
-
 
 def test_find_skill_review_pr(skill_dir):
     skill = find_skill("/review-pr some-pr-url")
     assert skill is not None
     assert skill.name == "review"
 
-
 def test_find_skill_nonexistent(skill_dir):
     result = find_skill("/nonexistent")
     assert result is None
-
 
 # ------------------------------------------------------------------
 # substitute_arguments
@@ -209,7 +188,6 @@ def test_find_skill_nonexistent(skill_dir):
 def test_substitute_arguments_placeholder():
     result = substitute_arguments("Deploy $ARGUMENTS please", "v1.2 prod", [])
     assert result == "Deploy v1.2 prod please"
-
 
 def test_substitute_named_args(tmp_path):
     result = substitute_arguments(
@@ -222,17 +200,14 @@ def test_substitute_named_args(tmp_path):
     assert "$ENV" not in result
     assert "$ARGUMENTS" not in result
 
-
 def test_substitute_missing_arg():
     # If user provides fewer args than named slots, missing ones become ""
     result = substitute_arguments("Hello $NAME!", "", ["name"])
     assert result == "Hello !"
 
-
 def test_substitute_no_placeholders():
     result = substitute_arguments("just a plain prompt", "some args", [])
     assert result == "just a plain prompt"
-
 
 # ------------------------------------------------------------------
 # _iter_skill_files (nested directory support)
@@ -240,13 +215,11 @@ def test_substitute_no_placeholders():
 
 from skill.loader import _iter_skill_files
 
-
 def test_iter_skill_files_flat(skill_dir):
     files = list(_iter_skill_files(skill_dir))
     names = [f.name for f in files]
     assert "commit.md" in names
     assert "review.md" in names
-
 
 def test_iter_skill_files_nested(tmp_path):
     skill_dir = tmp_path / "skills"
@@ -260,10 +233,8 @@ def test_iter_skill_files_nested(tmp_path):
     files = list(_iter_skill_files(skill_dir))
     assert any("myskill" in str(f) for f in files)
 
-
 def test_iter_skill_files_empty(tmp_path):
     assert list(_iter_skill_files(tmp_path / "nope")) == []
-
 
 def test_load_skills_finds_nested(tmp_path, monkeypatch):
     skill_dir = tmp_path / "skills"

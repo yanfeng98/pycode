@@ -14,14 +14,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 SEP = "=" * 60
 
-
 @dataclass
 class FakeState:
     messages: list = field(default_factory=list)
     total_input_tokens: int = 500
     total_output_tokens: int = 300
     turn_count: int = 3
-
 
 def test_commands():
     tmpdir = Path(tempfile.mkdtemp(prefix="cmd_e2e_"))
@@ -33,7 +31,6 @@ def test_commands():
     finally:
         os.chdir(orig_cwd)
         shutil.rmtree(str(tmpdir), ignore_errors=True)
-
 
 def _run_tests(tmpdir):
     # Import after chdir so paths resolve correctly
@@ -185,7 +182,6 @@ def _run_tests(tmpdir):
     print(f"\n{SEP}")
     print("ALL 9 STEPS PASSED")
     print(SEP)
-
 
 if __name__ == "__main__":
     test_commands()

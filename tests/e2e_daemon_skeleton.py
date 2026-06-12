@@ -21,9 +21,7 @@ from pathlib import Path
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
-
 
 # ── Fixture: boot a real daemon under an isolated HOME ─────────────────────
 
@@ -94,7 +92,6 @@ def daemon_proc(tmp_path):
             proc.terminate()
             proc.wait(timeout=5)
 
-
 # ── Helpers ────────────────────────────────────────────────────────────────
 
 def _post_rpc(address: str, token: str, method: str,
@@ -117,7 +114,6 @@ def _post_rpc(address: str, token: str, method: str,
     finally:
         conn.close()
 
-
 def _get(address: str, path: str, *, token: str | None = None,
          api_version: bool = False, timeout=3.0):
     host, port_s = address.rsplit(":", 1)
@@ -135,7 +131,6 @@ def _get(address: str, path: str, *, token: str | None = None,
     finally:
         conn.close()
 
-
 def _run_subcommand(args: list[str], home: Path, *, timeout=10.0):
     env = os.environ.copy()
     env["HOME"] = str(home)
@@ -149,7 +144,6 @@ def _run_subcommand(args: list[str], home: Path, *, timeout=10.0):
     return (proc.returncode,
             proc.stdout.decode("utf-8", "replace"),
             proc.stderr.decode("utf-8", "replace"))
-
 
 # ── Boot + discovery ───────────────────────────────────────────────────────
 
@@ -165,7 +159,6 @@ def test_daemon_writes_discovery_and_token(daemon_proc):
     # an accidental shrink to 16 raw bytes (~22 chars) breaks loudly.
     assert len(token) >= 40
 
-
 # ── RPC ────────────────────────────────────────────────────────────────────
 
 def test_rpc_system_ping(daemon_proc):
@@ -174,13 +167,11 @@ def test_rpc_system_ping(daemon_proc):
     assert status == 200
     assert body == {"jsonrpc": "2.0", "id": 1, "result": "pong"}
 
-
 def test_rpc_method_not_found(daemon_proc):
     _proc, _home, address, token = daemon_proc
     status, body = _post_rpc(address, token, "no.such.method")
     assert status == 200  # JSON-RPC errors travel inside the envelope
     assert body["error"]["code"] == -32601
-
 
 def test_rpc_without_token_returns_401(daemon_proc):
     _proc, _home, address, _token = daemon_proc
@@ -197,14 +188,12 @@ def test_rpc_without_token_returns_401(daemon_proc):
     finally:
         conn.close()
 
-
 # ── Health endpoints ───────────────────────────────────────────────────────
 
 def test_healthz_requires_auth_by_default(daemon_proc):
     _proc, _home, address, _token = daemon_proc
     status, _ = _get(address, "/healthz")  # no token
     assert status == 401
-
 
 def test_healthz_with_token_returns_real_payload(daemon_proc):
     _proc, _home, address, token = daemon_proc
@@ -216,7 +205,6 @@ def test_healthz_with_token_returns_real_payload(daemon_proc):
     assert "active_sessions" in payload
     assert "model" in payload  # health.py reads from cc_config
 
-
 def test_metrics_with_token_returns_real_payload(daemon_proc):
     _proc, _home, address, token = daemon_proc
     status, body = _get(address, "/metrics", token=token)
@@ -225,7 +213,6 @@ def test_metrics_with_token_returns_real_payload(daemon_proc):
     for key in ("uptime_s", "model", "active_sessions", "circuits",
                 "daily_tokens", "daily_cost_usd"):
         assert key in payload, f"missing {key}"
-
 
 # ── SSE ────────────────────────────────────────────────────────────────────
 
@@ -259,7 +246,6 @@ def test_events_stream_emits_heartbeat(daemon_proc):
     finally:
         conn.close()
 
-
 # ── daemon subcommands ─────────────────────────────────────────────────────
 
 def test_daemon_status_subcommand_when_running(daemon_proc):
@@ -270,12 +256,10 @@ def test_daemon_status_subcommand_when_running(daemon_proc):
     assert "address:" in stdout
     assert "pong" in stdout
 
-
 def test_daemon_status_when_not_running(tmp_path):
     rc, _stdout, stderr = _run_subcommand(["daemon", "status"], tmp_path)
     assert rc == 1
     assert "not running" in stderr.lower()
-
 
 def test_daemon_stop_clears_discovery(daemon_proc):
     proc, home, _address, _token = daemon_proc
@@ -285,7 +269,6 @@ def test_daemon_stop_clears_discovery(daemon_proc):
     proc.wait(timeout=5)
     assert not (home / ".pycode" / "daemon.json").exists()
 
-
 def test_daemon_logs_subcommand(daemon_proc):
     _proc, home, _address, _token = daemon_proc
     rc, stdout, _stderr = _run_subcommand(
@@ -294,7 +277,6 @@ def test_daemon_logs_subcommand(daemon_proc):
     # Bootstrap emits structured JSON log lines under serve mode.
     assert "bootstrap_done" in stdout or "daemon_listening" in stdout
 
-
 def test_daemon_rotate_token_changes_file(daemon_proc):
     _proc, home, _address, token = daemon_proc
     token_path = home / ".pycode" / "daemon_token"
@@ -302,7 +284,6 @@ def test_daemon_rotate_token_changes_file(daemon_proc):
     assert rc == 0
     assert "rotated" in stdout.lower()
     assert token_path.read_text().strip() != token
-
 
 # ── F-2: SQLite persistence + cross-restart replay ────────────────────────
 
@@ -343,7 +324,6 @@ def _start_daemon(home: Path, *, wait_s: float = 10.0) -> tuple[subprocess.Popen
         pytest.fail("daemon did not write discovery file in time")
     return proc, info["address"], token_file.read_text(encoding="utf-8").strip()
 
-
 def _stop_daemon(proc: subprocess.Popen, address: str, token: str) -> None:
     if proc.poll() is None:
         try:
@@ -355,7 +335,6 @@ def _stop_daemon(proc: subprocess.Popen, address: str, token: str) -> None:
         except subprocess.TimeoutExpired:
             proc.terminate()
             proc.wait(timeout=5)
-
 
 def test_sessions_db_initialised_on_first_serve(tmp_path):
     """F-2 schema: pycode serve initialises ~/.pycode/sessions.db
@@ -382,7 +361,6 @@ def test_sessions_db_initialised_on_first_serve(tmp_path):
               "monitor_subscriptions", "monitor_reports", "bridges",
               "schema_meta"):
         assert t in names, f"missing table after serve: {t}"
-
 
 def test_monitor_subscribe_via_rpc_survives_daemon_restart(tmp_path):
     """F-3 headline:  /monitor subscribe via RPC persists into SQLite,
@@ -412,7 +390,6 @@ def test_monitor_subscribe_via_rpc_survives_daemon_restart(tmp_path):
             f"subscription did not survive restart: {topics}"
     finally:
         _stop_daemon(proc2, addr2, token2)
-
 
 def test_events_persist_in_sqlite_across_daemon_restart(tmp_path):
     """Publish events on daemon A (echo.ping fires `ping_received`),

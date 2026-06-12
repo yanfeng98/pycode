@@ -23,7 +23,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import providers
 import compaction
 
-
 # ── Known model context registry ─────────────────────────────────────────
 
 class TestKnownModelContext:
@@ -52,7 +51,6 @@ class TestKnownModelContext:
         # "qwen2.5-72b-instruct-vllm-build" starts with "qwen2.5-72b" → 32768.
         result = providers.get_model_context_window("custom", "qwen2.5-72b-instruct-vllm-build")
         assert result == 32768
-
 
 # ── dynamic_cap_max_tokens ───────────────────────────────────────────────
 
@@ -133,7 +131,6 @@ class TestDynamicCapMaxTokens:
         # Just assert it ran and produced a sane number.
         assert 256 <= result <= 8192
 
-
 # ── compaction.get_context_limit for custom provider ─────────────────────
 
 class TestCompactionContextLimit:
@@ -152,7 +149,6 @@ class TestCompactionContextLimit:
         # it should at least be a positive integer.
         result = compaction.get_context_limit("custom/totally-unknown-xyz")
         assert isinstance(result, int) and result > 0
-
 
 # ── End-to-end regression for the qwen2.5-72b 32k case ───────────────────
 
@@ -184,7 +180,6 @@ class TestQwen32kRegression:
         )
         # The whole point: input_est + capped must fit under ctx with safety.
         assert input_est + capped <= ctx - 1024 + 1  # +1 for floor() rounding
-
 
 # ── context_window user override (single source for % / compaction / cap) ──
 

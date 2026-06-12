@@ -20,26 +20,16 @@ from cc_kernel.tools.registry import (
     dispatch_tool_call,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="Exec streaming uses POSIX subprocess primitives",
-)
-
-
 # ── ToolContext.on_chunk plumbing ─────────────────────────────────────
-
 
 def test_tool_context_on_chunk_default_none():
     ctx = ToolContext(pid=1, kernel=None)
     assert ctx.on_chunk is None
 
-
 def test_tool_context_on_chunk_round_trip():
     cb = lambda x: None       # noqa: E731
     ctx = ToolContext(pid=1, kernel=None, on_chunk=cb)
     assert ctx.on_chunk is cb
-
 
 def test_dispatch_passes_on_chunk_into_ctx():
     """The dispatch wrapper must thread on_chunk into the
@@ -65,9 +55,7 @@ def test_dispatch_passes_on_chunk_into_ctx():
     assert resp["ok"] is True
     assert captured["on_chunk"] is cb
 
-
 # ── Exec stream arg validation ────────────────────────────────────────
-
 
 def test_exec_stream_arg_must_be_bool():
     ctx = ToolContext(pid=1, kernel=None)
@@ -76,7 +64,6 @@ def test_exec_stream_arg_must_be_bool():
             "argv": ["/bin/echo", "hi"],
             "stream": "yes",
         }, ctx)
-
 
 def test_exec_stream_default_false_no_chunks():
     """stream omitted (default False) → zero chunks even if
@@ -92,7 +79,6 @@ def test_exec_stream_default_false_no_chunks():
     assert "hello" in result["stdout"]
     assert received == []        # no streaming
 
-
 def test_exec_stream_true_but_no_callback_falls_back():
     """stream=True but ctx.on_chunk is None → buffered path."""
     ctx = ToolContext(pid=1, kernel=None)         # no on_chunk
@@ -103,9 +89,7 @@ def test_exec_stream_true_but_no_callback_falls_back():
     }, ctx)
     assert result["exit_code"] == 0
 
-
 # ── Streaming path: chunk emission ────────────────────────────────────
-
 
 def _run_streaming(argv: list, **kw) -> tuple[dict, list]:
     received: list = []
@@ -117,7 +101,6 @@ def _run_streaming(argv: list, **kw) -> tuple[dict, list]:
         "argv": argv, "stream": True, "timeout_s": 10, **kw,
     }, ctx)
     return result, received
-
 
 def test_exec_streams_each_stdout_line():
     result, chunks = _run_streaming(
@@ -131,7 +114,6 @@ def test_exec_streams_each_stdout_line():
         assert c["op"] == "chunk"
         assert c["metadata"] == {"tool": "Exec"}
 
-
 def test_exec_streams_stderr_separately():
     result, chunks = _run_streaming(
         ["/bin/sh", "-c", "echo out1; echo err1 1>&2; echo out2"],
@@ -142,7 +124,6 @@ def test_exec_streams_stderr_separately():
     assert kinds.count("stderr") == 1
     err = next(c for c in chunks if c["kind"] == "stderr")
     assert err["content"] == "err1\n"
-
 
 def test_exec_streamed_content_matches_final_stdout():
     """Concatenating streamed stdout chunks reproduces the final
@@ -155,7 +136,6 @@ def test_exec_streamed_content_matches_final_stdout():
         c["content"] for c in chunks if c["kind"] == "stdout"
     )
     assert stdout_streamed == result["stdout"]
-
 
 def test_exec_streaming_real_time_arrival():
     """At least one chunk must arrive *before* the process exits.
@@ -183,9 +163,7 @@ def test_exec_streaming_real_time_arrival():
         f"total runtime {total:.2f}s — looks buffered, not streamed"
     )
 
-
 # ── Wall-clock timeout under streaming ───────────────────────────────
-
 
 def test_exec_streaming_respects_wall_timeout():
     """A long-running infinite producer should be killed by
@@ -203,9 +181,7 @@ def test_exec_streaming_respects_wall_timeout():
     tick_chunks = [c for c in received if "tick" in c["content"]]
     assert len(tick_chunks) >= 2
 
-
 # ── Bad callback can't crash the tool ────────────────────────────────
-
 
 def test_exec_streaming_swallows_bad_callback():
     def bad_cb(payload):
@@ -218,15 +194,12 @@ def test_exec_streaming_swallows_bad_callback():
     assert result["exit_code"] == 0
     assert "hi" in result["stdout"]
 
-
 # ── End-to-end via supervisor.wait(on_chunk=...) ────────────────────
-
 
 @pytest.fixture
 def kernel(tmp_path):
     with Kernel.open(tmp_path / "kernel.db") as k:
         yield k
-
 
 def test_exec_streaming_end_to_end(kernel):
     """A subprocess agent that calls Exec(stream=True) — the

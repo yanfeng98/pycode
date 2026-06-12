@@ -33,12 +33,10 @@ from cc_kernel import (
 )
 from cc_kernel.integration import detach
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def daemon_with_kernel(tmp_path):
@@ -60,9 +58,7 @@ def daemon_with_kernel(tmp_path):
     detach(server.daemon_state)
     server.server_close()
 
-
 # ── Headline contract test ───────────────────────────────────────────────
-
 
 def test_no_undocumented_methods(daemon_with_kernel):
     """Every kernel.* method registered after register_with_daemon must
@@ -79,11 +75,9 @@ def test_no_undocumented_methods(daemon_with_kernel):
         f"registered — implementation drift: {result['missing']}"
     )
 
-
 def test_v1_no_deprecated_methods():
     """v1.0 ships with empty deprecated set."""
     assert DEPRECATED_METHODS == frozenset()
-
 
 def test_v1_no_experimental_methods():
     """v1.0 ships everything as stable. Future versions may add
@@ -91,12 +85,10 @@ def test_v1_no_experimental_methods():
     forcing an update + review."""
     assert EXPERIMENTAL_METHODS == frozenset()
 
-
 def test_all_known_is_union():
     assert ALL_KNOWN_METHODS == (
         STABLE_METHODS | EXPERIMENTAL_METHODS | DEPRECATED_METHODS
     )
-
 
 def test_method_count_matches_documentation():
     """contract.py advertises 58 stable methods at v1.0. If you add a
@@ -105,9 +97,7 @@ def test_method_count_matches_documentation():
     assert len(STABLE_METHODS) == 58
     assert len(ALL_KNOWN_METHODS) == 58
 
-
 # ── kernel.api.* RPCs ────────────────────────────────────────────────────
-
 
 def test_list_methods_all_tiers(daemon_with_kernel):
     state = daemon_with_kernel.daemon_state
@@ -124,7 +114,6 @@ def test_list_methods_all_tiers(daemon_with_kernel):
     assert result["tier_counts"]["experimental"] == 0
     assert result["tier_counts"]["deprecated"]   == 0
 
-
 def test_list_methods_filtered_by_tier(daemon_with_kernel):
     state = daemon_with_kernel.daemon_state
     list_fn = state.rpc._methods["kernel.api.list_methods"]
@@ -140,7 +129,6 @@ def test_list_methods_filtered_by_tier(daemon_with_kernel):
     only_exp = list_fn({"tier": "experimental"}, _Ctx())
     assert only_exp["methods"] == []
 
-
 def test_list_methods_invalid_tier(daemon_with_kernel):
     state = daemon_with_kernel.daemon_state
     list_fn = state.rpc._methods["kernel.api.list_methods"]
@@ -152,7 +140,6 @@ def test_list_methods_invalid_tier(daemon_with_kernel):
 
     with pytest.raises(TypeError):  # InvalidPayload → TypeError → INVALID_PARAMS
         list_fn({"tier": "bogus"}, _Ctx())
-
 
 def test_version_info_shape(daemon_with_kernel):
     state = daemon_with_kernel.daemon_state
@@ -171,9 +158,7 @@ def test_version_info_shape(daemon_with_kernel):
     assert info["rfcs_implemented"] == list(RFCS_IMPLEMENTED)
     assert info["tier_counts"]["stable"] == len(STABLE_METHODS)
 
-
 # ── Drift detection (negative test) ──────────────────────────────────────
-
 
 def test_verify_contract_detects_extra(daemon_with_kernel, monkeypatch):
     """Simulate a developer registering a new method without updating
@@ -184,7 +169,6 @@ def test_verify_contract_detects_extra(daemon_with_kernel, monkeypatch):
                         lambda p, c: {"ok": True})
     result = verify_contract(state.rpc)
     assert "kernel.bogus.notRegistered" in result["extra"]
-
 
 def test_verify_contract_does_not_flag_non_kernel_methods(daemon_with_kernel):
     """The daemon's existing system.*, echo.*, permission.* methods

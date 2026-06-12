@@ -21,12 +21,10 @@ from cc_daemon.server import make_tcp_server
 from cc_kernel import register_with_daemon
 from cc_kernel.integration import detach
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def daemon(tmp_path):
@@ -55,7 +53,6 @@ def daemon(tmp_path):
     server.server_close()
     t.join(timeout=2)
 
-
 def _rpc(host, port, token, method, params, *, kind="test"):
     body = json.dumps({"jsonrpc": "2.0", "id": str(uuid.uuid4()),
                        "method": method, "params": params}).encode()
@@ -73,7 +70,6 @@ def _rpc(host, port, token, method, params, *, kind="test"):
         return r.status, json.loads(r.read())
     finally:
         c.close()
-
 
 def test_write_read_via_rpc(daemon):
     h, p, t = daemon
@@ -94,7 +90,6 @@ def test_write_read_via_rpc(daemon):
     decoded = base64.b64decode(r["result"]["content"])
     assert decoded == payload
 
-
 def test_write_invalid_path_returns_error(daemon):
     h, p, t = daemon
     pid = _rpc(h, p, t, "kernel.agent.create",
@@ -106,7 +101,6 @@ def test_write_invalid_path_returns_error(daemon):
     assert s == 200
     assert "error" in r
     assert r["error"]["code"] == -32602  # INVALID_PARAMS via TypeError
-
 
 def test_list_via_rpc(daemon):
     h, p, t = daemon
@@ -122,7 +116,6 @@ def test_list_via_rpc(daemon):
     assert s == 200
     paths = {e["path"] for e in r["result"]["entries"]}
     assert paths == {"/memory/x/1", "/memory/x/2"}
-
 
 def test_quota_exceeded_via_rpc(daemon):
     h, p, t = daemon
@@ -140,7 +133,6 @@ def test_quota_exceeded_via_rpc(daemon):
     # Write was rolled back.
     s, r = _rpc(h, p, t, "kernel.fs.exists", {"path": "/x"})
     assert r["result"]["exists"] is False
-
 
 def test_phase4_does_not_break_earlier(daemon):
     h, p, t = daemon

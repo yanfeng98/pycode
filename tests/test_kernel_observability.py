@@ -20,7 +20,6 @@ from cc_kernel import (
 )
 from cc_kernel.errors import InvalidPayload, UnknownPid
 
-
 @pytest.fixture
 def stores(tmp_path):
     ks  = KernelStore.open(tmp_path / "kernel.db")
@@ -41,9 +40,7 @@ def stores(tmp_path):
     }
     ks.close()
 
-
 # ── proc(pid) ────────────────────────────────────────────────────────────
-
 
 def test_proc_returns_full_shape(stores):
     obs = stores["obs"]
@@ -61,7 +58,6 @@ def test_proc_returns_full_shape(stores):
     assert proc["fs"] == {"object_count": 0, "total_bytes": 0}
     assert proc["registry"] == {"names": []}
     assert isinstance(proc["recent_events"], list)
-
 
 def test_proc_aggregates_across_stores(stores):
     obs, ks = stores["obs"], stores["ks"]
@@ -92,7 +88,6 @@ def test_proc_aggregates_across_stores(stores):
     assert proc["registry"]["names"] == ["/agents/alice"]
     assert len(proc["recent_events"]) >= 1
 
-
 def test_proc_unknown_pid_returns_no_process(stores):
     obs = stores["obs"]
     proc = obs.proc(9999)
@@ -100,12 +95,10 @@ def test_proc_unknown_pid_returns_no_process(stores):
     assert proc["capability"] is None
     assert proc["ledger"] == []
 
-
 def test_proc_invalid_pid_raises(stores):
     obs = stores["obs"]
     with pytest.raises(InvalidPayload):
         obs.proc("not-an-int")  # type: ignore[arg-type]
-
 
 def test_proc_recent_events_chronological(stores):
     obs, ks = stores["obs"], stores["ks"]
@@ -121,9 +114,7 @@ def test_proc_recent_events_chronological(stores):
         "kernel.process.terminated",
     ]
 
-
 # ── summary() ────────────────────────────────────────────────────────────
-
 
 def test_summary_empty(stores):
     summary = stores["obs"].summary()
@@ -131,7 +122,6 @@ def test_summary_empty(stores):
     assert summary["agents"]["total"] == 0
     assert summary["events"]["total"] == 0
     assert summary["scheduler"]["queued"] == 0
-
 
 def test_summary_counts_after_population(stores):
     obs, ks = stores["obs"], stores["ks"]
@@ -164,16 +154,13 @@ def test_summary_counts_after_population(stores):
     assert s["fs"]["total_bytes"] == 5
     assert s["registry"]["entries"] == 1
 
-
 def test_summary_uptime_increases(stores):
     s1 = stores["obs"].summary()["uptime_s"]
     time.sleep(0.05)
     s2 = stores["obs"].summary()["uptime_s"]
     assert s2 > s1
 
-
 # ── trace() ──────────────────────────────────────────────────────────────
-
 
 def test_trace_walks_causation_chain(stores):
     obs, ks = stores["obs"], stores["ks"]
@@ -192,7 +179,6 @@ def test_trace_walks_causation_chain(stores):
     assert result["depth"] == 3
     assert result["truncated"] is False
 
-
 def test_trace_depth_truncates(stores):
     obs, ks = stores["obs"], stores["ks"]
     a = ks.create(name="x", template="t")
@@ -204,7 +190,6 @@ def test_trace_depth_truncates(stores):
     assert result["depth"] == 2
     assert result["truncated"] is True
 
-
 def test_trace_unknown_event_truncates(stores):
     obs = stores["obs"]
     result = obs.trace(99999, depth=10)
@@ -212,15 +197,12 @@ def test_trace_unknown_event_truncates(stores):
     assert result["events"] == []
     assert result["truncated"] is True
 
-
 def test_trace_invalid_event_id(stores):
     obs = stores["obs"]
     with pytest.raises(InvalidPayload):
         obs.trace("not-int")  # type: ignore[arg-type]
 
-
 # ── prometheus_text() ────────────────────────────────────────────────────
-
 
 def test_prometheus_text_format(stores):
     obs, ks = stores["obs"], stores["ks"]
@@ -240,7 +222,6 @@ def test_prometheus_text_format(stores):
     # Final newline.
     assert text.endswith("\n")
 
-
 def test_prometheus_text_passes_basic_regex_contract(stores):
     """Each metric line: metric_name{label_pairs} value
     Where labels are double-quoted, values are numeric."""
@@ -254,7 +235,6 @@ def test_prometheus_text_passes_basic_regex_contract(stores):
         if not line or line.startswith("#"):
             continue
         assert line_pattern.match(line), f"bad metric line: {line!r}"
-
 
 def test_prometheus_text_label_escaping():
     """Make sure label-value escaping handles backslashes and quotes."""

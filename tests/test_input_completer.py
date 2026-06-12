@@ -15,7 +15,6 @@ if not HAS_PROMPT_TOOLKIT:
 
 from prompt_toolkit.document import Document
 
-
 META = {
     "help":       ("Show help", []),
     "clear":      ("Clear conversation history", []),
@@ -35,17 +34,14 @@ META = {
 
 COMMANDS = {name: (lambda *a, **k: True) for name in META}
 
-
 def _completions(completer, text: str):
     doc = Document(text, cursor_position=len(text))
     return list(completer.get_completions(doc, complete_event=None))
-
 
 def _make_completer(commands=None, meta=None):
     commands = commands if commands is not None else dict(COMMANDS)
     meta = meta if meta is not None else dict(META)
     return SlashCompleter(lambda: commands, lambda: meta)
-
 
 def test_level1_c_prefix_includes_cwd_and_siblings():
     completer = _make_completer()
@@ -62,13 +58,11 @@ def test_level1_c_prefix_includes_cwd_and_siblings():
     # Irrelevant commands should not leak in
     assert "/help" not in texts
 
-
 def test_level1_empty_slash_yields_all_commands():
     completer = _make_completer()
     texts = [c.text for c in _completions(completer, "/")]
     assert len(texts) == len(META)
     assert set(texts) == {"/" + name for name in META}
-
 
 def test_level1_display_meta_includes_description_and_subhint():
     completer = _make_completer()
@@ -76,7 +70,6 @@ def test_level1_display_meta_includes_description_and_subhint():
     (plugin,) = [c for c in results if c.text == "/plugin"]
     assert "Manage plugins" in plugin.display_meta_text
     assert "install" in plugin.display_meta_text
-
 
 def test_level2_subcommand_completion():
     completer = _make_completer()
@@ -86,12 +79,10 @@ def test_level2_subcommand_completion():
     assert "remove" in texts
     assert "add" not in texts  # does not start with 'r'
 
-
 def test_level2_no_subcommands_for_command_without_any():
     completer = _make_completer()
     completions = _completions(completer, "/clear x")
     assert completions == []
-
 
 def test_non_slash_input_yields_nothing():
     completer = _make_completer()
@@ -99,13 +90,11 @@ def test_non_slash_input_yields_nothing():
     assert _completions(completer, "") == []
     assert _completions(completer, " /help") == []  # leading space
 
-
 def test_slash_c_cwd_glue_yields_nothing():
     """Regression guard: `/c/cwd` must not match any real command."""
     completer = _make_completer()
     completions = _completions(completer, "/c/cwd")
     assert completions == []
-
 
 def test_live_command_registration_visible_without_restart():
     """Commands added to the live dict (e.g. via /plugin install) appear."""
@@ -123,7 +112,6 @@ def test_live_command_registration_visible_without_restart():
     texts = [c.text for c in _completions(completer, "/f")]
     assert "/fakecmd" in texts
 
-
 def test_symmetry_commands_only_also_visible():
     """Commands present in COMMANDS but missing from _CMD_META still complete."""
     cmds = dict(COMMANDS)
@@ -132,7 +120,6 @@ def test_symmetry_commands_only_also_visible():
 
     texts = [c.text for c in _completions(completer, "/or")]
     assert "/orphan" in texts
-
 
 def test_setup_registers_module_level_providers():
     """Verify ui.input.setup() injects providers without requiring ctor args."""
@@ -148,7 +135,6 @@ def test_setup_registers_module_level_providers():
         assert "/beta" not in texts
     finally:
         ui_input.setup(lambda: {}, lambda: {})
-
 
 def test_module_does_not_import_pycode():
     """Regression guard for the circular-import concern from review."""

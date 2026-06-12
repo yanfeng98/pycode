@@ -27,7 +27,6 @@ import pytest
 
 import commands.core as _core
 
-
 @pytest.fixture(autouse=True)
 def _ensure_real_providers_module():
     """Defend against test pollution.
@@ -48,7 +47,6 @@ def _ensure_real_providers_module():
         if saved is not None and getattr(saved, "PROVIDERS", None) is None:
             # The pre-existing entry was a stub — drop it.
             sys.modules.pop("providers", None)
-
 
 def _run_wizard(monkeypatch, inputs: list[str], config: dict,
                 ollama_models: list[str] | None = None) -> dict:
@@ -96,9 +94,7 @@ def _run_wizard(monkeypatch, inputs: list[str], config: dict,
     _core.run_setup_wizard(config)
     return config
 
-
 # ── The actual issue-#59 regression ──────────────────────────────────────
-
 
 def test_ollama_wizard_does_not_crash_on_none_api_key_env(monkeypatch):
     """Issue #59: selecting Ollama + a model triggered TypeError because
@@ -117,7 +113,6 @@ def test_ollama_wizard_does_not_crash_on_none_api_key_env(monkeypatch):
     # API key prompt MUST be skipped for ollama.
     assert "ollama_api_key" not in result
 
-
 def test_lmstudio_provider_does_not_crash_on_none_api_key_env(monkeypatch):
     """LMStudio's PROVIDERS entry also has api_key_env: None.  We test
     the unsafe predicate directly rather than driving the full wizard
@@ -131,7 +126,6 @@ def test_lmstudio_provider_does_not_crash_on_none_api_key_env(monkeypatch):
     assert env_var == ""
     # And the resulting os.environ.get call must be legal.
     assert os.environ.get(env_var, "") == ""
-
 
 def test_anthropic_path_still_prompts_for_api_key(monkeypatch):
     """The fix must NOT silently bypass the API-key step for cloud providers."""
@@ -147,7 +141,6 @@ def test_anthropic_path_still_prompts_for_api_key(monkeypatch):
     )
     assert "anthropic_api_key" in result
     assert result["anthropic_api_key"] == "sk-ant-test-key"
-
 
 def test_anthropic_picks_up_existing_env_var_without_prompt(monkeypatch):
     """If ANTHROPIC_API_KEY is already set, the wizard must NOT ask again."""

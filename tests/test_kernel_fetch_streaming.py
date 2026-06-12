@@ -11,15 +11,12 @@ import pytest
 from cc_kernel.tools.fetch_tool import fetch_handler
 from cc_kernel.tools.registry import ToolContext, ToolInvalidArgs
 
-
 # ── Local HTTP server fixture ───────────────────────────────────────
-
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 class _StreamingHandler(http.server.BaseHTTPRequestHandler):
     """Endpoints geared at streaming tests."""
@@ -58,7 +55,6 @@ class _StreamingHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-
 @pytest.fixture
 def http_server():
     port = _free_port()
@@ -70,14 +66,12 @@ def http_server():
     server.server_close()
     t.join(timeout=2)
 
-
 class _AllowAllKernel:
     class _Cap:
         def check_net(self, pid, host): return True
         def check_tool(self, pid, tool): return True
         def check_fs(self, pid, path, mode): return True
     cap = _Cap()
-
 
 @pytest.fixture
 def kernel_for_local(monkeypatch):
@@ -87,9 +81,7 @@ def kernel_for_local(monkeypatch):
     )
     return _AllowAllKernel()
 
-
 # ── Validation ───────────────────────────────────────────────────────
-
 
 def test_stream_arg_must_be_bool(http_server, kernel_for_local):
     _port, base = http_server
@@ -97,9 +89,7 @@ def test_stream_arg_must_be_bool(http_server, kernel_for_local):
     with pytest.raises(ToolInvalidArgs):
         fetch_handler({"url": f"{base}/", "stream": "yes"}, ctx)
 
-
 # ── Default stream=False emits zero chunks ──────────────────────────
-
 
 def test_stream_default_no_chunks(http_server, kernel_for_local):
     _port, base = http_server
@@ -113,7 +103,6 @@ def test_stream_default_no_chunks(http_server, kernel_for_local):
     assert len(result["body"]) == 16384
     assert received == []
 
-
 def test_stream_true_no_callback_no_chunks(http_server, kernel_for_local):
     """stream=True but on_chunk None → buffered (no chunks
     possible because there's no sink)."""
@@ -124,9 +113,7 @@ def test_stream_true_no_callback_no_chunks(http_server, kernel_for_local):
     assert result["status"] == 200
     assert len(result["body"]) == 16384
 
-
 # ── Streaming path emits chunks ─────────────────────────────────────
-
 
 def test_stream_emits_8k_blocks(http_server, kernel_for_local):
     _port, base = http_server
@@ -150,7 +137,6 @@ def test_stream_emits_8k_blocks(http_server, kernel_for_local):
         assert c["metadata"]["status"] == 200
         assert isinstance(c["metadata"]["bytes_so_far"], int)
 
-
 def test_stream_chunks_concatenate_to_body(http_server, kernel_for_local):
     _port, base = http_server
     received: list = []
@@ -164,7 +150,6 @@ def test_stream_chunks_concatenate_to_body(http_server, kernel_for_local):
     streamed = "".join(c["content"] for c in received)
     assert streamed == result["body"]
 
-
 def test_stream_bytes_so_far_monotonic(http_server, kernel_for_local):
     _port, base = http_server
     received: list = []
@@ -177,9 +162,7 @@ def test_stream_bytes_so_far_monotonic(http_server, kernel_for_local):
     assert bsf == sorted(bsf)
     assert bsf[-1] <= 16384
 
-
 # ── Truncation stops chunks ─────────────────────────────────────────
-
 
 def test_stream_truncation_stops_chunks(http_server, kernel_for_local):
     """max_bytes < body size → chunks emitted only up to the cap,
@@ -204,9 +187,7 @@ def test_stream_truncation_stops_chunks(http_server, kernel_for_local):
         c["metadata"]["bytes_so_far"] <= 8192 for c in received
     )
 
-
 # ── Redirect intermediate body does NOT stream ──────────────────────
-
 
 def test_stream_only_terminal_hop(http_server, kernel_for_local):
     """A redirect's empty intermediate body must not emit chunks;
@@ -231,9 +212,7 @@ def test_stream_only_terminal_hop(http_server, kernel_for_local):
         assert c["metadata"]["url"] == f"{base}/text16k"
     assert result["redirects"][0]["from"] == f"{base}/redirect-to-text"
 
-
 # ── Bad callback can't crash the fetch ──────────────────────────────
-
 
 def test_stream_bad_callback_swallowed(http_server, kernel_for_local):
     _port, base = http_server

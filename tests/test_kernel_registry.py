@@ -13,7 +13,6 @@ from cc_kernel import (
     UnknownPid,
 )
 
-
 @pytest.fixture
 def stores(tmp_path):
     ks = KernelStore.open(tmp_path / "kernel.db")
@@ -21,9 +20,7 @@ def stores(tmp_path):
     yield ks, rg
     ks.close()
 
-
 # ── register / lookup ────────────────────────────────────────────────────
-
 
 def test_register_lookup_round_trip(stores):
     ks, rg = stores
@@ -38,13 +35,11 @@ def test_register_lookup_round_trip(stores):
     assert set(e.tags) == {"research", "v2"}
     assert e.metadata == {"role": "researcher"}
 
-
 def test_resolve_pid(stores):
     ks, rg = stores
     a = ks.create(name="alice", template="t")
     rg.register(name="/agents/alice", pid=a.pid)
     assert rg.resolve_pid("/agents/alice") == a.pid
-
 
 def test_register_duplicate_name_rejected(stores):
     ks, rg = stores
@@ -54,46 +49,38 @@ def test_register_duplicate_name_rejected(stores):
     with pytest.raises(RegistryNameExists):
         rg.register(name="/x", pid=b.pid)
 
-
 def test_register_unknown_pid(stores):
     _, rg = stores
     with pytest.raises(UnknownPid):
         rg.register(name="/x", pid=9999)
-
 
 def test_lookup_unknown_raises(stores):
     _, rg = stores
     with pytest.raises(RegistryNotFound):
         rg.lookup("/missing")
 
-
 # ── name validation ──────────────────────────────────────────────────────
-
 
 def test_empty_name_rejected(stores):
     _, rg = stores
     with pytest.raises(RegistryInvalidName):
         rg.register(name="", pid=1)
 
-
 def test_nul_in_name_rejected(stores):
     _, rg = stores
     with pytest.raises(RegistryInvalidName):
         rg.register(name="bad\x00name", pid=1)
-
 
 def test_control_char_in_name_rejected(stores):
     _, rg = stores
     with pytest.raises(RegistryInvalidName):
         rg.register(name="bad\nname", pid=1)
 
-
 def test_oversize_name_rejected(stores):
     _, rg = stores
     big = "/" + "a" * 1000
     with pytest.raises(RegistryInvalidName):
         rg.register(name=big, pid=1)
-
 
 def test_unicode_name_accepted(stores):
     """Non-ASCII printable is fine; only NUL/control are blocked."""
@@ -102,9 +89,7 @@ def test_unicode_name_accepted(stores):
     rg.register(name="/agents/中文", pid=a.pid)
     assert rg.lookup("/agents/中文").pid == a.pid
 
-
 # ── tags ─────────────────────────────────────────────────────────────────
-
 
 def test_tags_dedup(stores):
     ks, rg = stores
@@ -112,7 +97,6 @@ def test_tags_dedup(stores):
     rg.register(name="/x", pid=a.pid, tags=["a", "a", "b"])
     e = rg.lookup("/x")
     assert sorted(e.tags) == ["a", "b"]
-
 
 def test_tag_filter_in_list(stores):
     ks, rg = stores
@@ -127,7 +111,6 @@ def test_tag_filter_in_list(stores):
     names = {e.name for e in entries}
     assert names == {"/agents/a", "/agents/c"}
 
-
 def test_too_many_tags_rejected(stores):
     ks, rg = stores
     a = ks.create(name="x", template="t")
@@ -135,9 +118,7 @@ def test_too_many_tags_rejected(stores):
     with pytest.raises(RegistryInvalidName):
         rg.register(name="/x", pid=a.pid, tags=too_many)
 
-
 # ── prefix list ──────────────────────────────────────────────────────────
-
 
 def test_list_prefix_filter(stores):
     ks, rg = stores
@@ -149,7 +130,6 @@ def test_list_prefix_filter(stores):
     entries, total = rg.list(prefix="/agents/research/")
     assert total == 2
     assert all(e.name.startswith("/agents/research/") for e in entries)
-
 
 def test_list_prefix_with_special_chars(stores):
     """LIKE wildcards in the prefix must be escaped."""
@@ -164,7 +144,6 @@ def test_list_prefix_with_special_chars(stores):
     assert total == 1
     assert entries[0].name == "/agents/100%match"
 
-
 def test_list_pagination(stores):
     ks, rg = stores
     a = ks.create(name="x", template="t")
@@ -176,9 +155,7 @@ def test_list_pagination(stores):
     assert total == 5
     assert len(page1) == 2 and len(page2) == 2 and len(page3) == 1
 
-
 # ── unregister ───────────────────────────────────────────────────────────
-
 
 def test_unregister_removes(stores):
     ks, rg = stores
@@ -188,11 +165,9 @@ def test_unregister_removes(stores):
     with pytest.raises(RegistryNotFound):
         rg.lookup("/x")
 
-
 def test_unregister_idempotent(stores):
     _, rg = stores
     assert rg.unregister("/never") == 0
-
 
 def test_unregister_pid_clears_all(stores):
     ks, rg = stores
@@ -206,9 +181,7 @@ def test_unregister_pid_clears_all(stores):
     # b's row remains.
     assert rg.lookup("/b/1").pid == b.pid
 
-
 # ── multiple names per pid ───────────────────────────────────────────────
-
 
 def test_multiple_names_per_pid_allowed(stores):
     ks, rg = stores

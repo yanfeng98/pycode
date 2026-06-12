@@ -15,14 +15,12 @@ import pytest
 import ui.render as render
 from ui.render import THEMES, apply_theme, C, _rgb, clr
 
-
 @pytest.fixture(autouse=True)
 def _restore_default_theme():
     """Ensure each test starts and ends on the default theme."""
     apply_theme("default")
     yield
     apply_theme("default")
-
 
 def test_themes_dict_schema():
     """Every theme must have a 'code' key, plus either color hexes or disable_color."""
@@ -38,10 +36,8 @@ def test_themes_dict_schema():
                 f"theme {name}.{key} is not a 7-char hex: {v!r}"
             )
 
-
 def test_apply_theme_unknown_returns_false():
     assert apply_theme("does-not-exist") is False
-
 
 def test_apply_theme_changes_color_map():
     apply_theme("default")
@@ -49,7 +45,6 @@ def test_apply_theme_changes_color_map():
     apply_theme("dracula")
     assert C["cyan"] != before
     assert C["cyan"] == _rgb("#BD93F9")
-
 
 def test_info_and_ok_distinguishable_in_every_theme():
     """Regression: PR #92 originally collapsed cyan/green/blue to accent,
@@ -64,7 +59,6 @@ def test_info_and_ok_distinguishable_in_every_theme():
             f"theme {name!r}: info (cyan) and ok (green) collapsed to {C['cyan']!r}"
         )
 
-
 def test_diff_additions_and_removals_distinguishable():
     """render_diff colors '+' green and '-' red. They must stay different."""
     for name, p in THEMES.items():
@@ -75,7 +69,6 @@ def test_diff_additions_and_removals_distinguishable():
             f"theme {name!r}: diff add (green) and remove (red) collapsed"
         )
 
-
 def test_none_theme_produces_plain_text():
     apply_theme("none")
     for k in ("cyan", "green", "yellow", "red", "blue", "magenta",
@@ -84,7 +77,6 @@ def test_none_theme_produces_plain_text():
     assert clr("hello", "cyan") == "hello"
     assert clr("warn-text", "yellow", "bold") == "warn-text"
 
-
 def test_code_theme_tracks_active_theme():
     apply_theme("dracula")
     assert render.CODE_THEME == "dracula"
@@ -92,7 +84,6 @@ def test_code_theme_tracks_active_theme():
     assert render.CODE_THEME == "nord"
     apply_theme("default")
     assert render.CODE_THEME == "monokai"
-
 
 def test_apply_theme_idempotent_across_state():
     """Applying theme A after any prior theme must yield the same C dict."""
@@ -109,7 +100,6 @@ def test_apply_theme_idempotent_across_state():
         "apply_theme leaks state between invocations — same theme should "
         "produce the same C regardless of prior theme"
     )
-
 
 def test_make_renderable_passes_code_theme():
     """The Rich Markdown renderable must use the active CODE_THEME."""

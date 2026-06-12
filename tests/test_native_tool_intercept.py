@@ -14,7 +14,6 @@ from providers import (
     TextChunk, AssistantTurn,
 )
 
-
 # ── Marker detection ─────────────────────────────────────────────────────
 
 def test_find_native_marker_gemma_official():
@@ -22,28 +21,23 @@ def test_find_native_marker_gemma_official():
     idx = _find_native_tool_marker(text)
     assert idx == len("Some preamble ")
 
-
 def test_find_native_marker_gemma_4_variant():
     text = "Let me search. <|tool_call>call:Research{\"q\":\"v\"}<tool_call|>"
     idx = _find_native_tool_marker(text)
     assert idx == text.index("<|tool_call>")
 
-
 def test_find_native_marker_returns_none_when_absent():
     assert _find_native_tool_marker("Just regular text.") is None
-
 
 def test_find_native_marker_picks_earliest():
     text = "<tool_call>foo</tool_call> and later <|tool_call>bar<tool_call|>"
     idx = _find_native_tool_marker(text)
     assert idx == 0  # <tool_call> wins (earliest)
 
-
 def test_find_native_marker_mistral():
     text = "Sure. [TOOL_CALLS] [{\"name\": \"x\"}]"
     idx = _find_native_tool_marker(text)
     assert idx == text.index("[TOOL_CALLS]")
-
 
 # ── Format 2 (Gemma's call:NAME format — what the user actually saw) ─────
 
@@ -54,7 +48,6 @@ def test_extract_gemma_call_name_format():
     assert calls[0]["name"] == "Research"
     assert calls[0]["input"] == {"topic": "NVDA"}
 
-
 def test_extract_gemma_call_handles_quote_escapes():
     """Gemma sometimes escapes quotes as <|"|> inside its native format."""
     buf = '<|tool_call>call:Research{"topic":<|"|>NVDA<|"|>}<tool_call|>'
@@ -63,13 +56,11 @@ def test_extract_gemma_call_handles_quote_escapes():
     assert calls[0]["name"] == "Research"
     assert calls[0]["input"] == {"topic": "NVDA"}
 
-
 def test_extract_gemma_call_with_official_closer():
     buf = '<|tool_call|>call:Foo{"a":1}<|end_tool_call|>'
     calls = _extract_native_tool_calls(buf)
     assert len(calls) == 1
     assert calls[0]["name"] == "Foo"
-
 
 # ── Format 1 (JSON envelope) ─────────────────────────────────────────────
 
@@ -80,14 +71,12 @@ def test_extract_json_envelope_format():
     assert calls[0]["name"] == "Search"
     assert calls[0]["input"] == {"q": "NVDA"}
 
-
 def test_extract_json_envelope_with_args_alias():
     buf = '<|tool_call|>{"function": "X", "args": {"k": 1}}<|end_tool_call|>'
     calls = _extract_native_tool_calls(buf)
     assert len(calls) == 1
     assert calls[0]["name"] == "X"
     assert calls[0]["input"] == {"k": 1}
-
 
 # ── Mistral [TOOL_CALLS] format ──────────────────────────────────────────
 
@@ -98,18 +87,15 @@ def test_extract_mistral_format():
     assert calls[0]["name"] == "Web"
     assert calls[0]["input"] == {"q": "NVDA"}
 
-
 # ── Robustness ──────────────────────────────────────────────────────────
 
 def test_extract_returns_empty_on_empty_buf():
     assert _extract_native_tool_calls("") == []
 
-
 def test_extract_returns_empty_on_unparsable_garbage():
     buf = '<|tool_call>not a valid call format at all<tool_call|>'
     calls = _extract_native_tool_calls(buf)
     assert calls == []
-
 
 def test_extract_handles_multiple_calls_in_one_buffer():
     buf = (
@@ -120,7 +106,6 @@ def test_extract_handles_multiple_calls_in_one_buffer():
     assert len(calls) == 2
     assert calls[0]["name"] == "A" and calls[1]["name"] == "B"
 
-
 # ── End-to-end: stream_openai_compat with mocked client ──────────────────
 
 class _FakeDelta:
@@ -129,17 +114,14 @@ class _FakeDelta:
         self.tool_calls = tool_calls
         self.reasoning_content = reasoning_content
 
-
 class _FakeChoice:
     def __init__(self, delta):
         self.delta = delta
-
 
 class _FakeChunk:
     def __init__(self, delta, usage=None):
         self.choices = [_FakeChoice(delta)]
         self.usage = usage
-
 
 class _FakeStream:
     def __init__(self, chunks):
@@ -147,25 +129,21 @@ class _FakeStream:
     def __iter__(self):
         return iter(self.chunks)
 
-
 class _FakeChatCompletions:
     def __init__(self, chunks):
         self._chunks = chunks
     def create(self, **kwargs):
         return _FakeStream(self._chunks)
 
-
 class _FakeChat:
     def __init__(self, chunks):
         self.completions = _FakeChatCompletions(chunks)
-
 
 class _FakeOpenAI:
     def __init__(self, api_key=None, base_url=None):
         self._chunks = []
     def _set_chunks(self, chunks):
         self.chat = _FakeChat(chunks)
-
 
 def test_stream_buffers_gemma_output_and_emits_tool_call(monkeypatch):
     """End-to-end: streaming Gemma's native format → no garbage to user,
@@ -213,7 +191,6 @@ def test_stream_buffers_gemma_output_and_emits_tool_call(monkeypatch):
     assert len(turns[0].tool_calls) == 1
     assert turns[0].tool_calls[0]["name"] == "Research"
     assert turns[0].tool_calls[0]["input"] == {"topic": "NVDA"}
-
 
 def test_stream_falls_back_to_text_when_native_call_unparsable(monkeypatch):
     """If buffering started but the format is unrecognisable, emit the raw

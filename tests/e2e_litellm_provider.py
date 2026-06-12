@@ -25,7 +25,6 @@ import pytest
 _DEFAULT_MODEL = "anthropic/claude-haiku-4-5-20251001"
 _MODEL = os.environ.get("CC_LITELLM_E2E_MODEL", _DEFAULT_MODEL)
 
-
 def _has_creds_for(model: str) -> bool:
     """Best-effort check that the right env var is set for the provider
     embedded in `model` (e.g. anthropic/... → ANTHROPIC_API_KEY)."""
@@ -41,7 +40,6 @@ def _has_creds_for(model: str) -> bool:
         }.get(prefix)
     )
 
-
 pytestmark = [
     pytest.mark.skipif(
         os.environ.get("CC_LITELLM_E2E") != "1",
@@ -52,7 +50,6 @@ pytestmark = [
         reason=f"no credentials available for {_MODEL}",
     ),
 ]
-
 
 @pytest.fixture(scope="module")
 def provider():
@@ -68,7 +65,6 @@ def provider():
         pytest.skip(f"litellm SDK not usable: {e}")
     return p
 
-
 def test_basic_call(provider):
     from cc_kernel.runner.llm.provider import LlmRequest
 
@@ -80,7 +76,6 @@ def test_basic_call(provider):
     # we used to emit) so ledger accounting is correct.
     assert resp.tokens_input > 0
     assert resp.tokens_output > 0
-
 
 def test_streaming_emits_deltas(provider):
     from cc_kernel.runner.llm.provider import LlmRequest
@@ -97,7 +92,6 @@ def test_streaming_emits_deltas(provider):
     # that stream() always returned 0 here.
     assert resp.tokens_input > 0
     assert resp.tokens_output > 0
-
 
 def test_system_prompt_steers_reply(provider):
     from cc_kernel.runner.llm.provider import LlmRequest

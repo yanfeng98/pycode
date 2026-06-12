@@ -5,7 +5,6 @@ import pytest
 
 from skill.loader import _iter_skill_files
 
-
 class TestIterSkillFiles:
     def test_flat_md_files(self, tmp_path):
         (tmp_path / "alpha.md").write_text("# Alpha")

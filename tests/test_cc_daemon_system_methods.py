@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from cc_daemon import system_methods
 from cc_daemon.rpc import CallContext, RpcRegistry
 
-
 # ── Fake DaemonState that exposes just the surface system_methods touches ──
 
 class _FakeState:
@@ -22,10 +21,8 @@ class _FakeState:
         self.shutdown_calls += 1
         self.shutdown_event.set()
 
-
 def _ctx(client_id: str = "test-client") -> CallContext:
     return CallContext(client_id=client_id, transport="tcp", api_version="0")
-
 
 def _call(registry: RpcRegistry, method: str, params=None,
            ctx: CallContext = None) -> dict:
@@ -33,7 +30,6 @@ def _call(registry: RpcRegistry, method: str, params=None,
                 "params": params or {}}
     response, _status = registry.dispatch(envelope, ctx or _ctx())
     return response
-
 
 # ── system.ping ─────────────────────────────────────────────────────────────
 
@@ -43,13 +39,11 @@ def test_system_ping_registers_and_returns_pong():
     response = _call(registry, "system.ping")
     assert response["result"] == "pong"
 
-
 def test_system_ping_ignores_params():
     registry = RpcRegistry()
     system_methods.register(registry, _FakeState())
     response = _call(registry, "system.ping", {"any": "thing"})
     assert response["result"] == "pong"
-
 
 def test_system_ping_appears_in_method_list():
     registry = RpcRegistry()
@@ -57,7 +51,6 @@ def test_system_ping_appears_in_method_list():
     methods = registry.methods()
     assert "system.ping" in methods
     assert "system.shutdown" in methods
-
 
 # ── system.shutdown ─────────────────────────────────────────────────────────
 
@@ -70,7 +63,6 @@ def test_system_shutdown_triggers_state_shutdown():
     assert state.shutdown_calls == 1
     assert state.shutdown_event.is_set()
 
-
 def test_system_shutdown_returned_from_dispatch_with_correct_envelope():
     state = _FakeState()
     registry = RpcRegistry()
@@ -80,7 +72,6 @@ def test_system_shutdown_returned_from_dispatch_with_correct_envelope():
     assert status == 200
     assert response == {"jsonrpc": "2.0", "id": "abc",
                         "result": "shutdown_initiated"}
-
 
 # ── Coexistence with spike methods ──────────────────────────────────────────
 

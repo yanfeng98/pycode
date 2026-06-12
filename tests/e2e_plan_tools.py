@@ -11,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 SEP = "=" * 60
 
-
 def test_plan_tools():
     tmpdir = Path(tempfile.mkdtemp(prefix="plan_tools_e2e_"))
     orig_cwd = os.getcwd()
@@ -22,7 +21,6 @@ def test_plan_tools():
     finally:
         os.chdir(orig_cwd)
         shutil.rmtree(str(tmpdir), ignore_errors=True)
-
 
 def _run(tmpdir):
     from tools import _enter_plan_mode, _exit_plan_mode
@@ -163,7 +161,6 @@ def _run(tmpdir):
     print(f"\n{SEP}")
     print("ALL 8 STEPS PASSED")
     print(SEP)
-
 
 if __name__ == "__main__":
     test_plan_tools()

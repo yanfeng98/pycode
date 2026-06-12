@@ -20,7 +20,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import agent_runner
 from agent_runner import AgentRunner, _normalize_summary
 
-
 # ── _normalize_summary unit tests ────────────────────────────────────────
 
 class TestNormalizeSummary:
@@ -65,7 +64,6 @@ class TestNormalizeSummary:
         # form, and the comparison should obviously succeed.
         assert _normalize_summary(s1) == _normalize_summary(s2)
 
-
 # ── Integration: run _run_loop with a fake agent.run generator ───────────
 
 def _fake_agent_run_factory(text_per_iter: Iterable[str]):
@@ -85,7 +83,6 @@ def _fake_agent_run_factory(text_per_iter: Iterable[str]):
         yield TextChunk(text)
     return fake_run
 
-
 def _build_runner(tmp_log_root: Path, dup_limit: int = 3,
                   interval: float = 0.0) -> AgentRunner:
     """Build a runner with patched _LOG_DIR and an empty config + send_fn."""
@@ -102,7 +99,6 @@ def _build_runner(tmp_log_root: Path, dup_limit: int = 3,
         auto_approve=True,
     )
     return runner
-
 
 class TestStagnationStop:
     def _run_with_canned_outputs(self, monkeypatch, tmp_path, outputs,

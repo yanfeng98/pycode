@@ -10,7 +10,6 @@ import pytest
 
 import ui.render as render
 
-
 # ── auto_stream_mode routing ────────────────────────────────────────────────
 
 class _Console:
@@ -24,7 +23,6 @@ class _Console:
     def print(self, value):
         self.printed.append(value)
 
-
 @pytest.fixture
 def clean_env(monkeypatch):
     """A real-TTY console + a baseline env with no terminal-identifying vars."""
@@ -35,53 +33,43 @@ def clean_env(monkeypatch):
     monkeypatch.setattr(render, "console", _Console())
     return monkeypatch
 
-
 def test_explicit_stream_mode_wins(clean_env):
     assert render.auto_stream_mode({"stream_mode": "plain"}) == "plain"
     assert render.auto_stream_mode({"stream_mode": "commit"}) == "commit"
     assert render.auto_stream_mode({"stream_mode": "live"}) == "live"
 
-
 def test_no_rich_is_plain(clean_env):
     clean_env.setattr(render, "_RICH", False)
     assert render.auto_stream_mode({}) == "plain"
 
-
 def test_local_tty_gets_live(clean_env):
     assert render.auto_stream_mode({}) == "live"
-
 
 def test_dumb_terminal_gets_commit(clean_env):
     clean_env.setattr(render, "console", _Console(is_dumb_terminal=True))
     assert render.auto_stream_mode({}) == "commit"
 
-
 def test_non_tty_gets_commit(clean_env):
     clean_env.setattr(render, "console", _Console(is_terminal=False))
     assert render.auto_stream_mode({}) == "commit"
 
-
 def test_unknown_ssh_terminal_gets_commit(clean_env):
     clean_env.setenv("SSH_CLIENT", "1.2.3.4 5555 22")
     assert render.auto_stream_mode({}) == "commit"
-
 
 def test_modern_terminal_over_ssh_gets_live(clean_env):
     clean_env.setenv("SSH_CLIENT", "1.2.3.4 5555 22")
     clean_env.setenv("TERM_PROGRAM", "vscode")
     assert render.auto_stream_mode({}) == "live"
 
-
 def test_windows_terminal_over_ssh_gets_live(clean_env):
     clean_env.setenv("SSH_TTY", "/dev/pts/0")
     clean_env.setenv("WT_SESSION", "abc-123")
     assert render.auto_stream_mode({}) == "live"
 
-
 def test_iterm_gets_live(clean_env):
     clean_env.setenv("TERM_PROGRAM", "iTerm.app")
     assert render.auto_stream_mode({}) == "live"
-
 
 # ── _safe_commit_point ──────────────────────────────────────────────────────
 
@@ -89,18 +77,15 @@ def test_commit_point_no_complete_block():
     text = "still typing the first paragraph"
     assert render._safe_commit_point(text, 0) == 0
 
-
 def test_commit_point_commits_completed_paragraph():
     text = "first paragraph\n\nsecond, in progress"
     # Boundary is just after the "\n\n".
     assert render._safe_commit_point(text, 0) == len("first paragraph\n\n")
 
-
 def test_commit_point_does_not_split_open_code_fence():
     # A blank line INSIDE an unclosed ``` fence must not be a commit point.
     text = "intro\n\n```python\ncode line\n\nmore code"
     assert render._safe_commit_point(text, 0) == len("intro\n\n")
-
 
 def test_commit_point_commits_after_fence_closes():
     text = "intro\n\n```python\ncode\n\nmore\n```\n\nafter"
@@ -108,7 +93,6 @@ def test_commit_point_commits_after_fence_closes():
     # Everything up to and including the blank line after the closing fence.
     assert text[:point].endswith("```\n\n")
     assert "after" not in text[:point]
-
 
 # ── commit-mode streaming ───────────────────────────────────────────────────
 
@@ -123,7 +107,6 @@ def commit_mode(monkeypatch):
     monkeypatch.setattr(render, "_commit_idx", 0)
     return fake
 
-
 def test_commit_mode_commits_blocks_appendonly(commit_mode, capsys):
     render.stream_text("# Title\n\n")        # completes a block → committed
     render.stream_text("body still going")   # incomplete → buffered, no commit
@@ -132,7 +115,6 @@ def test_commit_mode_commits_blocks_appendonly(commit_mode, capsys):
     render.flush_response()
     assert commit_mode.printed == ["# Title", "body still going"]
     assert render._commit_idx == 0           # state reset after flush
-
 
 def test_commit_mode_emits_no_cursor_sequences(commit_mode, capsys):
     """Regression: commit mode must NEVER issue cursor-up / erase ANSI, even on a
@@ -145,7 +127,6 @@ def test_commit_mode_emits_no_cursor_sequences(commit_mode, capsys):
     # Each block rendered exactly once → no duplication.
     assert commit_mode.printed == ["第一段，正在输入中的内容", "第二段也在写更多文字"]
 
-
 def test_commit_mode_streaming_chunks_commit_each_block_once(commit_mode):
     """A long block streamed token-by-token commits exactly once when it closes
     (not re-emitted on every chunk)."""
@@ -154,7 +135,6 @@ def test_commit_mode_streaming_chunks_commit_each_block_once(commit_mode):
         render.stream_text(ch)
     render.flush_response()
     assert commit_mode.printed == ["这是一个很长的段落" * 20, "尾巴"]
-
 
 def test_commit_mode_renders_full_fenced_block_atomically(commit_mode):
     for chunk in ["```py\n", "x = 1\n", "\n", "y = 2\n", "```\n\n", "done"]:

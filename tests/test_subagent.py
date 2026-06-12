@@ -6,7 +6,6 @@ import pytest
 
 from multi_agent.subagent import SubAgentManager, SubAgentTask, _extract_final_text
 
-
 # ── Mock for _agent_run ──────────────────────────────────────────────────
 
 def _make_mock_agent_run(sleep_per_iter=0.05, iters=3):
@@ -28,11 +27,9 @@ def _make_mock_agent_run(sleep_per_iter=0.05, iters=3):
 
     return mock_agent_run
 
-
 def _make_slow_mock(sleep_per_iter=0.2, iters=10):
     """Return a slow mock for cancellation testing."""
     return _make_mock_agent_run(sleep_per_iter=sleep_per_iter, iters=iters)
-
 
 @pytest.fixture
 def manager(monkeypatch):
@@ -43,7 +40,6 @@ def manager(monkeypatch):
     yield mgr
     mgr.shutdown()
 
-
 @pytest.fixture
 def slow_manager(monkeypatch):
     """Create a SubAgentManager with a slow mock for cancel testing."""
@@ -52,7 +48,6 @@ def slow_manager(monkeypatch):
     mgr = SubAgentManager(max_concurrent=3, max_depth=3)
     yield mgr
     mgr.shutdown()
-
 
 # ── Tests ────────────────────────────────────────────────────────────────
 
@@ -69,7 +64,6 @@ class TestSpawnAndWait:
         # Task should be pending or running, not yet completed
         assert task.status in ("pending", "running")
 
-
 class TestListTasks:
     def test_list_tasks(self, manager):
         t1 = manager.spawn("task1", {}, "system")
@@ -79,7 +73,6 @@ class TestListTasks:
         assert t1.id in task_ids
         assert t2.id in task_ids
         assert len(tasks) == 2
-
 
 class TestCancel:
     def test_cancel_running_task(self, slow_manager):
@@ -93,13 +86,11 @@ class TestCancel:
         slow_manager.wait(task.id, timeout=5)
         assert task.status == "cancelled"
 
-
 class TestDepthLimit:
     def test_spawn_at_max_depth_fails(self, manager):
         task = manager.spawn("deep", {}, "system", depth=3)
         assert task.status == "failed"
         assert "Max depth" in task.result
-
 
 class TestGetResult:
     def test_get_result_completed(self, manager):
@@ -111,7 +102,6 @@ class TestGetResult:
     def test_get_result_unknown_id(self, manager):
         result = manager.get_result("nonexistent_id")
         assert result is None
-
 
 class TestExtractFinalText:
     def test_extracts_last_assistant(self):
@@ -129,7 +119,6 @@ class TestExtractFinalText:
     def test_returns_none_no_assistant(self):
         messages = [{"role": "user", "content": "hi"}]
         assert _extract_final_text(messages) is None
-
 
 class TestWaitUnknown:
     def test_wait_unknown_returns_none(self, manager):

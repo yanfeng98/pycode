@@ -27,9 +27,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 # ── Shared setup helpers ──────────────────────────────────────────────────
-
 
 class _BridgeTestBase(unittest.TestCase):
     """Resets the supervisor registry, the bridge-stop events, and the
@@ -91,9 +89,7 @@ class _BridgeTestBase(unittest.TestCase):
         schema._db_path = None
         self._tmpdir.cleanup()
 
-
 # ── 1. Feature flag ────────────────────────────────────────────────────────
-
 
 class TestFeatureFlag(_BridgeTestBase):
 
@@ -125,16 +121,13 @@ class TestFeatureFlag(_BridgeTestBase):
             os.environ["PYCODE_ENABLE_F6"] = v
             self.assertFalse(bs.enabled("telegram"), v)
 
-
 # ── 2. Lifecycle ───────────────────────────────────────────────────────────
-
 
 def _quiet_telegram_worker_stub(stop_event):
     """A pretend Telegram supervisor. Sits there waiting for the
     stop_event so the daemon's lifecycle exercises real Thread.join().
     Returns immediately when stop fires."""
     stop_event.wait()
-
 
 class TestLifecycle(_BridgeTestBase):
 
@@ -207,9 +200,7 @@ class TestLifecycle(_BridgeTestBase):
         from cc_daemon import bridge_supervisor as bs
         self.assertFalse(bs.stop("telegram"))
 
-
 # ── 3. Notify (outbound mailbox) ───────────────────────────────────────────
-
 
 class TestNotify(_BridgeTestBase):
 
@@ -271,9 +262,7 @@ class TestNotify(_BridgeTestBase):
             finally:
                 bs.stop_all(timeout_s=3.0)
 
-
 # ── 4. SQLite persistence ──────────────────────────────────────────────────
-
 
 class TestSqlitePersistence(_BridgeTestBase):
 
@@ -314,9 +303,7 @@ class TestSqlitePersistence(_BridgeTestBase):
             self.assertFalse(bs._db_finalize_bridge(_Handle()))
             self.assertEqual(bs.list_persisted(), [])
 
-
 # ── 5. Config redaction ────────────────────────────────────────────────────
-
 
 class TestConfigRedaction(unittest.TestCase):
 
@@ -358,9 +345,7 @@ class TestConfigRedaction(unittest.TestCase):
         # Plain text non-secret stays intact.
         self.assertEqual(safe["model"], "claude-opus-4-7")
 
-
 # ── 6. F-7 Slack-specific worker wiring ────────────────────────────────────
-
 
 class TestSlackWorker(_BridgeTestBase):
     """F-7: same supervisor scaffolding, slack-specific imports + sender."""
@@ -415,9 +400,7 @@ class TestSlackWorker(_BridgeTestBase):
                 ev.set()
                 bs.stop("slack", timeout_s=3.0)
 
-
 # ── 7. F-8 WeChat-specific worker wiring ───────────────────────────────────
-
 
 class TestWechatWorker(_BridgeTestBase):
     """F-8: same supervisor scaffolding, wechat-specific imports + sender.
@@ -495,7 +478,6 @@ class TestWechatWorker(_BridgeTestBase):
             finally:
                 ev.set()
                 bs.stop("wechat", timeout_s=3.0)
-
 
 if __name__ == "__main__":
     unittest.main()

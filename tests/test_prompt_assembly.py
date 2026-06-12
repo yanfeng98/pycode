@@ -16,19 +16,16 @@ import pytest
 
 import context as _context
 
-
 @pytest.fixture(autouse=True)
 def _isolate_cwd(tmp_path, monkeypatch):
     """Run every test in an empty tmp cwd so real CLAUDE.md / .git don't leak in."""
     monkeypatch.chdir(tmp_path)
     yield
 
-
 def _base_config(**overrides) -> dict:
     cfg = {"model": "claude-opus-4-7", "_session_id": "test-session"}
     cfg.update(overrides)
     return cfg
-
 
 def test_assembled_prompt_contains_identity_and_env():
     prompt = _context.build_system_prompt(_base_config())
@@ -36,7 +33,6 @@ def test_assembled_prompt_contains_identity_and_env():
     assert "# Environment" in prompt
     assert "Current date:" in prompt
     assert "Working directory:" in prompt
-
 
 def test_plan_mode_appends_fragment_with_plan_file_filled(monkeypatch, tmp_path):
     plan_path = str(tmp_path / "plan.md")
@@ -54,11 +50,9 @@ def test_plan_mode_appends_fragment_with_plan_file_filled(monkeypatch, tmp_path)
         sctx.plan_file = None
         runtime.release_session_ctx("test-session")
 
-
 def test_plan_mode_absent_when_permission_mode_not_plan():
     prompt = _context.build_system_prompt(_base_config(permission_mode="auto"))
     assert "# Plan Mode (ACTIVE)" not in prompt
-
 
 def test_tmux_fragment_absent_when_tmux_unavailable(monkeypatch):
     """If tmux isn't installed we must NOT inject the tmux block."""
@@ -66,13 +60,11 @@ def test_tmux_fragment_absent_when_tmux_unavailable(monkeypatch):
     prompt = _context.build_system_prompt(_base_config())
     assert "TmuxNewSession" not in prompt
 
-
 def test_tmux_fragment_present_when_tmux_available(monkeypatch):
     monkeypatch.setattr(_context, "_tmux_available", lambda: True)
     prompt = _context.build_system_prompt(_base_config())
     assert "TmuxNewSession" in prompt
     assert "## Tmux (Terminal Multiplexer)" in prompt
-
 
 def test_memory_block_injected_when_context_non_empty(monkeypatch):
     monkeypatch.setattr(_context, "get_memory_context", lambda: "- note one\n- note two")
@@ -80,14 +72,12 @@ def test_memory_block_injected_when_context_non_empty(monkeypatch):
     assert "# Memory" in prompt
     assert "note one" in prompt
 
-
 def test_memory_block_omitted_when_context_empty(monkeypatch):
     monkeypatch.setattr(_context, "get_memory_context", lambda: "")
     prompt = _context.build_system_prompt(_base_config())
     # The base prompt mentions "MemorySave" etc. in the tool catalog, so
     # assert on the *section header* we only emit when memories exist.
     assert "Your persistent memories:" not in prompt
-
 
 def test_assembly_order_is_base_then_env_then_memory_then_plan(monkeypatch):
     """Verify left-to-right ordering: base → env → memory → tmux → plan."""
@@ -109,7 +99,6 @@ def test_assembly_order_is_base_then_env_then_memory_then_plan(monkeypatch):
     idx_plan = prompt.index("# Plan Mode (ACTIVE)")
 
     assert idx_identity < idx_env < idx_memory < idx_tmux < idx_plan
-
 
 def test_missing_config_falls_back_to_default():
     """build_system_prompt(None) must produce a usable prompt that uses the

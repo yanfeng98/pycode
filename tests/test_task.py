@@ -14,7 +14,6 @@ from task import (
 )
 import task.store as _store
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
@@ -26,7 +25,6 @@ def isolated_store(tmp_path, monkeypatch):
     yield
     _store._tasks.clear()
     _store._loaded = False
-
 
 # ── types ─────────────────────────────────────────────────────────────────────
 
@@ -72,7 +70,6 @@ class TestTaskTypes:
         t = Task(id="3", subject="Deploy", description="", blocked_by=["1"])
         line = t.one_line(resolved_ids={"1"})
         assert "blocked" not in line
-
 
 # ── store ─────────────────────────────────────────────────────────────────────
 
@@ -210,7 +207,6 @@ class TestTaskStore:
         tasks = list_tasks()
         ids = [t.id for t in tasks]
         assert len(ids) == len(set(ids)), "duplicate IDs detected"
-
 
 # ── tool functions ────────────────────────────────────────────────────────────
 

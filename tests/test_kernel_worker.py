@@ -19,15 +19,7 @@ from cc_kernel import (
     WorkerLoop,
 )
 
-
-pytestmark = pytest.mark.skipif(
-    os.name != "posix",
-    reason="WorkerLoop drives subprocesses — POSIX-only in v1",
-)
-
-
 RUNNER_ARGV = [sys.executable, "-m", "cc_kernel.runner.runner_main"]
-
 
 @pytest.fixture
 def stack(tmp_path):
@@ -46,25 +38,20 @@ def stack(tmp_path):
             pass
     ks.close()
 
-
 def _argv_factory(entry):
     return RUNNER_ARGV
-
 
 def _quick_env_factory(entry):
     """Fast-exiting echo runner, suitable for tick tests."""
     return {**os.environ, "CC_RUNNER_BEHAVIOR": "echo"}
-
 
 def _slow_env_factory(seconds: float):
     def fn(entry):
         return {**os.environ, "CC_RUNNER_BEHAVIOR": f"slow={seconds}"}
     return fn
 
-
 def _short_policy(entry):
     return SandboxPolicy(wall_seconds=10)
-
 
 def _enqueue(stack, n: int, name_prefix: str = "a") -> list[int]:
     """Create n agents + schedule entries; return sched_ids."""
@@ -73,7 +60,6 @@ def _enqueue(stack, n: int, name_prefix: str = "a") -> list[int]:
         agent = stack["ks"].create(name=f"{name_prefix}{i}", template="t")
         sids.append(stack["sch"].enqueue(ScheduleSpec(pid=agent.pid)))
     return sids
-
 
 def _build_loop(stack, **kw):
     defaults = dict(
@@ -92,14 +78,11 @@ def _build_loop(stack, **kw):
         **defaults,
     )
 
-
 # ── tick ─────────────────────────────────────────────────────────────────
-
 
 def test_tick_returns_false_when_queue_empty(stack):
     loop = _build_loop(stack)
     assert loop.tick() is False
-
 
 def test_tick_claims_and_runs_one(stack):
     sids = _enqueue(stack, 1)
@@ -113,7 +96,6 @@ def test_tick_claims_and_runs_one(stack):
     assert e.state == "completed"
     assert e.exit_kind == "completed"
 
-
 def test_tick_marks_agent_dead(stack):
     sids = _enqueue(stack, 1)
     loop = _build_loop(stack)
@@ -125,9 +107,7 @@ def test_tick_marks_agent_dead(stack):
     assert agents[0].state == AgentState.DEAD
     assert agents[0].exit_kind == "completed"
 
-
 # ── max_concurrent ──────────────────────────────────────────────────────
-
 
 def test_capacity_cap_blocks_third_tick(stack):
     sids = _enqueue(stack, 5)
@@ -146,7 +126,6 @@ def test_capacity_cap_blocks_third_tick(stack):
         time.sleep(0.1)
     # Now we can tick again.
     assert loop.tick() is True
-
 
 def test_observed_concurrency_does_not_exceed_cap(stack):
     sids = _enqueue(stack, 6)
@@ -181,9 +160,7 @@ def test_observed_concurrency_does_not_exceed_cap(stack):
     for sid in sids:
         assert stack["sch"].get(sid).state == "completed"
 
-
 # ── start / stop ────────────────────────────────────────────────────────
-
 
 def test_start_drains_queue_in_background(stack):
     sids = _enqueue(stack, 4)
@@ -204,7 +181,6 @@ def test_start_drains_queue_in_background(stack):
     finally:
         loop.stop(drain=True, drain_timeout_s=5)
 
-
 def test_stop_drain_waits_for_in_flight(stack):
     """drain=True returns 0 (no kills) when in-flight finishes within
     drain_timeout."""
@@ -216,7 +192,6 @@ def test_stop_drain_waits_for_in_flight(stack):
     killed = loop.stop(drain=True, drain_timeout_s=10)
     assert killed == 0
     assert stack["sch"].get(sids[0]).state == "completed"
-
 
 def test_stop_no_drain_kills_in_flight(stack):
     """drain=False kills running runners; scheduler entry ends in
@@ -246,13 +221,11 @@ def test_stop_no_drain_kills_in_flight(stack):
     # exact timing; the queue entry should be in a terminal state.
     assert e.state in ("completed", "cancelled", "expired", "crashed")
 
-
 def test_start_idempotent(stack):
     loop = _build_loop(stack)
     loop.start()
     loop.start()  # No-op
     loop.stop()
-
 
 def test_stop_without_start_is_safe(stack):
     loop = _build_loop(stack)
@@ -260,9 +233,7 @@ def test_stop_without_start_is_safe(stack):
     killed = loop.stop()
     assert killed == 0
 
-
 # ── exit_kind mapping ───────────────────────────────────────────────────
-
 
 def test_runner_crash_marks_scheduler_failed_or_crashed(stack):
     sids = _enqueue(stack, 1)
@@ -281,9 +252,7 @@ def test_runner_crash_marks_scheduler_failed_or_crashed(stack):
     assert e.state == "completed"
     assert e.exit_kind in ("failed", "crashed")
 
-
 # ── ledger admission still works through the loop ──────────────────────
-
 
 def test_admission_filter_skips_overlimit(stack):
     """An agent whose ledger is already over-limit gets skipped by
@@ -313,9 +282,7 @@ def test_admission_filter_skips_overlimit(stack):
     assert sch.get(sid_ok).state  == "completed"
     assert sch.get(sid_bad).state == "queued"  # untouched
 
-
 # ── empty-queue idle path ──────────────────────────────────────────────
-
 
 def test_idle_loop_does_not_busy_spin(stack):
     """With no work, the driver should sleep poll_interval between

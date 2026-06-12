@@ -17,34 +17,26 @@ from tools.files import (
     _maybe_redirect_to_summarize,
 )
 
-
 # ── CJK-heavy detection ──────────────────────────────────────────────────
-
 
 def test_is_cjk_heavy_pure_english_false():
     assert _is_cjk_heavy("hello world this is plain english") is False
 
-
 def test_is_cjk_heavy_pure_chinese_true():
     assert _is_cjk_heavy("中文内容测试一下分词的情况" * 10) is True
 
-
 def test_is_cjk_heavy_pure_japanese_true():
     assert _is_cjk_heavy("こんにちは世界これは日本語のテキストです" * 10) is True
-
 
 def test_is_cjk_heavy_mixed_minority_cjk_false():
     """A document with <20% CJK characters should NOT be flagged."""
     text = "Mostly English text with a few 中文 characters here and there." * 20
     assert _is_cjk_heavy(text) is False
 
-
 def test_is_cjk_heavy_empty():
     assert _is_cjk_heavy("") is False
 
-
 # ── Redirect threshold logic ─────────────────────────────────────────────
-
 
 def test_no_redirect_for_small_files():
     """A small file → returns None (caller returns original content)."""
@@ -52,12 +44,10 @@ def test_no_redirect_for_small_files():
         "small file", "/tmp/x.txt", {"model": "custom/qwen2.5-72b"},
     ) is None
 
-
 def test_no_redirect_for_empty_text():
     assert _maybe_redirect_to_summarize(
         "", "/tmp/x.txt", {"model": "claude-opus-4-7"},
     ) is None
-
 
 def test_redirect_fires_on_users_actual_failure_case():
     """Reproduce the user's exact scenario: ~25K-token PDF on
@@ -75,7 +65,6 @@ def test_redirect_fires_on_users_actual_failure_case():
     # Redirect message must be MUCH smaller than the input it replaces —
     # that's the whole point of the redirect.
     assert len(redirect) < len(big_text) / 10
-
 
 def test_redirect_fires_on_cjk_at_lower_char_count():
     """CJK content tokenizes 1:1 with chars, so a 17K-char CJK file is
@@ -96,7 +85,6 @@ def test_redirect_fires_on_cjk_at_lower_char_count():
         "Equivalent char-count in English should NOT redirect (chars/2.8 = ~6K tokens, fits)"
     )
 
-
 def test_redirect_caps_threshold_for_overconfident_provider():
     """`custom/...` provider declares 128K context but the underlying
     model might be 32K. The redirect must use min(ctx, 30K) as ceiling
@@ -110,7 +98,6 @@ def test_redirect_caps_threshold_for_overconfident_provider():
     assert redirect is not None, (
         "custom-provider redirect must fire even though declared ctx is 128K"
     )
-
 
 def test_no_redirect_on_genuine_large_context_model_with_modest_file():
     """A 32K-token file on claude-opus-4-7 (200K context) should NOT
@@ -129,7 +116,6 @@ def test_no_redirect_on_genuine_large_context_model_with_modest_file():
     # 30K tokens IS over the 16800 ceiling → redirect fires
     assert redirect is not None
 
-
 def test_redirect_message_includes_preview():
     """The redirect must include a preview chunk so the model has *some*
     context to decide on a focus parameter for SummarizeLargeFile."""
@@ -142,9 +128,7 @@ def test_redirect_message_includes_preview():
     # The preview comes from the start of the file
     assert "UNIQUE_PREVIEW_CONTENT_MARKER" in redirect
 
-
 # ── Integration: Read tool wrapper actually applies the redirect ────────
-
 
 def test_read_tool_redirects_huge_text_file(tmp_path):
     """Write a fake 'huge' text file, call Read via the tool dispatcher,
@@ -164,7 +148,6 @@ def test_read_tool_redirects_huge_text_file(tmp_path):
     assert "ReadTooLarge" in out
     assert "SummarizeLargeFile" in out
     assert str(big) in out
-
 
 def test_read_tool_passes_through_small_file(tmp_path):
     """Small files — Read returns the actual content, not a redirect."""

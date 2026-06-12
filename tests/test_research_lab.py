@@ -32,12 +32,9 @@ from research.lab import roles as _roles
 from research.lab import orchestrator as _orch
 from research.lab import output as _output
 
-
 # ── Storage ────────────────────────────────────────────────────────────────
 
-
 # ── Self-repeat / dedupe helpers (cheap-model degenerate sampling) ──────
-
 
 def test_dedupe_self_repeat_exact_halves():
     """Cheap models often emit their full response twice. Detect that
@@ -47,17 +44,14 @@ def test_dedupe_self_repeat_exact_halves():
     text = front + front
     assert _orch._dedupe_self_repeat(text) == front
 
-
 def test_dedupe_self_repeat_leaves_clean_text_alone():
     text = "This is a perfectly fine response with no repetition at all."
     assert _orch._dedupe_self_repeat(text) == text
-
 
 def test_dedupe_self_repeat_short_below_sanity_floor():
     """Very short responses are never trimmed (false-positive risk)."""
     short = "short reply"
     assert _orch._dedupe_self_repeat(short) == short
-
 
 def test_dedupe_self_repeat_sanity_floor_prevents_overtrim():
     """A weirdly-shaped response that *could* trigger pattern-2 must
@@ -65,7 +59,6 @@ def test_dedupe_self_repeat_sanity_floor_prevents_overtrim():
     weird = "A" + ("B" * 200)
     out = _orch._dedupe_self_repeat(weird)
     assert len(out) >= 60
-
 
 def test_verify_citations_per_citation_hard_timeout(monkeypatch):
     """If verify_one hangs, the wall-clock cap must kick in and mark the
@@ -94,7 +87,6 @@ def test_verify_citations_per_citation_hard_timeout(monkeypatch):
     assert result.n_verified == 0
     assert all(v.status == "verification_skipped" for v in result.verifications)
     assert all("hard timeout" in (v.notes or "") for v in result.verifications)
-
 
 def test_verify_citations_stage_budget(monkeypatch):
     """If the stage runs out of total wall time, remaining citations get
@@ -143,7 +135,6 @@ def test_verify_citations_stage_budget(monkeypatch):
     assert n_skipped_due_budget == 8
     assert len(result.verifications) == 10
 
-
 def test_verify_citations_progress_callback(monkeypatch):
     from research.lab.verifier import verify_citations, Citation, CitationVerification
     monkeypatch.setattr(
@@ -158,9 +149,7 @@ def test_verify_citations_progress_callback(monkeypatch):
     )
     assert seen == [(1, 3, "verified"), (2, 3, "verified"), (3, 3, "verified")]
 
-
 # ── Output path: human-readable dir names ────────────────────────────────
-
 
 def test_slugify_basic():
     from research.lab.storage import _slugify
@@ -168,7 +157,6 @@ def test_slugify_basic():
         == "post-transformer-architectures-ssm-vs-mamba-2026"
     assert _slugify("  hello, world!!  ") == "hello-world"
     assert _slugify("a-b___c") == "a-b-c"
-
 
 def test_slugify_truncates_at_word_boundary():
     from research.lab.storage import _slugify
@@ -179,13 +167,11 @@ def test_slugify_truncates_at_word_boundary():
     # Should land on a word, not mid-word.
     assert s.split("-")[-1] in long_topic.lower().split()
 
-
 def test_slugify_chinese_falls_back_to_untitled():
     from research.lab.storage import _slugify
     assert _slugify("后 transformer 时代") == "transformer"   # "transformer" is ASCII
     assert _slugify("纯中文话题") == "untitled"
     assert _slugify("") == "untitled"
-
 
 def test_human_dir_name_format():
     from research.lab.storage import human_dir_name
@@ -202,7 +188,6 @@ def test_human_dir_name_format():
     # Length sanity — not absurdly long
     assert len(out) < 90
 
-
 def test_human_dir_name_uniqueness_via_run_id_suffix():
     """Two runs with the same topic + minute must NOT collide."""
     from research.lab.storage import human_dir_name
@@ -215,7 +200,6 @@ def test_human_dir_name_uniqueness_via_run_id_suffix():
     assert a != b
     assert a.endswith("aaaaaaaa")
     assert b.endswith("bbbbbbbb")
-
 
 def test_output_dir_for_uses_human_format(tmp_path):
     from research.lab.storage import output_dir_for
@@ -231,7 +215,6 @@ def test_output_dir_for_uses_human_format(tmp_path):
     assert "post-transformer-architectures" in p.name
     assert p.name.endswith("b16036de")
 
-
 def test_extract_numbered_dedupes_repeated_list():
     """questioner emits 5 RQs then 5 duplicates → keep 5."""
     text = (
@@ -242,7 +225,6 @@ def test_extract_numbered_dedupes_repeated_list():
     assert len(got) == 5
     assert got[0].startswith("RQ-one")
 
-
 def test_storage_create_run_returns_record(tmp_path):
     s = _storage.LabStorage(tmp_path / "lab.db")
     r = s.create_run(topic="hi", budget_tokens=10000, max_rounds=3)
@@ -251,7 +233,6 @@ def test_storage_create_run_returns_record(tmp_path):
     assert r.status == "pending"
     assert r.budget_tokens == 10000
     s.close()
-
 
 def test_storage_messages_artifacts_budget(tmp_path):
     s = _storage.LabStorage(tmp_path / "lab.db")
@@ -276,7 +257,6 @@ def test_storage_messages_artifacts_budget(tmp_path):
     assert tok == 800 and cents == 20
     s.close()
 
-
 def test_storage_stage_transitions(tmp_path):
     s = _storage.LabStorage(tmp_path / "lab.db")
     r = s.create_run(topic="t")
@@ -289,7 +269,6 @@ def test_storage_stage_transitions(tmp_path):
     assert stages[0].ended_at is not None
     s.close()
 
-
 def test_storage_persists_across_reopen(tmp_path):
     db = tmp_path / "lab.db"
     s1 = _storage.LabStorage(db)
@@ -301,9 +280,7 @@ def test_storage_persists_across_reopen(tmp_path):
     assert art.content == "RQ-1"
     s2.close()
 
-
 # ── Convergence ─────────────────────────────────────────────────────────────
-
 
 def _v(reviewer_id: str, score: int = 8, blocking=None, sugs=None):
     return _conv.ReviewerVerdict(
@@ -312,20 +289,17 @@ def _v(reviewer_id: str, score: int = 8, blocking=None, sugs=None):
         overall="ok",
     )
 
-
 def test_decide_advance_pass_quorum():
     v = [_v("r1"), _v("r2"), _v("r3")]
     d = _conv.decide_advance(v, round_index=1)
     assert d.advance is True
     assert "3/3" in d.reason
 
-
 def test_decide_advance_partial_quorum():
     v = [_v("r1", score=8), _v("r2", score=8), _v("r3", score=4, blocking=["bad"])]
     d = _conv.decide_advance(v, round_index=1)
     # 2/3 pass with default n_required=2
     assert d.advance is True
-
 
 def test_decide_advance_below_quorum_iterates():
     v = [_v("r1", score=8), _v("r2", score=4, blocking=["bad"]),
@@ -334,7 +308,6 @@ def test_decide_advance_below_quorum_iterates():
     assert d.advance is False
     assert d.needs_redesign is False
 
-
 def test_decide_advance_max_rounds_force_advance():
     v = [_v("r1", score=4, blocking=["bad"]),
          _v("r2", score=4, blocking=["bad"]),
@@ -342,7 +315,6 @@ def test_decide_advance_max_rounds_force_advance():
     d = _conv.decide_advance(v, round_index=5)  # default max=5
     assert d.advance is True
     assert "max_rounds" in d.reason
-
 
 def test_decide_advance_zero_pass_triggers_redesign():
     v = [_v("r1", score=2, blocking=["x"]),
@@ -353,7 +325,6 @@ def test_decide_advance_zero_pass_triggers_redesign():
     assert d.advance is False
     assert d.needs_redesign is True
 
-
 def test_budget_status_fraction_and_exceeded():
     bs = _conv.BudgetStatus(tokens_used=500, tokens_budget=1000,
                               cost_cents_used=10, cost_cents_budget=100)
@@ -363,16 +334,13 @@ def test_budget_status_fraction_and_exceeded():
                                cost_cents_used=0, cost_cents_budget=None)
     assert bs2.exceeded is True
 
-
 def test_budget_status_unlimited():
     bs = _conv.BudgetStatus(tokens_used=5_000_000, tokens_budget=None,
                               cost_cents_used=10_000, cost_cents_budget=None)
     assert bs.exceeded is False
     assert bs.fraction_used() == 0.0
 
-
 # ── Verifier helpers ────────────────────────────────────────────────────────
-
 
 def test_title_similarity_jaccard():
     sim = _verifier._title_similarity(
@@ -381,14 +349,12 @@ def test_title_similarity_jaccard():
     )
     assert sim >= 0.7
 
-
 def test_title_similarity_unrelated():
     sim = _verifier._title_similarity(
         "Attention Is All You Need",
         "Convolutional Neural Networks for Sentence Classification",
     )
     assert sim < 0.3
-
 
 def test_author_overlap_handles_format_variants():
     overlap = _verifier._author_overlap(
@@ -398,12 +364,10 @@ def test_author_overlap_handles_format_variants():
     # both claimed surnames found in result; some extra in result is OK.
     assert overlap > 0.5
 
-
 def test_author_overlap_no_match():
     overlap = _verifier._author_overlap(["Smith, John"],
                                           ["Doe, Jane"])
     assert overlap < 0.1
-
 
 def test_verify_one_skips_without_network(monkeypatch):
     """When all three APIs fail, return verification_skipped, not not_found."""
@@ -414,7 +378,6 @@ def test_verify_one_skips_without_network(monkeypatch):
                             authors=["First Last"], year=2020)
     v = _verifier.verify_one(c, timeout_s=1.0)
     assert v.status == "verification_skipped"
-
 
 def test_verify_one_arxiv_match(monkeypatch):
     """Stub out HTTP to simulate a verified arXiv match."""
@@ -438,7 +401,6 @@ def test_verify_one_arxiv_match(monkeypatch):
     assert v.status == "verified"
     assert v.source == "arxiv"
 
-
 def test_verify_citations_aggregates_counts(monkeypatch):
     def fail(*a, **kw):
         raise RuntimeError("net down")
@@ -448,9 +410,7 @@ def test_verify_citations_aggregates_counts(monkeypatch):
     res = _verifier.verify_citations(cs, sleep_s=0)
     assert res.n_skipped == 3
 
-
 # ── Roles + assignment ────────────────────────────────────────────────────
-
 
 def test_default_assignment_has_all_seven_roles():
     a = _roles.build_default_assignment(config={"model": "test"})
@@ -463,14 +423,12 @@ def test_default_assignment_has_all_seven_roles():
     assert a.reviewers[0].name == "reviewer_1"
     assert a.lay_reader.name == "lay_reader"
 
-
 def test_role_override_pins_models():
     override = {"pi": "claude-opus-4-6", "reviewer_1": "gpt-5"}
     a = _roles.build_default_assignment(config={"model": "test"},
                                          override=override)
     assert a.pi.model == "claude-opus-4-6"
     assert a.reviewers[0].model == "gpt-5"
-
 
 def test_load_role_template_finds_files():
     # Templates ship in agent_templates/lab/. If repo layout is correct,
@@ -482,9 +440,7 @@ def test_load_role_template_finds_files():
         assert len(text) > 50
         assert text.lower().startswith("you are")
 
-
 # ── Orchestrator with stubbed LLM ─────────────────────────────────────────
-
 
 def _make_stub_llm(scripted_outputs: dict):
     """Build a CallLLM that returns scripted text per role_name."""
@@ -505,7 +461,6 @@ def _make_stub_llm(scripted_outputs: dict):
 
     return call
 
-
 def _passing_reviewer_json():
     return json.dumps({
         "score": 8, "blocking_issues": [],
@@ -513,14 +468,12 @@ def _passing_reviewer_json():
         "overall": "looks good",
     })
 
-
 def _failing_reviewer_json():
     return json.dumps({
         "score": 4,
         "blocking_issues": ["unclear methodology", "missing citation"],
         "suggestions": [], "overall": "needs work",
     })
-
 
 def test_orchestrator_end_to_end_happy_path(tmp_path, monkeypatch):
     """Run all 6 stages with reviewers passing on round 1; verify outputs."""
@@ -573,7 +526,6 @@ def test_orchestrator_end_to_end_happy_path(tmp_path, monkeypatch):
     assert report is not None
     assert "Title" in report.content or "test topic" in report.content.lower()
 
-
 def test_orchestrator_advances_on_max_rounds_with_failing_reviewers(
         tmp_path, monkeypatch):
     """Even with failing reviewers, hit max_rounds → force advance."""
@@ -603,7 +555,6 @@ def test_orchestrator_advances_on_max_rounds_with_failing_reviewers(
     )
     rec = storage.get_run(run.state.run_id)
     assert rec.status == "done"
-
 
 def test_orchestrator_respects_cancel(tmp_path, monkeypatch):
     """Cancel flag set during stage → run ends with status=aborted."""
@@ -641,7 +592,6 @@ def test_orchestrator_respects_cancel(tmp_path, monkeypatch):
     rec = storage.get_run(run.state.run_id)
     assert rec.status == "aborted"
 
-
 def test_orchestrator_respects_budget_and_finalizes(tmp_path, monkeypatch):
     """When the budget is tiny, run still reaches finalization gracefully."""
     storage = _storage.LabStorage(tmp_path / "lab.db")
@@ -664,9 +614,7 @@ def test_orchestrator_respects_budget_and_finalizes(tmp_path, monkeypatch):
     rec = storage.get_run(run.state.run_id)
     assert rec.status == "done"   # finalization completed
 
-
 # ── Citation parsing inside orchestrator ─────────────────────────────────
-
 
 def test_parse_citations_from_markdown_finds_arxiv_id():
     md = """## Citations
@@ -680,10 +628,8 @@ def test_parse_citations_from_markdown_finds_arxiv_id():
     arxiv_ids = [c.arxiv_id for c in cits if c.arxiv_id]
     assert "1706.03762" in arxiv_ids
 
-
 def test_parse_citations_handles_empty():
     assert _orch._parse_citations_from_markdown("") == []
-
 
 def test_parse_reviewer_verdict_handles_fenced_json():
     text = '```json\n{"score": 7, "blocking_issues": [], "suggestions": [], "overall": "ok"}\n```'
@@ -691,15 +637,12 @@ def test_parse_reviewer_verdict_handles_fenced_json():
     assert v.score == 7
     assert v.passes is True
 
-
 def test_parse_reviewer_verdict_handles_garbage():
     v = _orch._parse_reviewer_verdict("just prose, no JSON", "reviewer_2")
     assert v.score == 5
     assert "unparseable" in (v.blocking_issues + ["x"])[0].lower() or v.overall == "parse_error"
 
-
 # ── Output assembly ──────────────────────────────────────────────────────
-
 
 def test_write_markdown_report_assembles_artifacts(tmp_path):
     storage = _storage.LabStorage(tmp_path / "lab.db")
@@ -742,7 +685,6 @@ def test_write_markdown_report_assembles_artifacts(tmp_path):
     assert (paper_dir / "references.bib").exists() or True
     assert (paper_dir / "citations_verified.json").exists()
 
-
 def test_format_bibtex_handles_not_found():
     bib = _output.format_bibtex([
         {"key": "ok1", "title": "Real", "matched_authors": ["A"],
@@ -754,9 +696,7 @@ def test_format_bibtex_handles_not_found():
     assert "NOT FOUND" in bib
     assert "fake," not in bib  # don't emit bibtex for unverifieds
 
-
 # ── Phase 2: sandbox ─────────────────────────────────────────────────────
-
 
 def test_extract_python_block_basic():
     from research.lab import sandbox as sb
@@ -765,7 +705,6 @@ def test_extract_python_block_basic():
     assert code is not None
     assert code.strip() == "print(42)"
 
-
 def test_extract_python_block_no_lang_fallback():
     from research.lab import sandbox as sb
     text = "```\nprint('hi')\n```"
@@ -773,11 +712,9 @@ def test_extract_python_block_no_lang_fallback():
     assert code is not None
     assert "print('hi')" in code
 
-
 def test_extract_python_block_returns_none_when_absent():
     from research.lab import sandbox as sb
     assert sb.extract_python_block("just prose") is None
-
 
 def test_sandbox_runs_simple_script(tmp_path):
     from research.lab import sandbox as sb
@@ -791,7 +728,6 @@ def test_sandbox_runs_simple_script(tmp_path):
     assert not res.timed_out
     assert (ws / "stdout.txt").exists()
 
-
 def test_sandbox_captures_nonzero_exit(tmp_path):
     from research.lab import sandbox as sb
     res = sb.run_python_in_sandbox(
@@ -800,7 +736,6 @@ def test_sandbox_captures_nonzero_exit(tmp_path):
     )
     assert res.exit_code == 7
     assert not res.timed_out
-
 
 def test_sandbox_captures_stderr(tmp_path):
     from research.lab import sandbox as sb
@@ -811,7 +746,6 @@ def test_sandbox_captures_stderr(tmp_path):
     assert res.exit_code == 1
     assert "bad" in res.stderr
 
-
 def test_sandbox_timeout(tmp_path):
     from research.lab import sandbox as sb
     res = sb.run_python_in_sandbox(
@@ -820,7 +754,6 @@ def test_sandbox_timeout(tmp_path):
     )
     assert res.timed_out is True
     assert res.exit_code != 0
-
 
 def test_sandbox_collects_artifacts(tmp_path):
     from research.lab import sandbox as sb
@@ -839,7 +772,6 @@ def test_sandbox_collects_artifacts(tmp_path):
     # stdout/stderr/exit_code are excluded from artifacts
     assert "stdout.txt" not in fnames
 
-
 def test_sandbox_format_result_for_prompt():
     from research.lab.sandbox import SandboxResult, format_result_for_prompt
     res = SandboxResult(
@@ -852,9 +784,7 @@ def test_sandbox_format_result_for_prompt():
     assert "0.42s" in txt
     assert "hello" in txt
 
-
 # ── Phase 2: storage experiments ────────────────────────────────────────
-
 
 def test_storage_record_experiment_roundtrip(tmp_path):
     s = _storage.LabStorage(tmp_path / "lab.db")
@@ -877,9 +807,7 @@ def test_storage_record_experiment_roundtrip(tmp_path):
     assert latest.attempt == 2
     s.close()
 
-
 # ── Phase 2: orchestrator with experiments ──────────────────────────────
-
 
 def test_orchestrator_skip_experiment_via_engineer(tmp_path, monkeypatch):
     """Engineer responds with SKIP_EXPERIMENT → IMPLEMENTATION/EXPERIMENT/
@@ -912,7 +840,6 @@ def test_orchestrator_skip_experiment_via_engineer(tmp_path, monkeypatch):
     assert rec.status == "done"
     # No experiments recorded since engineer skipped
     assert storage.list_experiments(run.state.run_id) == []
-
 
 def test_orchestrator_runs_experiment_when_engineer_outputs_code(
         tmp_path, monkeypatch):
@@ -954,7 +881,6 @@ def test_orchestrator_runs_experiment_when_engineer_outputs_code(
     assert exps[0].exit_code == 0
     assert "metric" in (exps[0].stdout or "")
 
-
 def test_orchestrator_engineer_debug_loop_on_failure(tmp_path, monkeypatch):
     """First code crashes; engineer revises on attempt 2; should advance."""
     storage = _storage.LabStorage(tmp_path / "lab.db")
@@ -991,9 +917,7 @@ def test_orchestrator_engineer_debug_loop_on_failure(tmp_path, monkeypatch):
     assert exps[0].exit_code == 1
     assert exps[1].exit_code == 0
 
-
 # ── Phase 3: web routes ─────────────────────────────────────────────────
-
 
 def test_lab_api_start_run_returns_id(tmp_path, monkeypatch):
     monkeypatch.setattr(_storage, "DEFAULT_DB_PATH", tmp_path / "lab.db")
@@ -1026,7 +950,6 @@ def test_lab_api_start_run_returns_id(tmp_path, monkeypatch):
     assert payload["run_id"].startswith("lab_")
     assert started["n"] == 1
 
-
 def test_lab_api_list_runs(tmp_path, monkeypatch):
     monkeypatch.setattr(_storage, "DEFAULT_DB_PATH", tmp_path / "lab.db")
     s = _storage.LabStorage(tmp_path / "lab.db")
@@ -1041,14 +964,12 @@ def test_lab_api_list_runs(tmp_path, monkeypatch):
     topics = {r["topic"] for r in payload["runs"]}
     assert {"alpha", "beta"} <= topics
 
-
 def test_lab_api_run_detail_404_unknown(tmp_path, monkeypatch):
     monkeypatch.setattr(_storage, "DEFAULT_DB_PATH", tmp_path / "lab.db")
     from web import lab_api
     status, _, body = lab_api.dispatch(
         "/api/lab/runs/lab_doesnotexist", "GET", {}, {}, {})
     assert status == 404
-
 
 def test_lab_api_messages_endpoint(tmp_path, monkeypatch):
     monkeypatch.setattr(_storage, "DEFAULT_DB_PATH", tmp_path / "lab.db")
@@ -1065,7 +986,6 @@ def test_lab_api_messages_endpoint(tmp_path, monkeypatch):
     msgs = json.loads(body)["messages"]
     assert msgs[0]["content"] == "hi from PI"
 
-
 def test_lab_api_report_falls_back_to_404(tmp_path, monkeypatch):
     monkeypatch.setattr(_storage, "DEFAULT_DB_PATH", tmp_path / "lab.db")
     monkeypatch.setattr(_storage, "DEFAULT_OUTPUT_DIR", tmp_path / "papers")
@@ -1076,7 +996,6 @@ def test_lab_api_report_falls_back_to_404(tmp_path, monkeypatch):
     status, _, _ = lab_api.dispatch(
         f"/api/lab/runs/{rec.run_id}/report", "GET", {}, {}, {})
     assert status == 404
-
 
 def test_lab_api_artifact_serves_file(tmp_path, monkeypatch):
     monkeypatch.setattr(_storage, "DEFAULT_DB_PATH", tmp_path / "lab.db")
@@ -1095,7 +1014,6 @@ def test_lab_api_artifact_serves_file(tmp_path, monkeypatch):
     assert ctype == "image/png"
     assert body == b"PNGDATA"
 
-
 def test_lab_api_artifact_path_traversal_blocked(tmp_path, monkeypatch):
     monkeypatch.setattr(_storage, "DEFAULT_OUTPUT_DIR", tmp_path / "papers")
     from web import lab_api
@@ -1105,20 +1023,17 @@ def test_lab_api_artifact_path_traversal_blocked(tmp_path, monkeypatch):
     # Either 404 (regex doesn't match the encoded form) or 400 (blocked)
     assert status in (400, 404)
 
-
 def test_lab_api_abort_unknown_run(tmp_path, monkeypatch):
     from web import lab_api
     status, _, body = lab_api.dispatch(
         "/api/lab/runs/lab_abcdef0123456789/abort", "POST", {}, {}, {})
     assert status == 404
 
-
 def test_lab_api_unknown_endpoint_404():
     from web import lab_api
     status, _, _ = lab_api.dispatch(
         "/api/lab/garbage", "GET", {}, {}, {})
     assert status == 404
-
 
 def test_lab_html_file_exists():
     """The frontend page must ship with the package."""

@@ -17,9 +17,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 # ── 1. _apply_serve_defaults ──────────────────────────────────────────────
-
 
 class TestApplyServeDefaults(unittest.TestCase):
 
@@ -63,14 +61,11 @@ class TestApplyServeDefaults(unittest.TestCase):
         # Plus the four budget defaults landed.
         self.assertEqual(cfg["session_token_budget"], 200_000)
 
-
 # ── 2. system.status RPC ──────────────────────────────────────────────────
-
 
 class _FakeDaemonState:
     def __init__(self, config=None):
         self.config = config or {}
-
 
 def _build_system_registry(state):
     from cc_daemon.rpc import RpcRegistry
@@ -79,18 +74,15 @@ def _build_system_registry(state):
     system_methods.register(reg, state)
     return reg
 
-
 def _ctx():
     from cc_daemon.rpc import CallContext
     return CallContext(client_id="t", transport="unix", api_version="0")
-
 
 def _call(reg, method, params=None):
     envelope = {"jsonrpc": "2.0", "id": 1, "method": method,
                 "params": params or {}}
     response, _ = reg.dispatch(envelope, _ctx())
     return response.get("result"), response.get("error")
-
 
 class TestSystemStatus(unittest.TestCase):
 
@@ -126,9 +118,7 @@ class TestSystemStatus(unittest.TestCase):
         self.assertIn("runners", result)
         self.assertIn("bridges", result)
 
-
 # ── 3. agent.resume RPC ───────────────────────────────────────────────────
-
 
 def _build_agent_registry(state):
     from cc_daemon.rpc import RpcRegistry
@@ -136,7 +126,6 @@ def _build_agent_registry(state):
     reg = RpcRegistry()
     agent_methods.register(reg, state)
     return reg
-
 
 class TestAgentResume(unittest.TestCase):
 
@@ -226,7 +215,6 @@ class TestAgentResume(unittest.TestCase):
         self.assertIsNotNone(err)
         self.assertEqual(err["code"], -32602)
         self.assertIn("name", err["message"])
-
 
 if __name__ == "__main__":
     unittest.main()

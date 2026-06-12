@@ -21,9 +21,7 @@ from providers import (
     bare_model, detect_provider, nim_next_model,
 )
 
-
 # ── Provider registration ────────────────────────────────────────────────
-
 
 def test_nim_provider_entry_present():
     assert "nim" in PROVIDERS
@@ -33,14 +31,12 @@ def test_nim_provider_entry_present():
     assert e["api_key_env"] == "NVIDIA_API_KEY"
     assert len(e["models"]) >= 5, "expect a non-trivial curated chain"
 
-
 def test_nim_costs_are_free():
     """Every model in the curated chain must show $0 — NIM is free-tier."""
     for m in PROVIDERS["nim"]["models"]:
         assert COSTS.get(m) == (0.0, 0.0), (
             f"{m} missing from COSTS or not zero — UI would show 'unknown'."
         )
-
 
 @pytest.mark.parametrize("model_id,expected_bare", [
     ("nim/meta/llama-3.3-70b-instruct",     "meta/llama-3.3-70b-instruct"),
@@ -52,9 +48,7 @@ def test_nim_routing_strips_only_first_segment(model_id, expected_bare):
     assert detect_provider(model_id) == "nim"
     assert bare_model(model_id) == expected_bare
 
-
 # ── nim_next_model chain cycling ─────────────────────────────────────────
-
 
 def test_nim_next_model_cycles_through_chain():
     chain = PROVIDERS["nim"]["models"]
@@ -68,12 +62,10 @@ def test_nim_next_model_cycles_through_chain():
     # Then it wraps back to the first model.
     assert seen[-1] == chain[0]
 
-
 def test_nim_next_model_preserves_prefix():
     cur = "nim/" + PROVIDERS["nim"]["models"][0]
     nxt = nim_next_model(cur)
     assert nxt.startswith("nim/"), "prefix must be preserved when input had it"
-
 
 def test_nim_next_model_unknown_starts_at_head():
     """Unknown bare model → return the chain head, so an off-list user
@@ -81,9 +73,7 @@ def test_nim_next_model_unknown_starts_at_head():
     nxt = nim_next_model("nim/private-org/private-finetune")
     assert nxt == "nim/" + PROVIDERS["nim"]["models"][0]
 
-
 # ── Agent loop 429 cascade ───────────────────────────────────────────────
-
 
 def _fake_turn(text="ok"):
     t = AssistantTurn.__new__(AssistantTurn)
@@ -95,12 +85,10 @@ def _fake_turn(text="ok"):
     t.cache_write_tokens = 0
     return t
 
-
 class _FakeRateLimit(Exception):
     """OpenAI-style 429 — error_classifier matches the substring."""
     def __init__(self):
         super().__init__("rate_limit_exceeded: too many requests (429)")
-
 
 def _baseline_config():
     return {
@@ -110,7 +98,6 @@ def _baseline_config():
         "_session_id":    "test-nim",
         "nim_auto_fallback": True,
     }
-
 
 def test_nim_429_swaps_to_next_model_then_succeeds(monkeypatch):
     """First call raises 429 → loop swaps to next NIM model → second call succeeds."""
@@ -131,7 +118,6 @@ def test_nim_429_swaps_to_next_model_then_succeeds(monkeypatch):
     assert len(call_log) == 2, f"expected 2 stream calls, got {len(call_log)}"
     assert call_log[0] == "nim/meta/llama-3.3-70b-instruct"
     assert call_log[1] == nim_next_model("nim/meta/llama-3.3-70b-instruct")
-
 
 def test_nim_fallback_capped_to_limit(monkeypatch):
     """Continuous 429 must stop after _NIM_FALLBACK_LIMIT (3) swaps so
@@ -160,7 +146,6 @@ def test_nim_fallback_capped_to_limit(monkeypatch):
         f"chain must terminate after fallback cap"
     )
 
-
 def test_nim_fallback_disabled_via_config(monkeypatch):
     """When `nim_auto_fallback=False`, 429 falls through to the regular
     retry path immediately — no model swap."""
@@ -182,7 +167,6 @@ def test_nim_fallback_disabled_via_config(monkeypatch):
     assert all(m == "nim/meta/llama-3.3-70b-instruct" for m in call_log), (
         f"fallback should be disabled, but model changed: {call_log}"
     )
-
 
 def test_nim_fallback_does_not_apply_to_other_providers(monkeypatch):
     """A 429 from openai or anthropic must NOT trigger a NIM swap."""

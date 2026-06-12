@@ -13,7 +13,6 @@ from cc_kernel.runner.llm.provider import (
 )
 from cc_kernel.runner.llm.litellm_provider import LiteLLMProvider
 
-
 def _make_provider_with_fake_litellm(
     completion_return=None,
     completion_side_effect=None,
@@ -50,7 +49,6 @@ def _make_provider_with_fake_litellm(
     p._litellm = fake
     return p, fake
 
-
 def _build_final_from_chunks(chunks):
     """Tiny stand-in for litellm.stream_chunk_builder: glues content
     deltas and surfaces the LAST chunk's usage / tool_calls /
@@ -81,7 +79,6 @@ def _build_final_from_chunks(chunks):
     choice = MagicMock(message=msg, finish_reason=finish_reason)
     return MagicMock(choices=[choice], usage=usage, model="model")
 
-
 class TestLiteLLMProviderInit:
     def test_default_timeout(self):
         p = LiteLLMProvider()
@@ -96,7 +93,6 @@ class TestLiteLLMProviderInit:
         on machines without litellm installed."""
         p = LiteLLMProvider()
         assert p._litellm is None
-
 
 class TestLazyImport:
     def test_module_imports_without_litellm(self, monkeypatch):
@@ -138,7 +134,6 @@ class TestLazyImport:
         req = LlmRequest(model="openai/gpt-4o", user="hi")
         with pytest.raises(ProviderUnavailable, match="litellm"):
             p(req)
-
 
 class TestLiteLLMProviderCall:
     def test_calls_litellm_completion(self):
@@ -218,7 +213,6 @@ class TestLiteLLMProviderCall:
         assert isinstance(resp, LlmResponse)
         assert resp.model == "openai/gpt-4o"
 
-
 class TestCostCalculation:
     def test_cost_micro_populated_from_litellm(self):
         """litellm.completion_cost returns USD; we convert to micro-USD
@@ -255,7 +249,6 @@ class TestCostCalculation:
         req = LlmRequest(model="weird/model", user="hi")
         resp = p(req)
         assert resp.cost_micro == 0
-
 
 class TestStreaming:
     def test_stream_emits_deltas_and_returns_usage(self):
@@ -321,7 +314,6 @@ class TestStreaming:
         assert kwargs["stream"] is True
         assert kwargs["stream_options"] == {"include_usage": True}
 
-
 class TestExceptionMapping:
     def test_auth_error_maps_to_invalid_request(self):
         """4xx-class errors (auth, bad request) should surface as
@@ -351,7 +343,6 @@ class TestExceptionMapping:
         with pytest.raises(ProviderUnavailable, match="503"):
             p(req)
 
-
 class TestLiteLLMProviderEdgeCases:
     def test_rejects_non_llm_request(self):
         p = LiteLLMProvider()
@@ -363,7 +354,6 @@ class TestLiteLLMProviderEdgeCases:
         req = LlmRequest(model="openai/gpt-4o", user="hi")
         with pytest.raises(ProviderInvalidRequest, match="on_delta"):
             p.stream(req, "not callable")
-
 
 class TestToolCallParsingDefensive:
     """Regression tests for parser bugs that the original PR shipped:
@@ -434,7 +424,6 @@ class TestToolCallParsingDefensive:
         resp = p(LlmRequest(model="openai/gpt-4o", user="hi"))
         assert resp.tool_calls[0]["id"].startswith("call_")
 
-
 class TestStreamingFallback:
     def test_cost_unknown_set_when_chunk_builder_fails(self):
         """When stream_chunk_builder is unavailable / fails, the
@@ -459,9 +448,7 @@ class TestStreamingFallback:
         assert resp.metadata.get("cost_unknown") is True
         assert resp.text == "hi"
 
-
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-
 
 class TestRegistration:
     def test_litellm_is_optional_dependency(self):

@@ -20,7 +20,6 @@ class FakeState:
     total_output_tokens: int = 0
     turn_count: int = 0
 
-
 @pytest.fixture
 def tmp_home(tmp_path):
     """Redirect ~/.pycode/checkpoints to a temp directory."""
@@ -29,7 +28,6 @@ def tmp_home(tmp_path):
     with patch("checkpoint.store._checkpoints_root", return_value=ckpt_root):
         yield tmp_path, ckpt_root
 
-
 @pytest.fixture(autouse=True)
 def reset_versions():
     """Reset file version counters between tests."""
@@ -37,7 +35,6 @@ def reset_versions():
     reset_file_versions()
     yield
     reset_file_versions()
-
 
 # ── types.py tests ───────────────────────────────────────────────────────────
 
@@ -75,7 +72,6 @@ class TestTypes:
         assert snap2.message_index == 5
         assert "/tmp/test.py" in snap2.file_backups
         assert snap2.file_backups["/tmp/test.py"].backup_filename == "abc@v1"
-
 
 # ── store.py tests ───────────────────────────────────────────────────────────
 
@@ -253,7 +249,6 @@ class TestStore:
         removed = store.cleanup_old_sessions(max_age_days=30)
         assert removed == 1
 
-
 # ── hooks.py tests ───────────────────────────────────────────────────────────
 
 class TestHooks:
@@ -298,7 +293,6 @@ class TestHooks:
         hooks._hooks_installed = False
         hooks.install_hooks()
         assert hooks._hooks_installed
-
 
 # ── Integration test ─────────────────────────────────────────────────────────
 
@@ -456,7 +450,6 @@ class TestIntegration:
         state.turn_count = snap1.turn_count
         assert len(state.messages) == 0
         assert state.turn_count == 0
-
 
 # Cache-token coverage lives in tests/test_cache_tokens.py so this module
 # stays focused on snapshot / restore / file-backup behaviour.

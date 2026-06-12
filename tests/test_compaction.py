@@ -16,13 +16,11 @@ from compaction import (
     _respect_tool_pairs,
 )
 
-
 # ── estimate_tokens ───────────────────────────────────────────────────────
 
 def _expected(chars: int, msgs: int) -> int:
     """Mirror the estimate_tokens formula: int((int(chars/2.8) + msgs*4) * 1.1)"""
     return int((int(chars / 2.8) + msgs * 4) * 1.1)
-
 
 class TestEstimateTokens:
     def test_simple_messages(self):
@@ -93,7 +91,6 @@ class TestEstimateTokens:
         # "x"(1) + "Write"(5) + "/a/b"(4) + "hello"(5) = 15 chars, 1 msg
         assert result == _expected(15, 1)
 
-
 # ── get_context_limit ─────────────────────────────────────────────────────
 
 class TestGetContextLimit:
@@ -139,7 +136,6 @@ class TestGetContextLimit:
         assert get_context_limit("deepseek-chat", {"context_window": "oops"}) == 128000
         # max_tokens must NOT be treated as the context window (kept distinct).
         assert get_context_limit("deepseek-chat", {"max_tokens": 1_000_000}) == 128000
-
 
 # ── snip_old_tool_results ─────────────────────────────────────────────────
 
@@ -201,7 +197,6 @@ class TestSnipOldToolResults:
         snip_old_tool_results(msgs, max_chars=2000, preserve_last_n_turns=6)
         assert msgs[0]["content"] == "X" * 5000
 
-
 # ── find_split_point ──────────────────────────────────────────────────────
 
 class TestFindSplitPoint:
@@ -262,7 +257,6 @@ class TestFindSplitPoint:
                     # Must have kept the tool responses with it.
                     assert msgs[idx].get("role") != "tool"
 
-
 class TestRespectToolPairs:
     def test_noop_when_not_on_tool_pair(self):
         msgs = [
@@ -305,7 +299,6 @@ class TestRespectToolPairs:
             {"role": "user", "content": "b"},
         ]
         assert _respect_tool_pairs(msgs, 1) == 2
-
 
 # ── sanitize_history ──────────────────────────────────────────────────────
 

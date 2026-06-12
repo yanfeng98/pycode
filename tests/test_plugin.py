@@ -19,7 +19,6 @@ from plugin.recommend import (
 )
 import plugin.store as _store
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
@@ -35,7 +34,6 @@ def tmp_plugin_paths(tmp_path, monkeypatch):
     monkeypatch.setattr(_store, "_project_plugin_dir", lambda: proj_dir)
     monkeypatch.setattr(_store, "_project_plugin_cfg", lambda: proj_cfg)
     return tmp_path
-
 
 @pytest.fixture()
 def local_plugin(tmp_path):
@@ -53,7 +51,6 @@ def local_plugin(tmp_path):
     }
     (d / "plugin.json").write_text(json.dumps(manifest))
     return d
-
 
 # ── types ─────────────────────────────────────────────────────────────────────
 
@@ -129,7 +126,6 @@ class TestPluginTypes:
     def test_entry_qualified_name(self, tmp_path):
         entry = PluginEntry("bar", PluginScope.PROJECT, "", tmp_path)
         assert entry.qualified_name == "bar@project"
-
 
 # ── store ─────────────────────────────────────────────────────────────────────
 
@@ -223,7 +219,6 @@ class TestPluginStore:
         assert len(user_only) == 0
         assert len(proj_only) == 1
 
-
 # ── recommend ─────────────────────────────────────────────────────────────────
 
 class TestPluginRecommend:
@@ -279,7 +274,6 @@ class TestPluginRecommend:
     def test_format_empty(self):
         text = format_recommendations([])
         assert "No plugin recommendations" in text
-
 
 # ── AskUserQuestion (via tools module) ────────────────────────────────────────
 

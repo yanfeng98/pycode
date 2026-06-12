@@ -27,12 +27,10 @@ from cc_kernel.integration import detach
 from cc_kernel.process import AgentState
 from cc_kernel.store import EV_PROCESS_CREATED, EV_PROCESS_RECOVERED
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 @pytest.fixture
 def daemon_with_kernel(tmp_path):
@@ -68,7 +66,6 @@ def daemon_with_kernel(tmp_path):
     server.server_close()
     t.join(timeout=2)
 
-
 def _rpc(host, port, token, method, params, *, kind="test"):
     body = json.dumps({
         "jsonrpc": "2.0",
@@ -92,9 +89,7 @@ def _rpc(host, port, token, method, params, *, kind="test"):
     finally:
         conn.close()
 
-
 # ── Method coverage ────────────────────────────────────────────────────────
-
 
 def test_kernel_info_reports_zero_state(daemon_with_kernel):
     host, port, token, _db = daemon_with_kernel
@@ -108,7 +103,6 @@ def test_kernel_info_reports_zero_state(daemon_with_kernel):
     assert info["schema_version"] == SCHEMA_VERSION
     assert info["agent_count"] == 0
     assert info["event_count"] == 0
-
 
 def test_agent_create_and_get_round_trip(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
@@ -125,7 +119,6 @@ def test_agent_create_and_get_round_trip(daemon_with_kernel):
     assert a["name"] == "alice"
     assert a["state"] == AgentState.READY
 
-
 def test_agent_transition_through_dead(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
     pid = _rpc(host, port, token, "kernel.agent.create",
@@ -141,7 +134,6 @@ def test_agent_transition_through_dead(daemon_with_kernel):
     assert s == 200
     assert r["result"]["state"] == "DEAD"
 
-
 def test_illegal_transition_returns_rpc_error(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
     pid = _rpc(host, port, token, "kernel.agent.create",
@@ -155,14 +147,12 @@ def test_illegal_transition_returns_rpc_error(daemon_with_kernel):
     # the message; clients can match on it.
     assert "IllegalTransition" in resp["error"]["message"]
 
-
 def test_unknown_pid_returns_rpc_error(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
     status, resp = _rpc(host, port, token, "kernel.agent.get", {"pid": 9999})
     assert status == 200
     assert "error" in resp
     assert "UnknownPid" in resp["error"]["message"]
-
 
 def test_invalid_payload_returns_invalid_params(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
@@ -173,7 +163,6 @@ def test_invalid_payload_returns_invalid_params(daemon_with_kernel):
     assert "error" in resp
     # InvalidPayload maps to TypeError -> INVALID_PARAMS (-32602).
     assert resp["error"]["code"] == -32602
-
 
 def test_events_append_and_tail(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
@@ -192,7 +181,6 @@ def test_events_append_and_tail(daemon_with_kernel):
     kinds = [e["kind"] for e in r["result"]["events"]]
     assert kinds == [EV_PROCESS_CREATED, "my.app.tool_call"]
 
-
 def test_events_append_rejects_kernel_prefix_via_rpc(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
     pid = _rpc(host, port, token, "kernel.agent.create",
@@ -202,7 +190,6 @@ def test_events_append_rejects_kernel_prefix_via_rpc(daemon_with_kernel):
     assert s == 200
     assert "error" in r
     assert r["error"]["code"] == -32602
-
 
 def test_agent_list_filters_via_rpc(daemon_with_kernel):
     host, port, token, _ = daemon_with_kernel
@@ -219,7 +206,6 @@ def test_agent_list_filters_via_rpc(daemon_with_kernel):
     assert len(agents) == 1
     assert agents[0]["pid"] == pid1
 
-
 def test_kernel_methods_do_not_collide_with_existing(daemon_with_kernel):
     """Smoke test: existing methods (system.ping, echo.ping) still work."""
     host, port, token, _ = daemon_with_kernel
@@ -228,9 +214,7 @@ def test_kernel_methods_do_not_collide_with_existing(daemon_with_kernel):
     s, r = _rpc(host, port, token, "echo.ping", {"message": "hi"})
     assert s == 200 and r["result"]["pong"] is True
 
-
 # ── Recovery via the daemon path ───────────────────────────────────────────
-
 
 def test_recovery_runs_at_register_time(tmp_path):
     """register_with_daemon() runs recover() exactly once."""

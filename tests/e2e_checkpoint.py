@@ -44,7 +44,6 @@ def auto_snapshot(user_input):
     reset_tracked()
     return snap, skip
 
-
 # ── Step 1: Init ──
 print(f"\n{SEP}")
 print("STEP 1: Initialize session & create initial snapshot")

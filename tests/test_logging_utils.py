@@ -12,14 +12,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import logging_utils
 
-
 def _reset():
     """Reset logging_utils to defaults between tests."""
     logging_utils._level    = logging_utils._LEVELS["warn"]
     logging_utils._log_fh   = None
     logging_utils._log_file_path = None
     logging_utils._cfg_key  = ("warn", None)
-
 
 class TestConfigure:
     def test_default_level_is_warn(self):
@@ -57,7 +55,6 @@ class TestConfigure:
         _reset()
         logging_utils.configure_from_config({})
         assert logging_utils._level == logging_utils._LEVELS["warn"]
-
 
 class TestEmit:
     def setup_method(self):
@@ -142,7 +139,6 @@ class TestEmit:
         assert rec["foo"] == "bar"
         assert rec["num"] == 7
 
-
 class TestLogFile:
     def setup_method(self):
         _reset()
@@ -182,7 +178,6 @@ class TestLogFile:
                 os.unlink(path)
             except Exception:
                 pass
-
 
 class TestThreadSafety:
     def test_concurrent_logging_does_not_corrupt(self):

@@ -25,7 +25,6 @@ from memory.scan import (
 )
 from memory.types import MEMORY_TYPES
 
-
 # ── Fixtures ─────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
@@ -41,14 +40,12 @@ def redirect_memory_dirs(tmp_path, monkeypatch):
     # Patch get_project_memory_dir to return our tmp project dir
     monkeypatch.setattr(_store, "get_project_memory_dir", lambda: proj_mem)
 
-
 def _make_entry(name="test note", description="a test", type_="user",
                 content="hello world", scope="user"):
     return MemoryEntry(
         name=name, description=description, type=type_,
         content=content, created="2026-04-02", scope=scope,
     )
-
 
 # ── Save and Load ─────────────────────────────────────────────────────────
 
@@ -96,7 +93,6 @@ class TestSaveAndLoad:
         assert "user note" in names
         assert "proj note" in names
 
-
 # ── Delete ────────────────────────────────────────────────────────────────
 
 class TestDelete:
@@ -114,7 +110,6 @@ class TestDelete:
         save_memory(_make_entry(name="proj note"), scope="project")
         delete_memory("proj note", scope="project")
         assert load_entries("project") == []
-
 
 # ── Search ────────────────────────────────────────────────────────────────
 
@@ -142,7 +137,6 @@ class TestSearch:
         results = search_memory("alpha", scope="all")
         assert len(results) == 2
 
-
 # ── Memory context ────────────────────────────────────────────────────────
 
 class TestGetMemoryContext:
@@ -161,7 +155,6 @@ class TestGetMemoryContext:
         ctx = get_memory_context()
         assert "Project memories" in ctx
         assert "proj note" in ctx
-
 
 # ── Truncation ────────────────────────────────────────────────────────────
 
@@ -183,7 +176,6 @@ class TestTruncation:
         result = truncate_index_content(text)
         assert "WARNING" in result
 
-
 # ── Slugify ───────────────────────────────────────────────────────────────
 
 class TestSlugify:
@@ -195,7 +187,6 @@ class TestSlugify:
 
     def test_max_length(self):
         assert len(_slugify("a" * 100)) == 60
-
 
 # ── parse_frontmatter ─────────────────────────────────────────────────────
 
@@ -211,7 +202,6 @@ class TestParseFrontmatter:
         meta, body = parse_frontmatter("just plain text")
         assert meta == {}
         assert body == "just plain text"
-
 
 # ── scan / age / freshness ────────────────────────────────────────────────
 
@@ -266,7 +256,6 @@ class TestScanAndAge:
         text = memory_freshness_text(old)
         assert "10 days old" in text
         assert "stale" in text.lower() or "outdated" in text.lower()
-
 
 # ── Memory types ──────────────────────────────────────────────────────────
 

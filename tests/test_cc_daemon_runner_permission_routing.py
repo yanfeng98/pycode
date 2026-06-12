@@ -32,9 +32,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
-
 
 # A runner stand-in that:
 #   1. completes the init handshake,
@@ -85,7 +83,6 @@ _PERM_RUNNER_SOURCE = textwrap.dedent("""
     t.join()
 """).strip()
 
-
 def _spawn_inline_runner(name, source, *, init_payload=None,
                          auto_approve=False, permission_store=None,
                          originator=""):
@@ -119,14 +116,11 @@ def _spawn_inline_runner(name, source, *, init_payload=None,
     handle._reader = t
     return handle
 
-
 def _stop_and_cleanup(name):
     from cc_daemon import runner_supervisor
     runner_supervisor.stop(name, timeout_s=3.0)
 
-
 # ── PermissionStore on_answer callback (unit) ──────────────────────────────
-
 
 class TestStoreOnAnswerCallback(unittest.TestCase):
     """The store's new on_answer hook is what makes routing possible."""
@@ -184,9 +178,7 @@ class TestStoreOnAnswerCallback(unittest.TestCase):
         finally:
             store.stop()
 
-
 # ── Supervisor routing ─────────────────────────────────────────────────────
-
 
 class TestSupervisorPermissionRouting(unittest.TestCase):
     """End-to-end through the reader loop's permission_request branch."""
@@ -456,9 +448,7 @@ class TestSupervisorPermissionRouting(unittest.TestCase):
         finally:
             _stop_and_cleanup("no-store")
 
-
 # ── agent_methods.agent_start wiring ──────────────────────────────────────
-
 
 class TestAgentStartWiresPermissionStore(unittest.TestCase):
     """agent.start must pass ctx.client_id as originator AND
@@ -512,7 +502,6 @@ class TestAgentStartWiresPermissionStore(unittest.TestCase):
         self.assertEqual(captured.get("originator"), "alice")
         self.assertIs(captured.get("permission_store"), state.permissions)
         self.assertFalse(captured.get("auto_approve"))
-
 
 if __name__ == "__main__":
     unittest.main()

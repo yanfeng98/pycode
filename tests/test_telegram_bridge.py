@@ -20,9 +20,7 @@ import pytest
 
 from bridges import telegram as tg
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────
-
 
 class _FakeResponse:
     """Minimal context-managed stand-in for urllib.request.urlopen."""
@@ -39,7 +37,6 @@ class _FakeResponse:
     def read(self):
         return self._buf
 
-
 @pytest.fixture
 def tmp_file():
     """Write a small file and yield its path; clean up on exit."""
@@ -54,9 +51,7 @@ def tmp_file():
         except OSError:
             pass
 
-
 # ── _tg_send (text) ───────────────────────────────────────────────────────
-
 
 class TestTgSend:
     def test_short_message_single_call(self):
@@ -91,9 +86,7 @@ class TestTgSend:
         assert first_params.get("parse_mode") == "Markdown"
         assert "parse_mode" not in second_params
 
-
 # ── _tg_send_document (multipart) ─────────────────────────────────────────
-
 
 class TestTgSendDocument:
     def test_happy_path_builds_correct_multipart(self, tmp_file):
@@ -180,9 +173,7 @@ class TestTgSendDocument:
         assert ok is False
         assert "FILE_TOO_BIG" in warn.call_args[0][2]
 
-
 # ── Write-tool auto-send hook (in _bg_runner) ─────────────────────────────
-
 
 class _StubJobs:
     """Drop-in replacement for the jobs module, just enough for _bg_runner."""
@@ -200,7 +191,6 @@ class _StubJobs:
     def get(self, jid):
         return SimpleNamespace(step_count=1, duration_s=0.1)
 
-
 def _make_session_ctx():
     """Bare-bones stand-in for runtime.get_session_ctx output."""
     return SimpleNamespace(
@@ -209,7 +199,6 @@ def _make_session_ctx():
         on_tool_end=None,
         agent_state=None,
     )
-
 
 def _run_bg_runner_with_writes(tmp_file: str, write_paths: list[tuple[str, str]]):
     """Drive _bg_runner with a stub run_query_cb that fires Write start/end pairs.
@@ -247,7 +236,6 @@ def _run_bg_runner_with_writes(tmp_file: str, write_paths: list[tuple[str, str]]
         tg._bg_runner(job, "do it", "TOK", 42, run_query_cb, session_ctx, {"_session_id": "t"})
 
     return sent
-
 
 class TestBgRunnerAutoSend:
     def test_successful_write_mails_the_file(self, tmp_file):
@@ -290,9 +278,7 @@ class TestBgRunnerAutoSend:
         )
         assert sent == [tmp_file, str(other)]
 
-
 # ── Module-level smoke ────────────────────────────────────────────────────
-
 
 class TestModuleExports:
     def test_size_cap_under_50_megs(self):
@@ -305,9 +291,7 @@ class TestModuleExports:
                      "_tg_send_keyboard", "_handle_callback_query"):
             assert callable(getattr(tg, name)), f"missing: {name}"
 
-
 # ── _tg_send_keyboard (inline_keyboard outbound) ─────────────────────────
-
 
 class TestTgSendKeyboard:
     def test_happy_path_includes_reply_markup(self):
@@ -363,9 +347,7 @@ class TestTgSendKeyboard:
             mid = tg._tg_send_keyboard("TOK", 1, "p", kb)
         assert mid == 0
 
-
 # ── _handle_callback_query (inbound click router) ────────────────────────
-
 
 def _make_cb(data: str, chat_id: int, message_id: int = 100,
              cb_id: str = "CB1", text: str = "❓ pick one") -> dict:
@@ -379,7 +361,6 @@ def _make_cb(data: str, chat_id: int, message_id: int = 100,
             "text": text,
         },
     }
-
 
 class TestHandleCallbackQuery:
     def test_valid_click_delivers_value_and_fires_event(self):
@@ -528,9 +509,7 @@ class TestHandleCallbackQuery:
         assert evt.is_set()
         assert sctx.tg_input_value == "weird:value:with:colons"
 
-
 # ── End-to-end: ask_input_interactive(options=) → click → return ─────────
-
 
 class TestAskInputWithKeyboard:
     """Drive ask_input_interactive in a worker thread, simulate a click via
@@ -609,9 +588,7 @@ class TestAskInputWithKeyboard:
         opts = [("✅ Approve", "y"), ("❌ Reject", "n"), ("✅✅ Accept all", "a")]
         self._drive(opts, click_value="a", expected_return="a")
 
-
 # ── Slash-command stdout forwarding (issue #84 follow-up) ────────────────
-
 
 class TestSlashRunnerCapturesPrintOutput:
     """Pin: when a Telegram /<cmd> dispatches a "simple" command (the

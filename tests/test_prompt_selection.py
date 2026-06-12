@@ -19,14 +19,11 @@ import pytest
 from prompts import pick_base_prompt, load_fragment
 from prompts import select as _select
 
-
 def _default_text() -> str:
     return (_select._BASE_DIR / "default.md").read_text(encoding="utf-8")
 
-
 def _overlay_text(name: str) -> str:
     return (_select._OVERLAYS_DIR / name).read_text(encoding="utf-8")
-
 
 # ── Core claim: every model gets default.md as its base ───────────────────
 #
@@ -54,7 +51,6 @@ _ALL_MODELS = [
     "",
 ]
 
-
 @pytest.mark.parametrize("model_id", _ALL_MODELS,
                           ids=[m or "<empty>" for m in _ALL_MODELS])
 def test_every_model_includes_default_base(model_id: str):
@@ -64,7 +60,6 @@ def test_every_model_includes_default_base(model_id: str):
         f"model_id={model_id!r} did not include default.md verbatim — "
         f"that's the shared baseline."
     )
-
 
 # ── Overlay routing: documented family quirks get an overlay appended ─────
 
@@ -101,7 +96,6 @@ _OVERLAY_CASES = [
     ("",                               None, "empty model id"),
 ]
 
-
 @pytest.mark.parametrize("model_id,overlay,comment", _OVERLAY_CASES,
                           ids=[c[2] for c in _OVERLAY_CASES])
 def test_overlay_routing(model_id: str, overlay: str | None, comment: str):
@@ -118,9 +112,7 @@ def test_overlay_routing(model_id: str, overlay: str | None, comment: str):
             f"appended, but it wasn't found in the assembled prompt."
         )
 
-
 # ── Runtime invariance: same model via different runtimes → same prompt ──
-
 
 def test_runtime_is_irrelevant_for_family_routing():
     """Qwen served three different ways → same prompt (default + qwen overlay)."""
@@ -131,12 +123,10 @@ def test_runtime_is_irrelevant_for_family_routing():
     # And it should be picking up the qwen overlay regardless of runtime.
     assert _overlay_text("qwen.md").strip() in via_ollama
 
-
 def test_claude_routing_is_runtime_agnostic():
     native     = pick_base_prompt(model_id="claude-opus-4-7")
     openrouter = pick_base_prompt(model_id="custom/anthropic/claude-opus-4-7")
     assert native == openrouter
-
 
 def test_deepseek_via_anywhere_is_default_only():
     """DeepSeek currently has no overlay — every runtime path must give plain default."""
@@ -145,9 +135,7 @@ def test_deepseek_via_anywhere_is_default_only():
     c = pick_base_prompt(model_id="custom/deepseek/deepseek-chat-v3.2")
     assert a == b == c == _default_text()
 
-
 # ── Provider fallback (only consulted when model_id is empty) ────────────
-
 
 def test_provider_fallback_when_model_id_empty():
     """With no model_id, the provider kwarg picks the matching overlay."""
@@ -156,11 +144,9 @@ def test_provider_fallback_when_model_id_empty():
     gemini_prompt = pick_base_prompt(provider="gemini")
     assert _overlay_text("gemini.md").strip() in gemini_prompt
 
-
 def test_openai_provider_without_model_gets_no_overlay():
     """openai provider w/o model_id can't tell chat-vs-reasoning, so default only."""
     assert pick_base_prompt(provider="openai") == _default_text()
-
 
 def test_local_providers_do_not_pick_a_runtime_overlay():
     """ollama / lmstudio / custom without model_id must hit default — never a runtime-specific overlay."""
@@ -168,30 +154,24 @@ def test_local_providers_do_not_pick_a_runtime_overlay():
     assert pick_base_prompt(provider="lmstudio") == _default_text()
     assert pick_base_prompt(provider="custom")   == _default_text()
 
-
 def test_model_id_takes_precedence_over_provider():
     """If model_id carries a family keyword, provider fallback is ignored."""
     out = pick_base_prompt(provider="custom",
                             model_id="custom/anthropic/claude-sonnet-4-5")
     assert _overlay_text("claude.md").strip() in out
 
-
 def test_unknown_provider_with_no_model_falls_back_to_default():
     assert pick_base_prompt(provider="some-unknown-provider") == _default_text()
-
 
 def test_pick_base_prompt_no_args_returns_default():
     assert pick_base_prompt() == _default_text()
 
-
 # ── Fragment loading ──────────────────────────────────────────────────────
-
 
 def test_load_fragment_tmux():
     text = load_fragment("tmux")
     assert "tmux" in text.lower()
     assert "TmuxNewSession" in text
-
 
 def test_load_fragment_plan_keeps_placeholder():
     """plan.md must keep the {plan_file} placeholder unformatted."""
@@ -199,14 +179,11 @@ def test_load_fragment_plan_keeps_placeholder():
     assert "{plan_file}" in text, "plan fragment must carry its placeholder for caller to format"
     assert "Plan Mode" in text
 
-
 def test_load_fragment_missing_raises():
     with pytest.raises(FileNotFoundError):
         load_fragment("no-such-fragment-does-not-exist")
 
-
 # ── Cache behavior ────────────────────────────────────────────────────────
-
 
 def test_repeated_calls_hit_cache(monkeypatch):
     """Second call to pick_base_prompt must NOT re-read the file."""
@@ -227,9 +204,7 @@ def test_repeated_calls_hit_cache(monkeypatch):
     pick_base_prompt(model_id="claude-opus-4-7")
     assert call_count["n"] == first, "lru_cache should prevent further reads"
 
-
 # ── Architectural regressions ────────────────────────────────────────────
-
 
 def test_ollama_md_is_not_shipped():
     """No runtime-level prompt file may exist.
@@ -245,7 +220,6 @@ def test_ollama_md_is_not_shipped():
             f"prompts/overlays/{forbidden} must not exist — see prompts/README.md."
         )
 
-
 def test_dead_family_base_files_are_gone():
     """The pre-refactor full per-family base files must not be revived.
 
@@ -258,7 +232,6 @@ def test_dead_family_base_files_are_gone():
             f"prompts/base/{old} should not exist — family content lives in "
             f"prompts/overlays/ now (see prompts/README.md)."
         )
-
 
 def test_overlays_directory_has_expected_files():
     """Lock the current overlay set so accidental deletes / typos are caught."""

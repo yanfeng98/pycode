@@ -18,7 +18,6 @@ from cc_mcp.config import load_mcp_configs, add_server_to_user_config, remove_se
 from cc_mcp.client import MCPManager, MCPClient, StdioTransport, get_mcp_manager
 import cc_mcp.config as _mcp_config
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
@@ -27,7 +26,6 @@ def reset_manager(monkeypatch):
     import cc_mcp.client as _client_mod
     monkeypatch.setattr(_client_mod, "_manager", None)
 
-
 @pytest.fixture()
 def tmp_config(tmp_path, monkeypatch):
     """Redirect MCP config paths to tmp_path."""
@@ -35,7 +33,6 @@ def tmp_config(tmp_path, monkeypatch):
     monkeypatch.setattr(_mcp_config, "USER_MCP_CONFIG", user_cfg)
     monkeypatch.setattr(_mcp_config, "PROJECT_MCP_NAME", ".mcp_test.json")
     return tmp_path
-
 
 # ── types ─────────────────────────────────────────────────────────────────────
 
@@ -104,7 +101,6 @@ class TestTypes:
         assert "tools" in INIT_PARAMS["capabilities"]
         assert "clientInfo" in INIT_PARAMS
 
-
 # ── config ────────────────────────────────────────────────────────────────────
 
 class TestConfig:
@@ -167,7 +163,6 @@ class TestConfig:
         configs = load_mcp_configs()
         assert len(configs) == 2
         assert configs["b"].transport == MCPTransport.SSE
-
 
 # ── MCPClient (unit tests with mocked transport) ──────────────────────────────
 
@@ -299,7 +294,6 @@ class TestMCPClient:
         assert "✗" in line
         assert "connection refused" in line
 
-
 # ── MCPManager ────────────────────────────────────────────────────────────────
 
 class TestMCPManager:
@@ -341,7 +335,6 @@ class TestMCPManager:
         mgr1 = get_mcp_manager()
         mgr2 = get_mcp_manager()
         assert mgr1 is mgr2
-
 
 # ── StdioTransport (integration-style with echo) ──────────────────────────────
 

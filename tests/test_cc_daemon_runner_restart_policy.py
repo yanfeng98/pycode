@@ -33,12 +33,9 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
 
-
 # ── 1. Pure-function tests: RestartPolicy ─────────────────────────────────
-
 
 class TestRestartPolicyPure(unittest.TestCase):
     """``next_delay`` and ``from_params`` — no I/O, no Timer."""
@@ -148,9 +145,7 @@ class TestRestartPolicyPure(unittest.TestCase):
                                        "max_restarts": 1,
                                        "backoff_base_s": "soon"})
 
-
 # ── 2. Restart hook ────────────────────────────────────────────────────────
-
 
 # A subprocess source that handshakes, immediately exits 1 — minimum
 # viable "crashed" runner.  Used by the integration tests so we have a
@@ -162,7 +157,6 @@ _MOCK_CRASH_SOURCE = textwrap.dedent("""
     # Exit non-zero so the supervisor classifies this as 'crashed'.
     sys.exit(1)
 """).strip()
-
 
 def _spawn_crashing_runner_with_policy(name, policy):
     """Build a RunnerHandle pointing at the inline crashing runner, with
@@ -212,7 +206,6 @@ def _spawn_crashing_runner_with_policy(name, policy):
     t.start()
     handle._reader = t
     return handle
-
 
 class TestRestartHookIntegration(unittest.TestCase):
     """The reader's finally invokes ``_maybe_schedule_restart`` which
@@ -347,9 +340,7 @@ class TestRestartHookIntegration(unittest.TestCase):
         kinds = [k for k, _ in events]
         self.assertIn("agent_runner_restart_exhausted", kinds)
 
-
 # ── 3. stop() cancels pending restart ──────────────────────────────────────
-
 
 class TestStopCancelsRestart(unittest.TestCase):
 
@@ -430,9 +421,7 @@ class TestStopCancelsRestart(unittest.TestCase):
         self.assertFalse(spawned.wait(timeout=2.5),
                          "restart Timer fired despite stop() cancellation")
 
-
 # ── 4. SQLite snapshot ─────────────────────────────────────────────────────
-
 
 class TestRestartHandleSerialisation(unittest.TestCase):
     """agent_methods._handle_to_dict surfaces restart_count/policy."""
@@ -457,7 +446,6 @@ class TestRestartHandleSerialisation(unittest.TestCase):
         self.assertEqual(d["restart_policy"]["mode"], "on-crash")
         self.assertEqual(d["restart_policy"]["max_restarts"], 4)
         self.assertAlmostEqual(d["restart_policy"]["backoff_base_s"], 2.0)
-
 
 class TestUnregisterIdentityGuard(unittest.TestCase):
     """``_unregister(name, expected=handle)`` must NOT pop the slot when
@@ -505,7 +493,6 @@ class TestUnregisterIdentityGuard(unittest.TestCase):
         # Without ``expected`` (legacy callers), unconditional pop.
         rs._unregister("foo")
         self.assertNotIn("foo", rs._handles)
-
 
 if __name__ == "__main__":
     unittest.main()

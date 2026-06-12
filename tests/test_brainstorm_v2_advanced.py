@@ -37,9 +37,7 @@ from commands.advanced import (
     _BG_BRAINSTORMS,
 )
 
-
 # ── A. Ban-keyword extraction + action-plan filter ───────────────────────
-
 
 def test_extract_ban_keywords_includes_defaults():
     kws = _extract_ban_keywords("")
@@ -47,7 +45,6 @@ def test_extract_ban_keywords_includes_defaults():
     assert "diversify your portfolio" in kws
     assert "咨询财务顾问" in kws
     assert "定期监控" in kws
-
 
 def test_extract_ban_keywords_pulls_from_opening_quotes():
     """Quoted strings in the opening become extra ban keywords."""
@@ -63,7 +60,6 @@ def test_extract_ban_keywords_pulls_from_opening_quotes():
     # Opening-extracted bans appended
     assert "vague macro takes" in kws
     assert "random meme stocks" in kws
-
 
 def test_filter_action_plan_drops_banned_items():
     synthesis = """## Ranked Consensus
@@ -95,7 +91,6 @@ def test_filter_action_plan_drops_banned_items():
     # Note appended
     assert "programmatic self-check removed 2 action(s)" in filtered
 
-
 def test_filter_action_plan_handles_chinese_bans():
     synthesis = """## Concrete Action Plan
 1. 明天买入100股NVDA。
@@ -109,7 +104,6 @@ def test_filter_action_plan_handles_chinese_bans():
     assert "咨询金融顾问" not in filtered
     assert len(removed) == 2
 
-
 def test_filter_action_plan_no_action_section_returns_unchanged():
     """If there's no 'Concrete Action Plan' section, nothing to filter."""
     synthesis = "## Consensus\n- buy AAPL\n## Dissents\nnone"
@@ -117,7 +111,6 @@ def test_filter_action_plan_no_action_section_returns_unchanged():
                                               _extract_ban_keywords(""))
     assert filtered == synthesis
     assert removed == []
-
 
 def test_filter_action_plan_all_clean_no_changes():
     synthesis = """## Concrete Action Plan
@@ -130,9 +123,7 @@ def test_filter_action_plan_all_clean_no_changes():
     assert removed == []
     assert filtered == synthesis
 
-
 # ── B. Ranking detector + fallback ───────────────────────────────────────
-
 
 def test_consensus_is_ranked_detects_proper_ranking():
     synthesis = """## Ranked Consensus
@@ -143,7 +134,6 @@ def test_consensus_is_ranked_detects_proper_ranking():
 """
     assert _consensus_is_ranked(synthesis) is True
 
-
 def test_consensus_is_ranked_misses_unranked_bullets():
     synthesis = """## Consensus
 - NVDA backed by A, B
@@ -152,17 +142,14 @@ def test_consensus_is_ranked_misses_unranked_bullets():
 """
     assert _consensus_is_ranked(synthesis) is False
 
-
 def test_consensus_is_ranked_misses_no_section():
     assert _consensus_is_ranked("nothing here") is False
     assert _consensus_is_ranked("") is False
-
 
 def test_consensus_is_ranked_needs_at_least_two_items():
     """One numbered item isn't a ranking."""
     synthesis = "## Consensus\n1. Only one item.\n"
     assert _consensus_is_ranked(synthesis) is False
-
 
 def test_ensure_consensus_is_ranked_skips_when_already_ranked(monkeypatch):
     """If already ranked, no LLM call is made."""
@@ -181,7 +168,6 @@ def test_ensure_consensus_is_ranked_skips_when_already_ranked(monkeypatch):
     assert result == synthesis    # untouched
     assert call_count["n"] == 0   # no LLM call
 
-
 def test_ensure_consensus_is_ranked_calls_llm_when_unranked(monkeypatch):
     """If unranked, do ONE LLM call asking for a ranking."""
     monkeypatch.setattr(adv, "_llm_oneshot",
@@ -195,7 +181,6 @@ def test_ensure_consensus_is_ranked_calls_llm_when_unranked(monkeypatch):
     assert "## Ranked Consensus" in result
     assert _consensus_is_ranked(result)
 
-
 def test_ensure_consensus_is_ranked_keeps_original_on_llm_failure(monkeypatch):
     """LLM returns garbage that's STILL not ranked → keep original."""
     monkeypatch.setattr(adv, "_llm_oneshot",
@@ -204,9 +189,7 @@ def test_ensure_consensus_is_ranked_keeps_original_on_llm_failure(monkeypatch):
     result = _ensure_consensus_is_ranked(synthesis, "topic", "lead", {})
     assert result == synthesis   # fall back to original
 
-
 # ── C. --bg flag parsing ─────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("args,expected_bg,expected_rest", [
     ("",                                False, ""),
@@ -223,9 +206,7 @@ def test_parse_bg_flag(args, expected_bg, expected_rest):
     assert bg is expected_bg
     assert rest == expected_rest
 
-
 # ── C. bg registry (D. status subcommand uses these) ────────────────────
-
 
 @pytest.fixture(autouse=True)
 def _clear_bg_registry():
@@ -233,7 +214,6 @@ def _clear_bg_registry():
     _BG_BRAINSTORMS.clear()
     yield
     _BG_BRAINSTORMS.clear()
-
 
 def test_bg_register_and_snapshot_returns_entry():
     _bg_register("bs-test1", "topic 1", "/tmp/out1.md")
@@ -246,13 +226,11 @@ def test_bg_register_and_snapshot_returns_entry():
     assert snap[0]["done"] is False
     assert snap[0]["error"] == ""
 
-
 def test_bg_set_stage_updates_in_place():
     _bg_register("bs-test2", "topic 2", "/tmp/out2.md")
     _bg_set_stage("bs-test2", "round 2/3")
     snap = _bg_snapshot()
     assert snap[0]["stage"] == "round 2/3"
-
 
 def test_bg_complete_marks_done():
     _bg_register("bs-test3", "topic 3", "/tmp/out3.md")
@@ -262,7 +240,6 @@ def test_bg_complete_marks_done():
     assert snap[0]["error"] == ""
     assert snap[0]["stage"] == "complete"
 
-
 def test_bg_complete_with_error_marks_failed():
     _bg_register("bs-test4", "topic 4", "/tmp/out4.md")
     _bg_complete("bs-test4", error="provider 429")
@@ -270,7 +247,6 @@ def test_bg_complete_with_error_marks_failed():
     assert snap[0]["done"] is True
     assert snap[0]["error"] == "provider 429"
     assert snap[0]["stage"] == "failed"
-
 
 def test_bg_snapshot_sorted_by_start_time_desc():
     """Most recently started first."""
@@ -280,7 +256,6 @@ def test_bg_snapshot_sorted_by_start_time_desc():
     snap = _bg_snapshot()
     assert snap[0]["id"] == "new"
     assert snap[1]["id"] == "old"
-
 
 def test_bg_snapshot_drops_finished_older_than_1h():
     """Long-finished entries are pruned to keep the list useful."""
@@ -292,7 +267,6 @@ def test_bg_snapshot_drops_finished_older_than_1h():
     snap = _bg_snapshot()
     assert len(snap) == 1
     assert snap[0]["id"] == "fresh"
-
 
 def test_bg_snapshot_keeps_running_entries_regardless_of_age():
     """A long-running brainstorm shouldn't be pruned just because it's been

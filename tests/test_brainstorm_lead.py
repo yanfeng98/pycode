@@ -29,9 +29,7 @@ from commands.advanced import (
     _lead_synthesis,
 )
 
-
 # ── --lead flag parsing ──────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("args,expected_lead,expected_remaining", [
     ("the topic",                                    None,                 "the topic"),
@@ -46,7 +44,6 @@ def test_parse_lead_flag(args, expected_lead, expected_remaining):
     assert lead == expected_lead
     assert remaining == expected_remaining
 
-
 def test_parse_lead_and_models_compose():
     """--lead and --models can both be present and compose cleanly."""
     args = "--lead claude-opus-4-7 --models gpt-5,nim/deepseek-ai/deepseek-r1 redesign auth"
@@ -56,9 +53,7 @@ def test_parse_lead_and_models_compose():
     assert models == ["gpt-5", "nim/deepseek-ai/deepseek-r1"]
     assert rest2 == "redesign auth"
 
-
 # ── --rounds flag parsing ────────────────────────────────────────────────
-
 
 @pytest.mark.parametrize("args,expected_rounds,expected_remaining", [
     ("the topic",                                None, "the topic"),
@@ -77,7 +72,6 @@ def test_parse_rounds_flag(args, expected_rounds, expected_remaining):
     assert rounds == expected_rounds
     assert remaining == expected_remaining
 
-
 def test_all_three_flags_compose():
     """--lead, --models, --rounds can all stack on the same /brainstorm call."""
     args = ("--rounds 3 --lead claude-opus-4-7 "
@@ -90,27 +84,22 @@ def test_all_three_flags_compose():
     assert models == ["gpt-5", "nim/deepseek-ai/deepseek-r1"]
     assert rest3 == "redesign auth"
 
-
 # ── Lead helpers (with mocked LLM) ───────────────────────────────────────
-
 
 def _patch_llm(monkeypatch, response: str):
     """Replace _llm_oneshot with a stub that returns `response`."""
     monkeypatch.setattr(adv, "_llm_oneshot",
                          lambda *_a, **_kw: response)
 
-
 def test_lead_opening_returns_text(monkeypatch):
     _patch_llm(monkeypatch, "### Lead Opening\n- be specific")
     out = _lead_opening("Pick stocks", "snapshot...", "claude-opus-4-7", {})
     assert "Lead Opening" in out
 
-
 def test_lead_opening_failure_returns_empty(monkeypatch):
     _patch_llm(monkeypatch, "")
     out = _lead_opening("Pick stocks", "snap", "claude-opus-4-7", {})
     assert out == ""
-
 
 def test_lead_probe_no_probe_token_yields_empty(monkeypatch):
     """When the lead replies NO_PROBE, the probe call returns empty so
@@ -119,13 +108,11 @@ def test_lead_probe_no_probe_token_yields_empty(monkeypatch):
     out = _lead_probe("topic", "Analyst", "A", "concrete reply", "lead-model", {})
     assert out == ""
 
-
 def test_lead_probe_no_probe_with_trailing_text(monkeypatch):
     """Tolerate trailing whitespace / explanation after NO_PROBE."""
     _patch_llm(monkeypatch, "NO_PROBE — concrete enough")
     out = _lead_probe("topic", "Analyst", "A", "concrete reply", "lead-model", {})
     assert out == ""
-
 
 def test_lead_probe_returns_question(monkeypatch):
     """Vague contribution → lead returns a follow-up question."""
@@ -135,7 +122,6 @@ def test_lead_probe_returns_question(monkeypatch):
     assert "Lead to Agent A" in out
     assert "ticker" in out
 
-
 def test_lead_probe_strips_code_fences(monkeypatch):
     """Some models wrap their reply in ```...``` — strip those."""
     _patch_llm(monkeypatch,
@@ -144,9 +130,7 @@ def test_lead_probe_strips_code_fences(monkeypatch):
     assert out.startswith("> Lead to Agent B")
     assert "```" not in out
 
-
 # ── Round-aware probe: round 2+ requires actual challenge ────────────────
-
 
 def test_lead_probe_round2_polite_agreement_gets_probed(monkeypatch):
     """In round 2+, a polite 'I agree and would add' reply is a DODGE
@@ -170,7 +154,6 @@ def test_lead_probe_round2_polite_agreement_gets_probed(monkeypatch):
     # not the round-1 vague-vs-concrete branch.
     assert "ADVERSARIAL" in captured_user_msg["sys"] or "adversarial" in captured_user_msg["sys"].lower()
 
-
 def test_lead_probe_round2_real_challenge_passes(monkeypatch):
     """A round-2 contribution that quotes another agent and attacks the
     claim must NOT be probed."""
@@ -182,7 +165,6 @@ def test_lead_probe_round2_real_challenge_passes(monkeypatch):
         "lead-model", {}, round_num=2,
     )
     assert out == ""
-
 
 def test_lead_probe_round1_keeps_old_vague_check(monkeypatch):
     """Round-1 probe behavior is unchanged — concrete-vs-vague check, not
@@ -205,13 +187,11 @@ def test_lead_probe_round1_keeps_old_vague_check(monkeypatch):
     assert "ADVERSARIAL" not in captured["sys"]
     assert "cross-examination" not in captured["sys"].lower()
 
-
 def test_lead_synthesis_returns_text(monkeypatch):
     _patch_llm(monkeypatch,
                 "## Consensus\n- buy NVDA (backed by: A, B)\n## Dissents\nNo substantive dissents.\n## Concrete Action Plan\n1. ...\n")
     out = _lead_synthesis("topic", "transcript", "lead", {})
     assert "## Consensus" in out
-
 
 def test_lead_synthesis_failure_returns_empty(monkeypatch):
     """Lead synthesis failure must be silent — caller falls back."""

@@ -19,7 +19,6 @@ from cc_kernel import (
     UnknownPid,
 )
 
-
 @pytest.fixture
 def stores(tmp_path):
     ks = KernelStore.open(tmp_path / "kernel.db")
@@ -27,9 +26,7 @@ def stores(tmp_path):
     yield ks, mb
     ks.close()
 
-
 # ── create / get / delete ────────────────────────────────────────────────
-
 
 def test_create_round_trip(stores):
     ks, mb = stores
@@ -41,12 +38,10 @@ def test_create_round_trip(stores):
     again = mb.get(a.pid)
     assert again.queue_size == 4
 
-
 def test_create_unknown_pid(stores):
     _, mb = stores
     with pytest.raises(UnknownPid):
         mb.create(pid=9999)
-
 
 def test_create_duplicate_raises(stores):
     ks, mb = stores
@@ -55,12 +50,10 @@ def test_create_duplicate_raises(stores):
     with pytest.raises(MailboxAlreadyExists):
         mb.create(pid=a.pid)
 
-
 def test_get_unknown_raises(stores):
     _, mb = stores
     with pytest.raises(MailboxNotFound):
         mb.get(9999)
-
 
 def test_delete_purges_messages_and_subs(stores):
     ks, mb = stores
@@ -77,9 +70,7 @@ def test_delete_purges_messages_and_subs(stores):
         mb.get(a.pid)
     assert mb.list_subscriptions(a.pid) == []
 
-
 # ── subscribe / unsubscribe ──────────────────────────────────────────────
-
 
 def test_subscribe_idempotent(stores):
     ks, mb = stores
@@ -89,13 +80,11 @@ def test_subscribe_idempotent(stores):
     mb.subscribe(a.pid, "topic.x")  # no-op
     assert mb.list_subscriptions(a.pid) == ["topic.x"]
 
-
 def test_subscribe_requires_mailbox(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
     with pytest.raises(MailboxNotFound):
         mb.subscribe(a.pid, "t")
-
 
 def test_unsubscribe_missing_raises(stores):
     ks, mb = stores
@@ -104,9 +93,7 @@ def test_unsubscribe_missing_raises(stores):
     with pytest.raises(MailboxSubscriptionMissing):
         mb.unsubscribe(a.pid, "never.subscribed")
 
-
 # ── send (direct) ─────────────────────────────────────────────────────────
-
 
 def test_send_round_trip(stores):
     ks, mb = stores
@@ -125,14 +112,12 @@ def test_send_round_trip(stores):
     assert m.payload == {"msg": "hi"}
     assert m.delivered_at is not None  # mark_delivered default
 
-
 def test_send_to_unknown_mailbox(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
     with pytest.raises(MailboxNotFound):
         mb.send(sender_pid=a.pid, recipient_pid=9999,
                 kind="k", payload={})
-
 
 def test_send_full_mailbox(stores):
     ks, mb = stores
@@ -142,7 +127,6 @@ def test_send_full_mailbox(stores):
     mb.send(sender_pid=None, recipient_pid=a.pid, kind="k", payload={})
     with pytest.raises(MailboxFull):
         mb.send(sender_pid=None, recipient_pid=a.pid, kind="k", payload={})
-
 
 def test_send_after_recv_makes_room(stores):
     ks, mb = stores
@@ -154,7 +138,6 @@ def test_send_after_recv_makes_room(stores):
     # Now there's room.
     mb.send(sender_pid=None, recipient_pid=a.pid, kind="k", payload={})
 
-
 def test_send_invalid_payload(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
@@ -165,9 +148,7 @@ def test_send_invalid_payload(stores):
         mb.send(sender_pid=None, recipient_pid=a.pid, kind="k",
                 payload="not a dict")  # type: ignore
 
-
 # ── publish / fan-out ─────────────────────────────────────────────────────
-
 
 def test_publish_fan_out(stores):
     ks, mb = stores
@@ -185,7 +166,6 @@ def test_publish_fan_out(stores):
     assert len(mb.recv(pid=b.pid)) == 1
     assert mb.recv(pid=c.pid) == []
 
-
 def test_publish_partial_when_full(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
@@ -202,7 +182,6 @@ def test_publish_partial_when_full(stores):
     assert pub["rejected"]  == 1   # a was full
     assert len(pub["msg_ids"]) == 1
 
-
 def test_publish_fail_on_full_aborts_all(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
@@ -218,16 +197,13 @@ def test_publish_fail_on_full_aborts_all(stores):
     # b's box must not have received anything (atomic abort).
     assert mb.recv(pid=b.pid) == []
 
-
 def test_publish_unknown_topic_yields_zero_delivered(stores):
     ks, mb = stores
     pub = mb.publish(sender_pid=None, topic="nobody-listens",
                      kind="k", payload={})
     assert pub == {"delivered": 0, "rejected": 0, "msg_ids": []}
 
-
 # ── recv / peek / cursor ─────────────────────────────────────────────────
-
 
 def test_recv_advances_cursor(stores):
     ks, mb = stores
@@ -242,7 +218,6 @@ def test_recv_advances_cursor(stores):
     rest = mb.recv(pid=a.pid, since_msg_id=cursor)
     assert len(rest) == 1
 
-
 def test_peek_does_not_mark_delivered(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
@@ -255,7 +230,6 @@ def test_peek_does_not_mark_delivered(stores):
     msgs2 = mb.recv(pid=a.pid)
     assert len(msgs2) == 1
 
-
 def test_recv_no_mark_keeps_pending(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
@@ -265,9 +239,7 @@ def test_recv_no_mark_keeps_pending(stores):
     again = mb.recv(pid=a.pid, mark_delivered=False)
     assert len(again) == 1
 
-
 # ── TTL + retention gc ───────────────────────────────────────────────────
-
 
 def test_recv_skips_expired(stores):
     ks, mb = stores
@@ -283,7 +255,6 @@ def test_recv_skips_expired(stores):
     kinds = [m.kind for m in msgs]
     assert kinds == ["alive"]
 
-
 def test_gc_expired_purges_past_ttl(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
@@ -295,7 +266,6 @@ def test_gc_expired_purges_past_ttl(stores):
     purged = mb.gc_expired()
     assert purged == 1
 
-
 def test_gc_purges_delivered_past_retention(stores):
     ks, mb = stores
     a = ks.create(name="a", template="t")
@@ -305,9 +275,7 @@ def test_gc_purges_delivered_past_retention(stores):
     purged = mb.gc_expired(now=time.time() + 1)
     assert purged == 1
 
-
 # ── concurrent send atomicity ────────────────────────────────────────────
-
 
 def test_concurrent_sends_unique_msg_ids(stores):
     ks, mb = stores

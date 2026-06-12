@@ -25,9 +25,7 @@ from pathlib import Path
 
 import pytest
 
-
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
 
 def _read_pyproject() -> dict:
     """Parse pyproject.toml.
@@ -44,7 +42,6 @@ def _read_pyproject() -> dict:
     with open(_PROJECT_ROOT / "pyproject.toml", "rb") as f:
         return tomllib.load(f)
 
-
 # ── Configuration sanity ────────────────────────────────────────────────
 
 def test_pyproject_no_module_package_collision():
@@ -60,7 +57,6 @@ def test_pyproject_no_module_package_collision():
                 f"Remove from py-modules."
             )
 
-
 def test_no_dead_memory_shim():
     """memory.py shim is dead code — Python prefers memory/ package."""
     p = _PROJECT_ROOT / "memory.py"
@@ -69,7 +65,6 @@ def test_no_dead_memory_shim():
         f"(see issue #97) and Python silently shadows it. Use "
         f"`from memory import ...` directly via memory/__init__.py instead."
     )
-
 
 def test_pyproject_uses_find_for_packages():
     """Modern config uses find to auto-include new sub-packages."""
@@ -91,7 +86,6 @@ def test_pyproject_uses_find_for_packages():
         "tests/ must be excluded from packaged wheels"
     )
 
-
 # ── Discovery: are all dir-packages reachable from the include patterns? ─
 
 def _matches_any(name: str, patterns: list[str]) -> bool:
@@ -103,7 +97,6 @@ def _matches_any(name: str, patterns: list[str]) -> bool:
         elif name == p:
             return True
     return False
-
 
 def test_every_top_level_package_dir_reachable_by_find():
     """Walk top-level dirs with __init__.py — each must match include or exclude."""
@@ -140,7 +133,6 @@ def test_every_top_level_package_dir_reachable_by_find():
         f"actually ships them."
     )
 
-
 # ── Importability: every advertised package must import without error ────
 
 # These imports must always succeed in a healthy install. If any of them
@@ -172,7 +164,6 @@ _REQUIRED_IMPORTS = [
     "pycode",
 ]
 
-
 @pytest.mark.parametrize("modname", _REQUIRED_IMPORTS)
 def test_required_module_imports(modname):
     """Each must import without ModuleNotFoundError. This is the exact
@@ -186,7 +177,6 @@ def test_required_module_imports(modname):
             f"broken wheel for end users (issue #97 regression). "
             f"Original error: {e}"
         )
-
 
 def test_prompts_exports_pick_base_prompt():
     """The exact symbol context.py needs (failing line in issue #97)."""

@@ -31,23 +31,18 @@ _OVERLAYS_DIR = Path(__file__).parent.parent / "prompts" / "overlays"
 MAX_BASE_PROMPT_LINES = 150
 MAX_OVERLAY_LINES     = 20
 
-
 def _base_files() -> list[Path]:
     return sorted(_BASE_DIR.glob("*.md"))
 
-
 def _overlay_files() -> list[Path]:
     return sorted(_OVERLAYS_DIR.glob("*.md"))
-
 
 def test_base_prompt_directory_exists():
     assert _BASE_DIR.is_dir(), f"missing directory: {_BASE_DIR}"
     assert _base_files(), "expected at least one base prompt file"
 
-
 def test_overlays_directory_exists():
     assert _OVERLAYS_DIR.is_dir(), f"missing directory: {_OVERLAYS_DIR}"
-
 
 @pytest.mark.parametrize("path", _base_files(), ids=lambda p: p.name)
 def test_base_prompt_under_line_cap(path: Path):
@@ -58,7 +53,6 @@ def test_base_prompt_under_line_cap(path: Path):
         f"family-specific quirks into prompts/overlays/*.md."
     )
 
-
 @pytest.mark.parametrize("path", _overlay_files(), ids=lambda p: p.name)
 def test_overlay_under_line_cap(path: Path):
     line_count = len(path.read_text(encoding="utf-8").splitlines())
@@ -67,7 +61,6 @@ def test_overlay_under_line_cap(path: Path):
         f"Overlays must be short and quirk-focused — anything broader "
         f"belongs in default.md so it benefits every model."
     )
-
 
 @pytest.mark.parametrize("path", _overlay_files(), ids=lambda p: p.name)
 def test_overlay_cites_source(path: Path):

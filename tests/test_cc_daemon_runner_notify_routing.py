@@ -21,9 +21,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
 pytestmark_skipif_windows = sys.platform.startswith("win")
-
 
 # Inline runner that handshakes then emits one `notify` and exits cleanly.
 _NOTIFY_RUNNER = textwrap.dedent("""
@@ -38,7 +36,6 @@ _NOTIFY_RUNNER = textwrap.dedent("""
         if json.loads(raw).get("op") == "stop":
             sys.exit(0)
 """).strip()
-
 
 def _spawn_inline_notify_runner(name="notifier"):
     from cc_daemon import runner_supervisor as rs
@@ -64,7 +61,6 @@ def _spawn_inline_notify_runner(name="notifier"):
     t.start()
     handle._reader = t
     return handle
-
 
 class TestNotifyRouting(unittest.TestCase):
 
@@ -215,7 +211,6 @@ class TestNotifyRouting(unittest.TestCase):
             time.sleep(0.4)  # let both frames be consumed
         self.assertEqual(calls, [], f"expected zero notify calls, got {calls!r}")
         rs.stop("empty", timeout_s=3.0)
-
 
 if __name__ == "__main__":
     unittest.main()

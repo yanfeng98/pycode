@@ -22,7 +22,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from bridges import wechat_smart_reply as sr
 from bridges import wechat_smart_reply_store as srs
 
-
 # ── Identity heuristics ────────────────────────────────────────────────────
 
 def test_is_filehelper():
@@ -30,33 +29,27 @@ def test_is_filehelper():
     assert sr.is_filehelper("wxid_alice") is False
     assert sr.is_filehelper("group@chatroom") is False
 
-
 def test_is_group():
     assert sr.is_group("12345@chatroom") is True
     assert sr.is_group("wxid_alice") is False
     assert sr.is_group("filehelper") is False
-
 
 # ── Gating: is_smart_reply_target ──────────────────────────────────────────
 
 def test_target_off_by_default():
     assert sr.is_smart_reply_target("wxid_alice", {}) is False
 
-
 def test_target_filehelper_excluded():
     cfg = {"wechat_smart_reply": True}
     assert sr.is_smart_reply_target("filehelper", cfg) is False
-
 
 def test_target_group_excluded_by_default():
     cfg = {"wechat_smart_reply": True}
     assert sr.is_smart_reply_target("12345@chatroom", cfg) is False
 
-
 def test_target_group_included_when_groups_on():
     cfg = {"wechat_smart_reply": True, "wechat_smart_reply_groups": True}
     assert sr.is_smart_reply_target("12345@chatroom", cfg, text="anything") is True
-
 
 def test_target_whitelist_includes():
     cfg = {
@@ -66,11 +59,9 @@ def test_target_whitelist_includes():
     assert sr.is_smart_reply_target("wxid_alice", cfg) is True
     assert sr.is_smart_reply_target("wxid_carol", cfg) is False
 
-
 def test_target_empty_whitelist_means_everyone():
     cfg = {"wechat_smart_reply": True}
     assert sr.is_smart_reply_target("wxid_random", cfg) is True
-
 
 # ── Regression: self uid must always reach the agent ──────────────────────
 
@@ -89,12 +80,10 @@ def test_target_self_uid_excluded_even_when_in_whitelist():
     # Other whitelisted contacts still go through smart-reply.
     assert sr.is_smart_reply_target("wxid_alice", cfg) is True
 
-
 def test_target_self_uid_unset_falls_through():
     """Empty wechat_self_uid disables the short-circuit (back-compat)."""
     cfg = {"wechat_smart_reply": True, "wechat_self_uid": ""}
     assert sr.is_smart_reply_target("any_uid", cfg) is True
-
 
 # ── Group @-only rule ──────────────────────────────────────────────────────
 
@@ -108,7 +97,6 @@ def test_group_at_only_blocks_message_without_at():
     assert sr.is_smart_reply_target(
         "g@chatroom", cfg, text="今天天气不错") is False
 
-
 def test_group_at_only_allows_message_with_at():
     cfg = {
         "wechat_smart_reply": True,
@@ -119,7 +107,6 @@ def test_group_at_only_allows_message_with_at():
     assert sr.is_smart_reply_target(
         "g@chatroom", cfg, text="@李明 帮我看下这个") is True
 
-
 def test_group_at_only_eos_boundary():
     cfg = {
         "wechat_smart_reply": True,
@@ -129,7 +116,6 @@ def test_group_at_only_eos_boundary():
     }
     # @nickname at end of string with no trailing char should still match
     assert sr.is_smart_reply_target("g@chatroom", cfg, text="hi @李明") is True
-
 
 def test_group_at_only_substring_does_not_match():
     cfg = {
@@ -142,7 +128,6 @@ def test_group_at_only_substring_does_not_match():
     # boundary rule (the next char after "李" is "明", not space/punct).
     assert sr.is_smart_reply_target("g@chatroom", cfg, text="@李明 hi") is False
 
-
 def test_group_at_only_no_nickname_set_blocks_all():
     cfg = {
         "wechat_smart_reply": True,
@@ -152,7 +137,6 @@ def test_group_at_only_no_nickname_set_blocks_all():
     }
     assert sr.is_smart_reply_target("g@chatroom", cfg, text="@anyone hi") is False
 
-
 # ── Panel-ID generation ────────────────────────────────────────────────────
 
 def test_n_to_id_first_few():
@@ -161,10 +145,8 @@ def test_n_to_id_first_few():
     assert srs.n_to_id(25) == "AZ"
     assert srs.n_to_id(26) == "BA"
 
-
 def test_n_to_id_wraps():
     assert srs.n_to_id(26 * 26) == "AA"  # wraps after 676
-
 
 # ── make_panel ─────────────────────────────────────────────────────────────
 
@@ -172,7 +154,6 @@ def _mk_panel(uid: str, *, panel_id: str = "AA",
               expires_in: float = 60) -> sr.PendingPanel:
     return sr.make_panel(uid, "Alice", "hi", ["a", "b", "c"],
                          panel_id=panel_id, timeout_s=expires_in)
-
 
 # ── In-memory store ───────────────────────────────────────────────────────
 
@@ -182,7 +163,6 @@ def test_store_assign_next_id_monotonic():
     assert store.assign_next_id() == "AB"
     assert store.assign_next_id() == "AC"
 
-
 def test_store_put_and_take_active():
     store = srs.InMemoryStore()
     p = _mk_panel("wxid_alice")
@@ -191,7 +171,6 @@ def test_store_put_and_take_active():
     got = store.take_active()
     assert got is not None
     assert got.target_uid == "wxid_alice"
-
 
 def test_store_take_returns_most_recent():
     store = srs.InMemoryStore()
@@ -203,12 +182,10 @@ def test_store_take_returns_most_recent():
     got = store.take_active()
     assert got.target_uid == "wxid_bob"
 
-
 def test_store_skips_expired():
     store = srs.InMemoryStore()
     store.put(_mk_panel("wxid_alice", expires_in=-1))  # already expired
     assert store.take_active() is None
-
 
 def test_store_consume_by_uid():
     store = srs.InMemoryStore()
@@ -216,7 +193,6 @@ def test_store_consume_by_uid():
     assert store.consume("wxid_alice") is not None
     assert store.consume("wxid_alice") is None  # idempotent
     assert len(store) == 0
-
 
 def test_store_get_by_id():
     store = srs.InMemoryStore()
@@ -226,13 +202,11 @@ def test_store_get_by_id():
     assert p.target_uid == "wxid_alice"
     assert store.get_by_id("ZZ") is None
 
-
 def test_store_consume_by_id():
     store = srs.InMemoryStore()
     store.put(_mk_panel("wxid_alice", panel_id="AA"))
     assert store.consume_by_id("AA") is not None
     assert store.consume_by_id("AA") is None  # already consumed
-
 
 def test_store_list_active_returns_oldest_first():
     store = srs.InMemoryStore()
@@ -244,7 +218,6 @@ def test_store_list_active_returns_oldest_first():
     listed = store.list_active()
     assert [p.panel_id for p in listed] == ["AA", "AB", "AC"]
 
-
 def test_store_sweep_expired_returns_count():
     store = srs.InMemoryStore()
     store.put(_mk_panel("u1", panel_id="AA", expires_in=-1))
@@ -252,7 +225,6 @@ def test_store_sweep_expired_returns_count():
     swept = store.sweep_expired()
     assert swept == 1
     assert store.list_active()[0].panel_id == "AB"
-
 
 def test_store_history_write_and_recent():
     store = srs.InMemoryStore()
@@ -262,14 +234,12 @@ def test_store_history_write_and_recent():
     assert len(rows) == 2
     assert rows[0].text == "bye"  # newest first
 
-
 def test_store_history_excludes_uid():
     store = srs.InMemoryStore()
     store.write_reply(to_uid="u1", to_label="A", text="hi")
     store.write_reply(to_uid="u2", to_label="B", text="bye")
     rows = store.recent_replies(n=10, exclude_uid="u1")
     assert [r.to_uid for r in rows] == ["u2"]
-
 
 def test_store_history_pruning():
     store = srs.InMemoryStore()
@@ -280,9 +250,7 @@ def test_store_history_pruning():
     assert pruned == 1
     assert [r.text for r in store.recent_replies(n=5)] == ["recent"]
 
-
 # ── SQLite store ──────────────────────────────────────────────────────────
-
 
 def test_sqlite_store_schema_initializes(tmp_path):
     store = srs.SqliteStore(tmp_path / "wx.db")
@@ -292,7 +260,6 @@ def test_sqlite_store_schema_initializes(tmp_path):
         store2.stop()
     finally:
         store.stop()
-
 
 def test_sqlite_store_panel_roundtrip(tmp_path):
     store = srs.SqliteStore(tmp_path / "wx.db")
@@ -306,7 +273,6 @@ def test_sqlite_store_panel_roundtrip(tmp_path):
         assert got.target_label == "Alice"
     finally:
         store.stop()
-
 
 def test_sqlite_store_persists_across_reopen(tmp_path):
     db = tmp_path / "wx.db"
@@ -323,7 +289,6 @@ def test_sqlite_store_persists_across_reopen(tmp_path):
     finally:
         store2.stop()
 
-
 def test_sqlite_store_history_persists(tmp_path):
     db = tmp_path / "wx.db"
     s1 = srs.SqliteStore(db)
@@ -336,7 +301,6 @@ def test_sqlite_store_history_persists(tmp_path):
         assert rows[0].text == "好的"
     finally:
         s2.stop()
-
 
 def test_make_store_falls_back_to_memory_when_sqlite_blocked(tmp_path,
                                                                monkeypatch):
@@ -351,21 +315,17 @@ def test_make_store_falls_back_to_memory_when_sqlite_blocked(tmp_path,
     monkeypatch.setattr(_sqlite3, "connect", real_connect)
     assert isinstance(store, srs.InMemoryStore)
 
-
 # ── ParsedAction parsing ─────────────────────────────────────────────────
-
 
 def test_parse_no_panel_returns_noop():
     store = srs.InMemoryStore()
     assert sr.parse_filehelper_input("1", store).kind == "noop"
-
 
 def test_parse_queue_command():
     store = srs.InMemoryStore()
     assert sr.parse_filehelper_input("q", store).kind == "list"
     assert sr.parse_filehelper_input("queue", store).kind == "list"
     assert sr.parse_filehelper_input("队列", store).kind == "list"
-
 
 def test_parse_numeric_choice_uses_latest_active():
     store = srs.InMemoryStore()
@@ -377,7 +337,6 @@ def test_parse_numeric_choice_uses_latest_active():
     assert a.text == "B"
     assert a.panel_id == pid
 
-
 def test_parse_skip_uses_latest_active():
     store = srs.InMemoryStore()
     pid = store.assign_next_id()
@@ -388,7 +347,6 @@ def test_parse_skip_uses_latest_active():
         assert a.kind == "skip"
         assert a.panel_id == pid
 
-
 def test_parse_freeform_uses_latest_active():
     store = srs.InMemoryStore()
     pid = store.assign_next_id()
@@ -397,7 +355,6 @@ def test_parse_freeform_uses_latest_active():
     a = sr.parse_filehelper_input("我自己写的", store)
     assert a.kind == "send"
     assert a.text == "我自己写的"
-
 
 def test_parse_explicit_panel_id_addressing():
     store = srs.InMemoryStore()
@@ -411,7 +368,6 @@ def test_parse_explicit_panel_id_addressing():
     assert a.panel_id == "AA"
     assert a.text == "A"
 
-
 def test_parse_panel_id_alone_lists_panel():
     store = srs.InMemoryStore()
     p1 = store.assign_next_id()
@@ -419,7 +375,6 @@ def test_parse_panel_id_alone_lists_panel():
     a = sr.parse_filehelper_input("AA", store)
     assert a.kind == "list"
     assert a.panel_id == "AA"
-
 
 def test_parse_unknown_panel_id_returns_noop():
     store = srs.InMemoryStore()
@@ -430,7 +385,6 @@ def test_parse_unknown_panel_id_returns_noop():
     assert a.kind == "noop"
     assert a.panel_id == "ZZ"
 
-
 # ── Candidate extraction ──────────────────────────────────────────────────
 
 def test_parse_candidates_clean_format():
@@ -438,29 +392,24 @@ def test_parse_candidates_clean_format():
     out = sr._parse_candidates(text)
     assert out == ["好的", "周末出差", "在忙稍后"]
 
-
 def test_parse_candidates_strips_trailing_punct():
     text = "1. 好的。\n2. 不行！\n3. 在忙呢…"
     out = sr._parse_candidates(text)
     assert out[0] == "好的"
     assert out[1] == "不行"
 
-
 def test_parse_candidates_handles_chinese_dot():
     text = "1、好\n2、行\n3、不"
     out = sr._parse_candidates(text)
     assert out == ["好", "行", "不"]
-
 
 def test_parse_candidates_caps_at_three():
     text = "1. a\n2. b\n3. c\n4. d\n5. e"
     out = sr._parse_candidates(text)
     assert out == ["a", "b", "c"]
 
-
 def test_parse_candidates_empty_on_garbage():
     assert sr._parse_candidates("just some prose, no numbered list") == []
-
 
 # ── Prompt construction (style + contact context) ─────────────────────────
 
@@ -471,14 +420,12 @@ def test_build_prompt_without_extras():
     assert "关于发件人" not in prompt
     assert "用户最近发出" not in prompt
 
-
 def test_build_prompt_includes_contact_relationship():
     contact = sr.Contact(uid="u", label="Alice", relationship="close friend",
                          notes="她在找工作")
     prompt = sr._build_prompt("hi", "Alice", contact=contact, history=[])
     assert "close friend" in prompt
     assert "她在找工作" in prompt
-
 
 def test_build_prompt_includes_history_examples():
     history = [
@@ -492,7 +439,6 @@ def test_build_prompt_includes_history_examples():
     assert "晚点回你" in prompt
     assert "用户最近发出" in prompt
 
-
 def test_build_prompt_history_capped_at_ten():
     history = [
         sr.ReplyHistoryEntry(ts=time.time(), to_uid="u", to_label=None,
@@ -504,30 +450,24 @@ def test_build_prompt_history_capped_at_ten():
     # 11+ should not appear (we cap at 10)
     assert "reply 15" not in prompt
 
-
 # ── generate_candidates with stub ──────────────────────────────────────────
 
 class _TextChunk:
     def __init__(self, text: str):
         self.text = text
 
-
 def _stub_stream_3(**kwargs):
     yield _TextChunk("1. 行\n2. 在忙\n3. 晚点回")
-
 
 def _stub_stream_2(**kwargs):
     yield _TextChunk("1. 好\n2. 在忙")
 
-
 def _stub_stream_garbage(**kwargs):
     yield _TextChunk("This is not a list.")
-
 
 def _stub_stream_raises(**kwargs):
     raise RuntimeError("boom")
     yield  # pragma: no cover
-
 
 def test_generate_candidates_happy_path():
     out = sr.generate_candidates(
@@ -536,13 +476,11 @@ def test_generate_candidates_happy_path():
     )
     assert out == ["行", "在忙", "晚点回"]
 
-
 def test_generate_candidates_partial_returned_as_is():
     out = sr.generate_candidates(
         "x", "Y", {"auxiliary_model": "test"}, _stream_fn=_stub_stream_2,
     )
     assert out == ["好", "在忙"]
-
 
 def test_generate_candidates_returns_empty_on_garbage():
     out = sr.generate_candidates(
@@ -550,13 +488,11 @@ def test_generate_candidates_returns_empty_on_garbage():
     )
     assert out == []
 
-
 def test_generate_candidates_returns_empty_on_exception():
     out = sr.generate_candidates(
         "x", "Y", {"auxiliary_model": "test"}, _stream_fn=_stub_stream_raises,
     )
     assert out == []
-
 
 def test_generate_candidates_threads_contact_into_prompt():
     captured = {}
@@ -574,7 +510,6 @@ def test_generate_candidates_threads_contact_into_prompt():
     assert "ex-coworker" in captured["msg"]
     assert "formal tone" in captured["msg"]
 
-
 # ── format_panel + format_queue ───────────────────────────────────────────
 
 def test_format_panel_includes_id_label_message():
@@ -587,11 +522,9 @@ def test_format_panel_includes_id_label_message():
     assert "[1] a" in out
     assert "q 看队列" in out
 
-
 def test_format_queue_empty():
     out = sr.format_queue([])
     assert "没有" in out
-
 
 def test_format_queue_lists_with_ids():
     p1 = sr.make_panel("u1", "Alice", "msg1", ["a", "b", "c"], panel_id="AA")
@@ -602,13 +535,11 @@ def test_format_queue_lists_with_ids():
     assert "Alice" in out
     assert "Bob" in out
 
-
 def test_format_panel_truncates_long_message():
     long_msg = "x" * 300
     p = sr.make_panel("u", "U", long_msg, ["a", "b", "c"], panel_id="AA")
     out = sr.format_panel(p)
     assert "…" in out
-
 
 # ── trigger_smart_reply (end-to-end with stubs) ──────────────────────────
 
@@ -628,7 +559,6 @@ def test_trigger_happy_path_with_in_memory_store():
     assert "Alice" in sent[0]
     assert len(store) == 1
 
-
 def test_trigger_pads_short_list_to_three():
     store = srs.InMemoryStore()
     sent: list = []
@@ -640,7 +570,6 @@ def test_trigger_pads_short_list_to_three():
     )
     panel = store.take_active()
     assert len(panel.candidates) == 3
-
 
 def test_trigger_returns_false_on_empty_generation():
     store = srs.InMemoryStore()
@@ -654,7 +583,6 @@ def test_trigger_returns_false_on_empty_generation():
     assert ok is False
     assert sent == []
     assert len(store) == 0
-
 
 def test_trigger_passes_contact_into_generator(tmp_path):
     captured = {}
@@ -681,9 +609,7 @@ def test_trigger_passes_contact_into_generator(tmp_path):
     assert captured["contact"] is not None
     assert captured["contact"].relationship == "friend"
 
-
 # ── handle_filehelper_message ─────────────────────────────────────────────
-
 
 def test_handle_no_active_panel_falls_through():
     store = srs.InMemoryStore()
@@ -693,7 +619,6 @@ def test_handle_no_active_panel_falls_through():
         send_to_filehelper=lambda t: None,
     )
     assert consumed is False
-
 
 def test_handle_numeric_sends_candidate_and_records_history():
     store = srs.InMemoryStore()
@@ -714,7 +639,6 @@ def test_handle_numeric_sends_candidate_and_records_history():
     assert history[0].text == "B"
     assert history[0].source == "candidate_2"
 
-
 def test_handle_skip_drops_panel_no_history():
     store = srs.InMemoryStore()
     pid = store.assign_next_id()
@@ -730,7 +654,6 @@ def test_handle_skip_drops_panel_no_history():
     assert sent_target == []
     assert store.recent_replies(n=5) == []  # skip ≠ send → no history row
 
-
 def test_handle_freeform_records_as_freeform():
     store = srs.InMemoryStore()
     pid = store.assign_next_id()
@@ -743,7 +666,6 @@ def test_handle_freeform_records_as_freeform():
     history = store.recent_replies(n=5)
     assert history[0].source == "freeform"
     assert history[0].text == "我自己写的"
-
 
 def test_handle_queue_command_lists_pending():
     store = srs.InMemoryStore()
@@ -759,7 +681,6 @@ def test_handle_queue_command_lists_pending():
     )
     assert consumed is True
     assert any("Alice" in s and "Bob" in s for s in sent_fh)
-
 
 def test_handle_explicit_panel_id_addressing():
     store = srs.InMemoryStore()
@@ -778,7 +699,6 @@ def test_handle_explicit_panel_id_addressing():
     # Bob's panel still pending
     assert store.get_by_id("AB") is not None
 
-
 def test_handle_unknown_panel_id_returns_warning():
     store = srs.InMemoryStore()
     pid = store.assign_next_id()
@@ -793,15 +713,12 @@ def test_handle_unknown_panel_id_returns_warning():
     # but handle_filehelper_message should fall through (no known panel).
     assert consumed is False
 
-
 # ── ContactsStore ─────────────────────────────────────────────────────────
-
 
 def test_contacts_missing_file_returns_none(tmp_path):
     store = sr.ContactsStore(path=tmp_path / "nonexistent.json")
     assert store.get("anyone") is None
     assert store.all() == {}
-
 
 def test_contacts_set_and_get_roundtrip(tmp_path):
     p = tmp_path / "wx_contacts.json"
@@ -818,7 +735,6 @@ def test_contacts_set_and_get_roundtrip(tmp_path):
     assert got is not None
     assert got.notes == "loves coffee"
 
-
 def test_contacts_delete(tmp_path):
     p = tmp_path / "wx_contacts.json"
     store = sr.ContactsStore(path=p)
@@ -827,14 +743,12 @@ def test_contacts_delete(tmp_path):
     assert store.delete("u") is False  # idempotent
     assert store.get("u") is None
 
-
 def test_contacts_corrupt_file_returns_empty(tmp_path):
     p = tmp_path / "wx_contacts.json"
     p.write_text("not valid json")
     store = sr.ContactsStore(path=p)
     assert store.all() == {}
     assert store.get("any") is None
-
 
 def test_contacts_reload_on_mtime_change(tmp_path):
     p = tmp_path / "wx_contacts.json"
@@ -850,9 +764,7 @@ def test_contacts_reload_on_mtime_change(tmp_path):
     os.utime(p, (new_mtime, new_mtime))
     assert store.get("u").label == "Second"
 
-
 # ── Config defaults ───────────────────────────────────────────────────────
-
 
 def test_cc_config_defaults_present():
     from cc_config import DEFAULTS

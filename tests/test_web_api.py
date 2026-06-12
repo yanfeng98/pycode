@@ -30,12 +30,10 @@ _PKG = Path(__file__).resolve().parent.parent
 if str(_PKG) not in sys.path:
     sys.path.insert(0, str(_PKG))
 
-
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
-
 
 def _wait_for_ready(url: str, timeout: float = 5.0) -> None:
     deadline = time.monotonic() + timeout
@@ -49,7 +47,6 @@ def _wait_for_ready(url: str, timeout: float = 5.0) -> None:
             last_err = exc
         time.sleep(0.05)
     raise RuntimeError(f"server never became ready: {last_err}")
-
 
 @pytest.fixture(scope="session")
 def server_url() -> str:
@@ -74,7 +71,6 @@ def server_url() -> str:
     _wait_for_ready(f"{base}/health")
     return base
 
-
 @pytest.fixture(autouse=True)
 def fresh_db():
     """Truncate all tables between tests so each starts empty."""
@@ -92,7 +88,6 @@ def fresh_db():
     _apimod._chat_sessions.clear()
     yield
 
-
 def _csrf_request_hook(request):
     """Echo the ccsrf cookie back as X-CSRF-Token on state-changing requests.
 
@@ -108,24 +103,19 @@ def _csrf_request_hook(request):
             request.headers["X-CSRF-Token"] = part[len("ccsrf="):]
             return
 
-
 def _client(base: str) -> httpx.Client:
     return httpx.Client(base_url=base, timeout=5.0, follow_redirects=False,
                         event_hooks={"request": [_csrf_request_hook]})
-
 
 def _register(c: httpx.Client, username: str, password: str = "secret123"):
     return c.post("/api/auth/register",
                   json={"username": username, "password": password})
 
-
 def _login(c: httpx.Client, username: str, password: str = "secret123"):
     return c.post("/api/auth/login",
                   json={"username": username, "password": password})
 
-
 # ── Tests ────────────────────────────────────────────────────────────────
-
 
 def test_health_returns_ok(server_url):
     with _client(server_url) as c:
@@ -136,7 +126,6 @@ def test_health_returns_ok(server_url):
         assert d["db"] == "ok"
         assert d["uptime_s"] >= 0
 
-
 def test_metrics_prometheus_format(server_url):
     with _client(server_url) as c:
         r = c.get("/metrics")
@@ -145,7 +134,6 @@ def test_metrics_prometheus_format(server_url):
         assert "pycode_uptime_seconds " in body
         assert "pycode_requests_total " in body
         assert "# TYPE pycode_requests_total counter" in body
-
 
 def test_bootstrap_empty_then_after_register(server_url):
     with _client(server_url) as c:
@@ -156,7 +144,6 @@ def test_bootstrap_empty_then_after_register(server_url):
         assert r.status_code == 200
         assert c.get("/api/auth/bootstrap").json()["has_users"] is True
 
-
 def test_first_user_is_admin_second_is_not(server_url):
     with _client(server_url) as c:
         u1 = _register(c, "alice").json()["user"]
@@ -166,13 +153,11 @@ def test_first_user_is_admin_second_is_not(server_url):
         assert u1["is_admin"] is True
         assert u2["is_admin"] is False
 
-
 def test_register_short_password_400(server_url):
     with _client(server_url) as c:
         r = c.post("/api/auth/register",
                    json={"username": "alice", "password": "12345"})
         assert r.status_code == 400
-
 
 def test_register_duplicate_username_409(server_url):
     with _client(server_url) as c:
@@ -181,7 +166,6 @@ def test_register_duplicate_username_409(server_url):
             r = _register(c2, "alice")
             assert r.status_code == 409
 
-
 def test_login_wrong_password_401(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
@@ -189,11 +173,9 @@ def test_login_wrong_password_401(server_url):
             r = _login(c2, "alice", "WRONG")
             assert r.status_code == 401
 
-
 def test_whoami_without_cookie_401(server_url):
     with _client(server_url) as c:
         assert c.get("/api/auth/whoami").status_code == 401
-
 
 def test_register_then_whoami(server_url):
     with _client(server_url) as c:
@@ -201,7 +183,6 @@ def test_register_then_whoami(server_url):
         r = c.get("/api/auth/whoami")
         assert r.status_code == 200
         assert r.json()["user"]["username"] == "alice"
-
 
 def test_logout_clears_cookie(server_url):
     with _client(server_url) as c:
@@ -211,14 +192,12 @@ def test_logout_clears_cookie(server_url):
         # The Set-Cookie max-age=0 should clear the cookie in this client
         assert c.get("/api/auth/whoami").status_code == 401
 
-
 def test_sessions_list_empty(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
         r = c.get("/api/sessions")
         assert r.status_code == 200
         assert r.json() == {"sessions": []}
-
 
 def test_create_session_via_prompt(server_url):
     with _client(server_url) as c:
@@ -232,7 +211,6 @@ def test_create_session_via_prompt(server_url):
         assert len(ls) == 1
         assert ls[0]["id"] == sid
 
-
 def test_rename_session(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
@@ -244,7 +222,6 @@ def test_rename_session(server_url):
         ls = c.get("/api/sessions").json()["sessions"]
         assert ls[0]["title"] == "My Project Notes"
 
-
 def test_rename_requires_title(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
@@ -252,7 +229,6 @@ def test_rename_requires_title(server_url):
                      json={"prompt": "", "session_id": ""}).json()["session_id"]
         r = c.patch(f"/api/sessions/{sid}", json={"title": "  "})
         assert r.status_code == 400
-
 
 def test_delete_session(server_url):
     with _client(server_url) as c:
@@ -264,7 +240,6 @@ def test_delete_session(server_url):
         assert r.json()["ok"] is True
         assert c.get("/api/sessions").json()["sessions"] == []
 
-
 def test_export_session_markdown(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
@@ -275,7 +250,6 @@ def test_export_session_markdown(server_url):
         assert r.headers["content-type"].startswith("text/markdown")
         assert sid in r.text
         assert "# " in r.text  # has a heading
-
 
 def test_batch_delete_sessions(server_url):
     with _client(server_url) as c:
@@ -294,7 +268,6 @@ def test_batch_delete_sessions(server_url):
         assert body["requested"] == 2
         remaining = c.get("/api/sessions").json()["sessions"]
         assert {s["id"] for s in remaining} == {sids[2]}
-
 
 def test_batch_delete_skips_other_users_sessions(server_url):
     with _client(server_url) as ca:
@@ -320,7 +293,6 @@ def test_batch_delete_skips_other_users_sessions(server_url):
         ls = ca.get("/api/sessions").json()["sessions"]
         assert any(s["id"] == a_sid for s in ls)
 
-
 def test_batch_export_sessions_markdown(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
@@ -343,13 +315,11 @@ def test_batch_export_sessions_markdown(server_url):
         cd = r.headers.get("content-disposition", "")
         assert "chats-2-sessions.md" in cd
 
-
 def test_batch_export_empty_ids_returns_400(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
         r = c.post("/api/sessions/batch_export", json={"ids": []})
         assert r.status_code == 400
-
 
 def test_folder_create_list_rename_delete(server_url):
     with _client(server_url) as c:
@@ -375,14 +345,12 @@ def test_folder_create_list_rename_delete(server_url):
         assert r.json() == {"ok": True}
         assert c.get("/api/folders").json()["folders"] == []
 
-
 def test_folder_duplicate_name_409(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
         c.post("/api/folders", json={"name": "Research"})
         r = c.post("/api/folders", json={"name": "Research"})
         assert r.status_code == 409
-
 
 def test_move_session_to_folder(server_url):
     with _client(server_url) as c:
@@ -403,7 +371,6 @@ def test_move_session_to_folder(server_url):
         ls = c.get("/api/sessions").json()["sessions"]
         assert next(s for s in ls if s["id"] == sid)["folder_id"] is None
 
-
 def test_delete_folder_preserves_sessions_as_ungrouped(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
@@ -418,7 +385,6 @@ def test_delete_folder_preserves_sessions_as_ungrouped(server_url):
         ls = c.get("/api/sessions").json()["sessions"]
         s = next(x for x in ls if x["id"] == sid)
         assert s["folder_id"] is None
-
 
 def test_folder_cross_user_isolation(server_url):
     with _client(server_url) as ca:
@@ -451,7 +417,6 @@ def test_folder_cross_user_isolation(server_url):
         assert any(f["id"] == a_fid and f["name"] == "AlicePrivate"
                    for f in folders)
 
-
 def test_session_list_includes_folder_id(server_url):
     with _client(server_url) as c:
         _register(c, "alice")
@@ -462,7 +427,6 @@ def test_session_list_includes_folder_id(server_url):
         s = next(x for x in ls if x["id"] == sid)
         assert "folder_id" in s
         assert s["folder_id"] is None
-
 
 def test_reap_stale_chat_sessions_passes_user_id(server_url):
     """Regression for the daemon-thread crash where the reaper called
@@ -487,7 +451,6 @@ def test_reap_stale_chat_sessions_passes_user_id(server_url):
         # And it must actually evict the session
         assert sid not in _apimod._chat_sessions
 
-
 def test_cross_user_isolation(server_url):
     with _client(server_url) as ca:
         _register(ca, "alice")
@@ -502,7 +465,6 @@ def test_cross_user_isolation(server_url):
         # Bob can't delete it (returns ok:false)
         assert cb.request("DELETE",
                           f"/api/sessions/{sid}").json() == {"ok": False}
-
 
 def test_session_persists_in_db_after_cache_clear(server_url):
     """Session metadata survives even when in-memory cache is cleared
@@ -523,7 +485,6 @@ def test_session_persists_in_db_after_cache_clear(server_url):
         d = c.get(f"/api/sessions/{sid}").json()
         assert d["title"] == "Persistent Title"
 
-
 def test_auth_required_for_chat_endpoints(server_url):
     with _client(server_url) as c:
         # No cookie → all chat endpoints return 401
@@ -531,7 +492,6 @@ def test_auth_required_for_chat_endpoints(server_url):
         assert c.post("/api/prompt", json={}).status_code == 401
         assert c.get("/api/sessions/abc").status_code == 401
         assert c.get("/api/models").status_code == 401
-
 
 def test_metrics_counters_increment(server_url):
     with _client(server_url) as c:
@@ -552,7 +512,6 @@ def test_metrics_counters_increment(server_url):
         assert _counter(after, "pycode_requests_4xx") >= _counter(
             before, "pycode_requests_4xx") + 1
         assert _counter(after, "pycode_auth_registrations_total") >= 1
-
 
 def test_cors_preflight_for_unknown_origin(server_url):
     """Preflight OPTIONS should respond 204 (server replies even without CORS)."""

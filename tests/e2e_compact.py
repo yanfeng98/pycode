@@ -10,14 +10,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 SEP = "=" * 60
 
-
 @dataclass
 class FakeState:
     messages: list = field(default_factory=list)
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     turn_count: int = 0
-
 
 def test_compact():
     from compaction import (
@@ -190,7 +188,6 @@ def test_compact():
     print(f"\n{SEP}")
     print("ALL 9 STEPS PASSED")
     print(SEP)
-
 
 if __name__ == "__main__":
     test_compact()
