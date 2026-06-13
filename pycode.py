@@ -1098,7 +1098,8 @@ def repl(config: dict, initial_prompt: str = None):
                             stream_thinking(event.text, verbose)
 
                     elif isinstance(event, ToolStart):
-                        flush_response()
+                        if not quiet:
+                            flush_response()
                         print_tool_start(event.name, event.inputs, verbose)
                         _hook = session_ctx.on_tool_start
                         if _hook:

@@ -159,6 +159,7 @@ _current_live = None                # active Rich Live instance (one at a time)
 _RICH_LIVE = True
 _plain_streaming_response = False   # current response has fallen back from Live
 _live_shows_full = False            # True when the live frame holds the whole response (not a tail window)
+_streamed_any_text = False          # True when text was printed without trailing newline (plain mode)
 _STREAM_MODE = "live" if _RICH else "plain"
 _commit_idx = 0                     # chars of the response already committed (rendered + printed)
 
@@ -383,8 +384,10 @@ def stream_text(chunk: str) -> None:
     append-only progressive-Markdown renderer, and "live" (below) does the
     in-place Rich Live redraw described above.
     """
+    global _streamed_any_text
     if not _RICH or _STREAM_MODE == "plain":
         print(chunk, end="", flush=True)
+        _streamed_any_text = True
         return
 
     if _STREAM_MODE == "commit":
@@ -394,12 +397,14 @@ def stream_text(chunk: str) -> None:
 
     if _plain_streaming_response:
         print(chunk, end="", flush=True)
+        _streamed_any_text = True
         return
 
     _accumulated_text.append(chunk)
 
     if not (_RICH and _RICH_LIVE):
         print(chunk, end="", flush=True)
+        _streamed_any_text = True
         return
 
     full = "".join(_accumulated_text)
@@ -441,7 +446,7 @@ def stream_thinking(chunk: str, verbose: bool):
 
 def flush_response() -> None:
     """Commit buffered text to screen, then reset per-response streaming state."""
-    global _plain_streaming_response, _live_shows_full
+    global _plain_streaming_response, _live_shows_full, _streamed_any_text
     if _STREAM_MODE == "commit":
         _commit_flush()
         return
@@ -459,7 +464,9 @@ def flush_response() -> None:
     elif _RICH and _RICH_LIVE and full.strip():
         console.print(_make_renderable(full))
     else:
-        print()  # ensure newline after plain-text stream
+        if _streamed_any_text:
+            print()  # ensure newline after plain-text stream
+    _streamed_any_text = False
     _live_shows_full = False
     _plain_streaming_response = False
 
