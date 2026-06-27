@@ -58,7 +58,11 @@ class MemoryEntry:
         scope:          "user" | "project" — which directory this was loaded from
         confidence:     0.0–1.0 reliability score (default 1.0 = explicit user statement)
         source:         origin: "user" | "model" | "tool" | "consolidator"
-        last_used_at:   ISO date of last retrieval (updated on MemorySearch hits)
+        last_used_at:   ISO date of last *retrieval* (updated on MemorySearch hits;
+                        utility/analytics signal only — does NOT affect staleness)
+        last_verified:  ISO date the memory's claim was last *re-checked* against the
+                        live environment. Anchors the staleness clock. Defaults to
+                        `created` at save time; refreshed only via mark_verified().
         conflict_group: tag linking related/conflicting memories (e.g. "writing_style")
     """
     name: str
@@ -71,6 +75,7 @@ class MemoryEntry:
     confidence: float = 1.0
     source: str = "user"
     last_used_at: str = ""
+    last_verified: str = ""
     conflict_group: str = ""
 
 
@@ -111,6 +116,12 @@ def _format_entry_md(entry: MemoryEntry) -> str:
         f"type: {entry.type}",
         f"created: {entry.created}",
     ]
+    # last_verified anchors the staleness clock. A freshly written memory is
+    # "verified now", so if it is not set explicitly it defaults to the
+    # creation date. It is refreshed ONLY by mark_verified(), never by a read.
+    lv = entry.last_verified or entry.created
+    if lv:
+        lines.append(f"last_verified: {lv}")
     if entry.confidence != 1.0:
         lines.append(f"confidence: {entry.confidence:.2f}")
     if entry.source and entry.source != "user":
@@ -187,6 +198,7 @@ def load_entries(scope: str = "user") -> list[MemoryEntry]:
             confidence=float(meta.get("confidence", 1.0)),
             source=meta.get("source", "user"),
             last_used_at=meta.get("last_used_at", ""),
+            last_verified=meta.get("last_verified", "") or meta.get("created", ""),
             conflict_group=meta.get("conflict_group", ""),
         ))
     return entries
@@ -272,14 +284,22 @@ def check_conflict(entry: "MemoryEntry", scope: str = "user") -> dict | None:
 def touch_last_used(file_path: str) -> None:
     """Update the last_used_at frontmatter field of a memory file to today.
 
-    Called by MemorySearch when a memory is returned so staleness/utility
+    Called by MemorySearch when a memory is returned, so retrieval/utility
     tracking stays current. Silent on any error.
+
+    Importantly, this is a *read*-side bookkeeping write: it must NOT make the
+    memory look freshly verified. We therefore (a) never touch last_verified,
+    and (b) restore the file's original mtime after rewriting, so any legacy
+    mtime-based staleness consumer is not reset merely because the memory was
+    retrieved. Staleness is anchored to last_verified (see mark_verified).
     """
     from datetime import date
+    import os
     fp = Path(file_path)
     if not fp.exists():
         return
     try:
+        st = fp.stat()  # capture original (a,m)time before the bookkeeping write
         text = fp.read_text()
         meta, body = parse_frontmatter(text)
         today = date.today().isoformat()
@@ -288,13 +308,50 @@ def touch_last_used(file_path: str) -> None:
         meta["last_used_at"] = today
         # Rebuild frontmatter
         fm_lines = ["---"]
-        for k in ("name", "description", "type", "created", "confidence",
-                   "source", "last_used_at", "conflict_group"):
+        for k in ("name", "description", "type", "created", "last_verified",
+                   "confidence", "source", "last_used_at", "conflict_group"):
             v = meta.get(k)
             if v is not None and str(v):
                 fm_lines.append(f"{k}: {v}")
         fm_lines.append("---")
         new_text = "\n".join(fm_lines) + "\n" + body + "\n"
         fp.write_text(new_text)
+        # A read must not look like a write: restore the original mtime.
+        os.utime(fp, (st.st_atime, st.st_mtime))
     except Exception:
         pass
+
+
+def mark_verified(file_path: str) -> bool:
+    """Stamp last_verified = today after a memory's claim was re-checked against
+    the live environment.
+
+    This is the ONLY operation that refreshes the staleness clock; plain
+    retrieval (touch_last_used) deliberately does not. Call this once the
+    agent has confirmed the memory still holds (e.g. the file/function/flag it
+    cites still exists). Unlike touch_last_used, this is a genuine freshness
+    event, so the file's mtime is allowed to advance.
+
+    Returns True if the field is set to today, False on any error.
+    """
+    from datetime import date
+    fp = Path(file_path)
+    if not fp.exists():
+        return False
+    try:
+        meta, body = parse_frontmatter(fp.read_text())
+        today = date.today().isoformat()
+        if meta.get("last_verified") == today:
+            return True
+        meta["last_verified"] = today
+        fm_lines = ["---"]
+        for k in ("name", "description", "type", "created", "last_verified",
+                   "confidence", "source", "last_used_at", "conflict_group"):
+            v = meta.get(k)
+            if v is not None and str(v):
+                fm_lines.append(f"{k}: {v}")
+        fm_lines.append("---")
+        fp.write_text("\n".join(fm_lines) + "\n" + body + "\n")
+        return True
+    except Exception:
+        return False

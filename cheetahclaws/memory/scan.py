@@ -31,6 +31,9 @@ class MemoryHeader:
         description: value from frontmatter `description:` field
         type:        value from frontmatter `type:` field
         scope:       "user" or "project"
+        created:     value from frontmatter `created:` field (may be "")
+        last_verified: value from frontmatter `last_verified:` field, falling back
+                     to `created`. Anchors staleness (see verified_epoch).
     """
     filename: str
     file_path: str
@@ -38,6 +41,8 @@ class MemoryHeader:
     description: str
     type: str
     scope: str
+    created: str = ""
+    last_verified: str = ""
 
 
 # ── Scanning ───────────────────────────────────────────────────────────────
@@ -68,6 +73,8 @@ def scan_memory_dir(mem_dir: Path, scope: str) -> list[MemoryHeader]:
                 description=meta.get("description", ""),
                 type=meta.get("type", ""),
                 scope=scope,
+                created=meta.get("created", ""),
+                last_verified=meta.get("last_verified", "") or meta.get("created", ""),
             ))
         except Exception:
             continue
@@ -111,6 +118,12 @@ def memory_freshness_text(mtime_s: float) -> str:
 
     Motivated by user reports of stale code-state memories (file:line
     citations to code that has since changed) being asserted as fact.
+
+    Note: callers should pass a *verification* timestamp (see verified_epoch),
+    not a raw filesystem mtime — otherwise simply retrieving a memory (which
+    can rewrite the file) would suppress this warning. The parameter name is
+    kept for backward compatibility; semantically it is "seconds since the
+    memory's claim was last established".
     """
     d = memory_age_days(mtime_s)
     if d <= 1:
@@ -121,6 +134,55 @@ def memory_freshness_text(mtime_s: float) -> str:
         "claims about code behavior or file:line citations may be outdated. "
         "Verify against current code before asserting as fact."
     )
+
+
+# ── Verification-anchored staleness ────────────────────────────────────────
+
+def parse_date_epoch(date_str: str) -> float:
+    """Parse a 'YYYY-MM-DD' (or full ISO) date string to an epoch in seconds.
+
+    Returns 0.0 if the string is empty or unparseable. Day granularity is
+    sufficient here: both the staleness warning and the recency decay work in
+    whole days.
+    """
+    if not date_str:
+        return 0.0
+    try:
+        from datetime import datetime
+        return datetime.fromisoformat(str(date_str).strip()).timestamp()
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def verified_epoch(last_verified: str, created: str, mtime_s: float = 0.0) -> float:
+    """Resolve the timestamp that anchors a memory's staleness.
+
+    Preference order: last_verified -> created -> filesystem mtime.
+
+    The filesystem mtime is only a last-resort fallback for legacy memory
+    files written before the date fields existed. Because an explicit date is
+    always preferred over mtime, a *read* of the memory (which may rewrite the
+    file, and which we additionally guard with os.utime in touch_last_used)
+    can never reset its staleness once a date is present. This is the fix for
+    the "retrieval resets staleness" bug: freshness reflects when the claim
+    was last *verified*, not when the file was last *touched*.
+    """
+    e = parse_date_epoch(last_verified) or parse_date_epoch(created)
+    return e if e else (mtime_s or 0.0)
+
+
+def trust_recency(verified_s: float, now: float | None = None) -> float:
+    """Exponential recency weight from the last-verified time.
+
+    exp(-age_days / 30)  → half-life ≈ 21 days. Older-since-verified yields a
+    smaller weight. Used as the recency factor in confidence × recency
+    retrieval ranking, replacing the previous mtime-based recency that a read
+    could reset to 1.0.
+    """
+    if now is None:
+        now = time.time()
+    age_days = max(0.0, (now - (verified_s or 0.0)) / 86_400.0)
+    return math.exp(-age_days / 30.0)
 
 
 # ── Manifest formatting ────────────────────────────────────────────────────
