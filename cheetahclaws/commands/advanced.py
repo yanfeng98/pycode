@@ -2126,7 +2126,7 @@ def cmd_summarize(args: str, _state, config) -> bool:
 
 def cmd_memory(args: str, _state, config) -> bool:
     from cheetahclaws.memory import search_memory, load_index
-    from cheetahclaws.memory.scan import scan_all_memories, format_memory_manifest, memory_freshness_text
+    from cheetahclaws.memory.scan import scan_all_memories, format_memory_manifest, memory_freshness_text, verified_epoch
 
     stripped = args.strip()
 
@@ -2160,7 +2160,7 @@ def cmd_memory(args: str, _state, config) -> bool:
         return True
     info(f"  {len(headers)} memory/memories (newest first):")
     for h in headers:
-        fresh_warn = "  ⚠ stale" if memory_freshness_text(h.mtime_s) else ""
+        fresh_warn = "  ⚠ stale" if memory_freshness_text(verified_epoch(h.last_verified, h.created, h.mtime_s)) else ""
         tag = f"[{h.type or '?':9s}|{h.scope:7s}]"
         info(f"  {tag} {h.filename}{fresh_warn}")
         if h.description:

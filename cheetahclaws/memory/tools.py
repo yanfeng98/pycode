@@ -7,9 +7,12 @@ from __future__ import annotations
 from datetime import datetime
 
 from cheetahclaws.tool_registry import ToolDef, register_tool
-from .store import MemoryEntry, save_memory, delete_memory, load_index, check_conflict, touch_last_used
+from .store import (
+    MemoryEntry, save_memory, delete_memory, load_index, check_conflict,
+    touch_last_used, mark_verified,
+)
 from .context import find_relevant_memories
-from .scan import scan_all_memories, format_memory_manifest
+from .scan import scan_all_memories, format_memory_manifest, trust_recency
 
 
 # ── Tool implementations ───────────────────────────────────────────────────
@@ -57,9 +60,13 @@ def _memory_delete(params: dict, config: dict) -> str:
 def _memory_search(params: dict, config: dict) -> str:
     """Search memories by keyword query with optional AI relevance filtering.
 
-    Results are ranked by: confidence × recency (30-day exponential decay).
+    Results are ranked by confidence × recency, where recency decays from the
+    time the memory was last *verified* against the environment (half-life
+    ≈ 21 days) — not from when the file was last touched. Retrieving a memory
+    updates last_used_at for analytics but does NOT make a stale memory look
+    fresh.
     """
-    import math, time as _time
+    import time as _time
     query = params["query"]
     use_ai = params.get("use_ai", False)
     max_results = params.get("max_results", 5)
@@ -71,16 +78,15 @@ def _memory_search(params: dict, config: dict) -> str:
     if not results:
         return f"No memories found matching '{query}'."
 
-    # Re-rank by confidence × recency score
+    # Re-rank by confidence × verification-anchored recency.
     now = _time.time()
     for r in results:
-        age_days = max(0, (now - r["mtime_s"]) / 86400)
-        recency = math.exp(-age_days / 30)   # half-life ≈ 21 days
-        r["_rank"] = r.get("confidence", 1.0) * recency
+        verified_s = r.get("verified_s", r.get("mtime_s", 0.0))
+        r["_rank"] = r.get("confidence", 1.0) * trust_recency(verified_s, now)
     results.sort(key=lambda r: r["_rank"], reverse=True)
     results = results[:max_results]
 
-    # Touch last_used_at for returned memories
+    # Touch last_used_at for returned memories (does not affect staleness).
     for r in results:
         if r.get("file_path"):
             touch_last_used(r["file_path"])
@@ -127,6 +133,31 @@ def _memory_list(params: dict, config: dict) -> str:
         if e.description:
             lines.append(f"    {e.description}")
     return "\n".join(lines)
+
+
+def _memory_verify(params: dict, config: dict) -> str:
+    """Refresh a memory's staleness clock after re-checking it against reality.
+
+    Call this AFTER confirming the memory's claim still holds (e.g. the file,
+    function, or flag it cites still exists). This is the only thing that
+    resets staleness — plain MemorySearch does not. Keeps trustworthy memory a
+    runtime decision rather than a property of a stored item.
+    """
+    from .store import get_memory_dir, _slugify
+    name = params["name"]
+    scope = params.get("scope", "all")
+    scopes = ["user", "project"] if scope == "all" else [scope]
+    slug = _slugify(name)
+    for s in scopes:
+        fp = get_memory_dir(s) / f"{slug}.md"
+        if fp.exists():
+            if mark_verified(str(fp)):
+                return (
+                    f"Memory verified: '{name}' [{s}] — staleness clock reset to today. "
+                    "Its retrieval ranking and freshness warning now reflect this re-check."
+                )
+            return f"Memory '{name}' found in {s} scope but could not be updated."
+    return f"No memory named '{name}' found to verify (scope: {scope})."
 
 
 # ── Tool registrations ─────────────────────────────────────────────────────
@@ -285,4 +316,34 @@ register_tool(ToolDef(
     func=_memory_list,
     read_only=True,
     concurrent_safe=True,
+))
+
+register_tool(ToolDef(
+    name="MemoryVerify",
+    schema={
+        "name": "MemoryVerify",
+        "description": (
+            "Mark a memory as re-verified against the live environment, refreshing "
+            "its staleness clock. Call this AFTER you have confirmed the memory's "
+            "claim still holds (e.g. the file/function/flag it references still "
+            "exists, or you re-read the current code). Plain MemorySearch does NOT "
+            "refresh staleness — only this does. Use it to keep a still-correct but "
+            "old memory ranked highly and free of the stale-memory warning."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Name of the memory that was re-checked"},
+                "scope": {
+                    "type": "string",
+                    "enum": ["user", "project", "all"],
+                    "description": "Which scope to look in (default: 'all')",
+                },
+            },
+            "required": ["name"],
+        },
+    },
+    func=_memory_verify,
+    read_only=False,
+    concurrent_safe=False,
 ))

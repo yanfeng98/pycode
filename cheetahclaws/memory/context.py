@@ -19,7 +19,7 @@ from .store import (
     load_entries,
     search_memory,
 )
-from .scan import scan_all_memories, format_memory_manifest, memory_freshness_text
+from .scan import scan_all_memories, format_memory_manifest, memory_freshness_text, verified_epoch
 from .types import MEMORY_SYSTEM_PROMPT
 
 
@@ -126,7 +126,9 @@ def find_relevant_memories(
         return []
 
     if not use_ai or not config:
-        # Return top max_results by recency (newest first)
+        # Return top max_results by recency-of-verification (most recently
+        # verified first). mtime is kept only as a legacy fallback inside
+        # verified_epoch for files that predate the date fields.
         from .scan import scan_all_memories
         headers = scan_all_memories()
         path_to_mtime = {h.file_path: h.mtime_s for h in headers}
@@ -134,6 +136,7 @@ def find_relevant_memories(
         results = []
         for entry in keyword_results[:max_results * 3]:
             mtime_s = path_to_mtime.get(entry.file_path, 0)
+            vepoch = verified_epoch(entry.last_verified, entry.created, mtime_s)
             results.append({
                 "name": entry.name,
                 "description": entry.description,
@@ -142,11 +145,13 @@ def find_relevant_memories(
                 "content": entry.content,
                 "file_path": entry.file_path,
                 "mtime_s": mtime_s,
-                "freshness_text": memory_freshness_text(mtime_s),
+                "verified_s": vepoch,
+                "last_verified": entry.last_verified or entry.created,
+                "freshness_text": memory_freshness_text(vepoch),
                 "confidence": entry.confidence,
                 "source": entry.source,
             })
-        results.sort(key=lambda r: r["mtime_s"], reverse=True)
+        results.sort(key=lambda r: r["verified_s"], reverse=True)
         return results[:max_results]
 
     # Step 2: AI-powered relevance selection (optional, lightweight)
@@ -210,6 +215,7 @@ def _ai_select_memories(
             continue
         entry = candidates[i]
         mtime_s = path_to_mtime.get(entry.file_path, 0) if "path_to_mtime" in dir() else 0
+        vepoch = verified_epoch(entry.last_verified, entry.created, mtime_s)
         results.append({
             "name": entry.name,
             "description": entry.description,
@@ -218,7 +224,9 @@ def _ai_select_memories(
             "content": entry.content,
             "file_path": entry.file_path,
             "mtime_s": mtime_s,
-            "freshness_text": memory_freshness_text(mtime_s),
+            "verified_s": vepoch,
+            "last_verified": entry.last_verified or entry.created,
+            "freshness_text": memory_freshness_text(vepoch),
             "confidence": entry.confidence,
             "source": entry.source,
         })
