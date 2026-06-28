@@ -1321,7 +1321,8 @@ def repl(config: dict, initial_prompt: str = None):
             # Verbose already prints per-turn token lines, so skip it there.
             if quiet:
                 print_turn_stats(time.monotonic() - turn_start,
-                                 turn_in_tokens, turn_out_tokens)
+                                 turn_in_tokens, turn_out_tokens,
+                                 show_input=config.get("stats_show_input", False))
             # Budget proximity warnings (≥80% / ≥95%) — heads-up before the hard
             # stop arrives. Skipped when this turn already hit the cap.
             if not quota_paused:
