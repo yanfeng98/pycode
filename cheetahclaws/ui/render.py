@@ -754,16 +754,23 @@ def turn_summary_line():
     return text[0].upper() + text[1:]
 
 
-def print_turn_stats(elapsed_s: float, in_tok: int, out_tok: int) -> None:
+def print_turn_stats(elapsed_s: float, in_tok: int, out_tok: int,
+                     show_input: bool = False) -> None:
     """Print a Claude-Code-style footer with real elapsed time + token usage.
 
     Uses the true counts from TurnDone (not the live estimate). Shown once at
-    the end of a turn in quiet mode, e.g. '✻ Worked for 7.2s · ↑ 1.2k · ↓ 435'.
+    the end of a turn in quiet mode, e.g. '✻ Worked for 7.2s · ↓ 435'.
+
+    The input-token count (``↑ …``) is hidden by default — for most turns it is
+    dominated by conversation history + tool output and isn't actionable. Set
+    ``show_input=True`` (config ``stats_show_input``) to bring it back, giving
+    '✻ Worked for 7.2s · ↑ 1.2k · ↓ 435'.
     """
     if in_tok <= 0 and out_tok <= 0:
         return
     el = _fmt_elapsed(elapsed_s)
-    print(clr(f"  ✻ Worked for {el} · ↑ {fmt_tokens(in_tok)} · ↓ {fmt_tokens(out_tok)}", "dim"),
+    up = f" · ↑ {fmt_tokens(in_tok)}" if show_input else ""
+    print(clr(f"  ✻ Worked for {el}{up} · ↓ {fmt_tokens(out_tok)}", "dim"),
           flush=True)
 
 
