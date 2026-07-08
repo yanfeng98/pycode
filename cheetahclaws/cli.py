@@ -2019,12 +2019,15 @@ def main():
 
     config = load_config()
 
-    # ── Workspace: start in the last-used workspace (or workspace1) ──────────
-    try:
-        _apply_workspace(config)
-    except Exception as _e:
-        if config.get("verbose", False):
-            warn(f"Could not apply workspace: {_e}")
+    # ── Workspace: opt-in. Only chdir into a managed workspace when the user
+    # has enabled it (config workspace_auto=true). Off by default so launching
+    # in a project directory keeps operating on that directory. ───────────────
+    if config.get("workspace_auto", False):
+        try:
+            _apply_workspace(config)
+        except Exception as _e:
+            if config.get("verbose", False):
+                warn(f"Could not apply workspace: {_e}")
 
     # Apply persisted console theme (if any) before any output is rendered.
     try:
