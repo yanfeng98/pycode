@@ -74,6 +74,13 @@ Type `/` and press **Tab** to see all commands with descriptions. Continue typin
 | `/permissions <mode>` | Set permission mode: `auto` / `accept-edits` / `accept-all` / `manual` / `plan` |
 | `/cwd` | Show current working directory |
 | `/cwd <path>` | Change working directory |
+| `/workspace` | Show current workspace + working directory |
+| `/workspace list` | List workspaces under `~/.cheetahclaws/workspaces` |
+| `/workspace switch <name>` | Switch to a workspace (creates it if missing); records it as last-used |
+| `/workspace default [name]` | Show or set the startup workspace (sticky; not changed by `switch`) |
+| `/workspace create <name>` | Create a workspace without switching to it |
+| `/workspace delete <name>` | Delete an empty workspace (cannot delete the current one) |
+| `/config workspace_auto=true` | Opt in to auto-switching into the startup workspace on launch (off by default; when off the CLI stays in the directory you launched from) |
 | `/memory` | List all persistent memories |
 | `/memory <query>` | Search memories by keyword (ranked by confidence × recency, where recency decays from when the memory was last *verified*, not last read) |
 | `/memory consolidate` | AI-extract up to 3 long-term insights from the current session |
