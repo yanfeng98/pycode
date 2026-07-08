@@ -35,6 +35,18 @@ DEFAULTS = {
     "max_concurrent_agents": 3,
     "session_daily_limit":   10000,    # max sessions kept per day in daily/
     "session_history_limit": 100000,  # max sessions kept in history.json
+    # ── Workspaces ──────────────────────────────────────────────────────────
+    # workspace_auto: when True, the CLI chdirs into a workspace under
+    #   ~/.cheetahclaws/workspaces on startup. Default False so launching in a
+    #   project directory keeps operating on that directory (opt-in isolation).
+    "workspace_auto":    False,
+    # workspace_default: the workspace entered at startup when workspace_auto is
+    #   on. null → fall back to workspace_last, then "workspace1". Set via
+    #   `/workspace default <name>`; NOT overwritten by `/workspace switch`.
+    "workspace_default": None,
+    # workspace_last: the most recently switched-to workspace (updated by
+    #   `/workspace switch`). Used as the startup fallback when no default is set.
+    "workspace_last":    None,
     # ── Security settings ──────────────────────────────────────────────────
     # allowed_root: restrict file operations (Read/Write/Edit/Glob/Grep) to this
     # directory tree.  null = unrestricted (CLI default).  Set to the project

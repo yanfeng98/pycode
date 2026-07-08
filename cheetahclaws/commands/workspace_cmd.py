@@ -61,18 +61,32 @@ def _activate_workspace(name: str, config: dict) -> bool:
         return False
 
 
+def _startup_workspace(config: dict) -> str:
+    """Which workspace to enter at boot.
+
+    Prefers the explicit default (`/workspace default`), then the last-used
+    workspace (`/workspace switch`), then the built-in fallback. Setting a
+    default is sticky: switching workspaces no longer clobbers it.
+    """
+    return (
+        config.get("workspace_default")
+        or config.get("workspace_last")
+        or _DEFAULT_WORKSPACE
+    )
+
+
 def _apply_workspace(config: dict) -> None:
-    """At boot, move cwd into the last-used workspace (or workspace1)."""
-    last = config.get("workspace_last") or _DEFAULT_WORKSPACE
-    ws = _workspace_path(last)
+    """At boot, move cwd into the startup workspace (see _startup_workspace)."""
+    target = _startup_workspace(config)
+    ws = _workspace_path(target)
     if not ws.exists():
-        _ensure_workspace(last)
+        _ensure_workspace(target)
     try:
         os.chdir(ws)
         if config.get("verbose", False):
-            info(f"Active workspace: {last}")
+            info(f"Active workspace: {target}")
     except Exception as e:
-        warn(f"Could not enter workspace '{last}': {e}")
+        warn(f"Could not enter workspace '{target}': {e}")
 
 
 def cmd_workspace(args: str, _state, config) -> bool:
@@ -123,12 +137,14 @@ def cmd_workspace(args: str, _state, config) -> bool:
 
     if subcmd == "default":
         if not rest:
-            current_default = config.get("workspace_last") or _DEFAULT_WORKSPACE
+            current_default = config.get("workspace_default") or _DEFAULT_WORKSPACE
             info(f"Default workspace: {current_default}")
+            if not config.get("workspace_auto", False):
+                info("(startup auto-switch is off; enable with /config workspace_auto=true)")
             return True
         name = rest.split()[0]
         _ensure_workspace(name)
-        config["workspace_last"] = name
+        config["workspace_default"] = name
         save_config(config)
         ok(f"Default workspace set to: {name}")
         return True
