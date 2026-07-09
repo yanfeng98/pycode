@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cheetahclaws"
 version = "3.5.84"
-description = "CheetahClaws: An Extensible, Python-Native Agent System for Autonomous Multi-Model Workflows"
+description = "CheetahClaws: Agent Harness Infrastructure for Long-Horizon, Multi-Model, and Tool-Using AI Systems"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
