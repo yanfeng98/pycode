@@ -26,18 +26,16 @@ English | [中文](docs/i18n/README.CN.MD) | [한국어](docs/i18n/README.KO.MD)
 ### Quick Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+pip install cheetahclaws
 ```
 
-After installation:
+Then just run:
 
 ```bash
-source ~/.zshrc     # macOS
-# or: source ~/.bashrc   # Linux
 cheetahclaws        # start chatting!
 ```
 
-Other install methods: [pip install](#alternative-install-with-pip) | [uv install](#alternative-install-with-uv) | [run from source](#alternative-run-directly-from-source-no-install) | [full details](#installation)
+Other install methods: [one-line install script](#alternative-one-line-install-script) | [install from source](#alternative-install-with-pip-from-source-code) | [uv install](#alternative-install-with-uv) | [run from source install](#alternative-run-directly-from-source-no-install) | [full install details](#installation)
 
 > 🖥️ **Prefer a native app?** A desktop build (Electron) wraps the full chat UI in a window — no terminal needed. See [`desktop/`](desktop/README.md).
 
@@ -231,17 +229,25 @@ Claude Code is a powerful, production-grade AI coding assistant — but its sour
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+pip install cheetahclaws
 ```
 
 Works on **Linux, macOS, WSL2, and Android (Termux)** (Python 3.10+). First run guides you through provider + API-key setup; re-run anytime with `cheetahclaws --setup`.
 
 > **Windows:** native Windows is not supported — use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install). **Android/Termux:** `pkg install python git && pip install cheetahclaws`.
 
-### Alternative: install with `pip`
+### Alternative: one-line install script
 
 ```bash
-pip install cheetahclaws
+curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+```
+
+After installation, reload your shell so `cheetahclaws` is on PATH:
+
+```bash
+source ~/.zshrc     # macOS
+# or: source ~/.bashrc   # Linux
+cheetahclaws        # start chatting!
 ```
 
 ### Alternative: install with `pip` from source code
