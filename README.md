@@ -26,23 +26,22 @@ English | [中文](docs/i18n/README.CN.MD) | [한국어](docs/i18n/README.KO.MD)
 ### Quick Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+pip install cheetahclaws
 ```
 
-After installation:
+Then just run:
 
 ```bash
-source ~/.zshrc     # macOS
-# or: source ~/.bashrc   # Linux
 cheetahclaws        # start chatting!
 ```
 
-Other install methods: [pip install](#alternative-install-with-pip) | [uv install](#alternative-install-with-uv) | [run from source](#alternative-run-directly-from-source-no-install) | [full details](#installation)
+Other install methods: [one-line install script](#alternative-one-line-install-script) | [install from source](#alternative-install-with-pip-from-source-code) | [uv install](#alternative-install-with-uv) | [run from source install](#alternative-run-directly-from-source-no-install) | [full install details](#installation)
 
 > 🖥️ **Prefer a native app?** A desktop build (Electron) wraps the full chat UI in a window — no terminal needed. See [`desktop/`](desktop/README.md).
 
 ## 🔥🔥🔥 News (Pacific Time)
 
+- July 9, 2026: **Official Docker image + one-command publish.** Pre-built image on Docker Hub (`docker pull chauncygu/cheetahclaws`) so you can run the Web UI without cloning; fixes a first-run `PermissionError` by pre-creating the `.cheetahclaws`/`workspace` dirs owned by the non-root user, makes the compose `image` overridable via `CHEETAH_IMAGE`, and adds `scripts/docker-publish.sh` (auto-reads the version, multi/single-arch). New docs sections: **Pull from Docker Hub** and **Interactive setup / CLI mode**. [Details](docs/news.md)
 - July 8, 2026: New **`/workspace`** command manages isolated working directories under `~/.cheetahclaws/workspaces` (`list`/`switch`/`default`/`create`/`delete`) (PR #162); startup auto-switching is **opt-in** via `workspace_auto` (off by default, so launching in a project directory is unchanged), and `default` is now a sticky key separate from last-used. [Details](docs/news.md)
 - July 6, 2026 (**v3.5.84**): **`/image` now enriches the prompt with local OCR text** so even non-vision models can act on clipboard screenshots (error dumps, code, tables); runs only when `pytesseract`/`tesseract` are installed and is fully opt-out via `CHEETAHCLAWS_IMAGE_OCR=0`. [Details](docs/news.md)
 - June 28, 2026: New **`accept-edits`** permission mode (auto-run file edits, still ask before non-allow-listed Bash) — the middle ground between `auto` and `accept-all`; also exposes the existing `plan` mode in `/permissions` and corrects the prompt's misleading `auto` description. [Details](docs/news.md)
@@ -231,17 +230,25 @@ Claude Code is a powerful, production-grade AI coding assistant — but its sour
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+pip install cheetahclaws
 ```
 
 Works on **Linux, macOS, WSL2, and Android (Termux)** (Python 3.10+). First run guides you through provider + API-key setup; re-run anytime with `cheetahclaws --setup`.
 
 > **Windows:** native Windows is not supported — use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install). **Android/Termux:** `pkg install python git && pip install cheetahclaws`.
 
-### Alternative: install with `pip`
+### Alternative: one-line install script
 
 ```bash
-pip install cheetahclaws
+curl -fsSL https://raw.githubusercontent.com/SafeRL-Lab/cheetahclaws/main/scripts/install.sh | bash
+```
+
+After installation, reload your shell so `cheetahclaws` is on PATH:
+
+```bash
+source ~/.zshrc     # macOS
+# or: source ~/.bashrc   # Linux
+cheetahclaws        # start chatting!
 ```
 
 ### Alternative: install with `pip` from source code
