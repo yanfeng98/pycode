@@ -23,6 +23,7 @@ Model string formats:
 from __future__ import annotations
 import json
 import os
+import threading
 import time
 import urllib.request
 from typing import Generator
@@ -587,9 +588,15 @@ def get_api_key(provider_name: str, config: dict) -> str:
     return prov.get("api_key", "")
 
 
-def calc_cost(model: str, in_tok: int, out_tok: int) -> float:
+def calc_cost(model: str, in_tok: int, out_tok: int,
+              cache_read_tok: int = 0, cache_write_tok: int = 0) -> float:
+    """Estimate USD cost. Anthropic reports cached tokens separately from
+    input_tokens, priced at 0.1x (read) / 1.25x (write) of the input rate —
+    omitting them would silently under-report spend once prompt caching is
+    active."""
     ic, oc = COSTS.get(bare_model(model), (0.0, 0.0))
-    return (in_tok * ic + out_tok * oc) / 1_000_000
+    cache = (cache_read_tok * 0.1 + cache_write_tok * 1.25) * ic
+    return (in_tok * ic + out_tok * oc + cache) / 1_000_000
 
 
 # ── Native tool-call format interceptors ──────────────────────────────────
@@ -978,6 +985,194 @@ class AssistantTurn:
         self.reasoning_content    = reasoning_content
 
 
+# ── SDK client reuse ───────────────────────────────────────────────────────
+# One client per (endpoint, key, pid) instead of one per request: keeps the
+# underlying httpx connection pool alive across the 5-50 stream() calls of a
+# single tool loop (each fresh client pays a new TCP+TLS handshake). The pid
+# is part of the key because pooled connections do not survive fork (the
+# daemon runs subprocess workers). Clients are thread-safe; the lock only
+# guards get-or-create.
+
+_CLIENT_CACHE: dict[tuple, object] = {}
+_CLIENT_LEASES: dict[tuple, int] = {}   # key → number of in-flight streams
+_CLIENT_CACHE_LOCK = threading.Lock()
+# Rotating keys/endpoints in a long-lived daemon would otherwise accumulate
+# clients (each holding an open httpx connection pool). Past this cap the
+# least-recently-used IDLE entry is closed and evicted; entries with live
+# leases are never evicted, so an in-flight stream can't have its pool
+# closed underneath it — the cap is soft while every client is busy.
+_CLIENT_CACHE_MAX = 8
+
+
+def _close_quietly(client) -> None:
+    """Best-effort close of an SDK client's underlying connection pool."""
+    close = getattr(client, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            pass
+
+
+def _evict_idle_clients_locked(exclude_key: tuple | None = None) -> list[object]:
+    """Evict least-recently-used idle clients until the soft cap is met.
+
+    Caller must hold ``_CLIENT_CACHE_LOCK``.  A client with a positive lease
+    is actively streaming and must remain in the cache; if every entry is
+    leased, the cap stays soft until a later release.  The just-created key
+    is excluded while it is being leased so a concurrent cache miss cannot
+    evict the client about to be returned.
+    """
+    evicted: list[object] = []
+    while len(_CLIENT_CACHE) > _CLIENT_CACHE_MAX:
+        for key in list(_CLIENT_CACHE):
+            if key != exclude_key and _CLIENT_LEASES.get(key, 0) == 0:
+                evicted.append(_CLIENT_CACHE.pop(key))
+                break
+        else:
+            break  # every cached client is in flight; keep the cap soft
+    return evicted
+
+
+def _client_cache_clear() -> None:
+    """Close and drop all cached SDK clients. Test hook + fork/shutdown
+    hygiene ONLY — it closes clients regardless of live leases, so never
+    call it while streams are in flight.
+
+    close() runs outside the lock — it can do network I/O and must not
+    serialize concurrent lease calls.
+    """
+    with _CLIENT_CACHE_LOCK:
+        clients = list(_CLIENT_CACHE.values())
+        _CLIENT_CACHE.clear()
+        _CLIENT_LEASES.clear()
+    for c in clients:
+        _close_quietly(c)
+
+
+def _lease_anthropic_client(api_key: str, base_url: str):
+    """Get-or-create a client and take a lease on it. Every lease must be
+    paired with _release_anthropic_client (stream_anthropic does this in a
+    finally), so eviction can tell idle clients from in-flight ones."""
+    import anthropic as _ant
+    key = ("anthropic", base_url, api_key, os.getpid())
+    evicted: list[object] = []
+    with _CLIENT_CACHE_LOCK:
+        client = _CLIENT_CACHE.get(key)
+        if client is not None:
+            # True LRU: a hit moves the key to the end of insertion order.
+            _CLIENT_CACHE[key] = _CLIENT_CACHE.pop(key)
+        else:
+            client = _ant.Anthropic(api_key=api_key, base_url=base_url)
+            _CLIENT_CACHE[key] = client
+            evicted = _evict_idle_clients_locked(exclude_key=key)
+        _CLIENT_LEASES[key] = _CLIENT_LEASES.get(key, 0) + 1
+    for stale in evicted:
+        _close_quietly(stale)
+    return client
+
+
+def _release_anthropic_client(api_key: str, base_url: str) -> None:
+    """Drop one lease and shrink an earlier soft-cap overflow if possible."""
+    key = ("anthropic", base_url, api_key, os.getpid())
+    with _CLIENT_CACHE_LOCK:
+        n = _CLIENT_LEASES.get(key, 0)
+        if n <= 1:
+            _CLIENT_LEASES.pop(key, None)
+        else:
+            _CLIENT_LEASES[key] = n - 1
+        # If every client was busy, a prior lease may have legitimately made
+        # the cap soft.  Releasing an idle client is the first safe chance to
+        # converge back to the configured cap without interrupting a stream.
+        evicted = _evict_idle_clients_locked()
+    for stale in evicted:
+        _close_quietly(stale)
+
+
+# ── Anthropic prompt caching ───────────────────────────────────────────────
+# cache_control breakpoints let Anthropic reuse the shared request prefix
+# (tools → system → history) across the tool loop's sequential calls: reads
+# bill at 0.1x input price, writes at 1.25x, so caching pays off from the
+# second call on any shared prefix (break-even hit-rate ≈ 22%). Three
+# breakpoints of the API's maximum four are used; annotation is strictly
+# copy-on-write because tool_schemas aliases the live registry dicts and
+# messages aliases the neutral session history.
+
+_CACHE_EPHEMERAL = {"type": "ephemeral"}
+
+# Endpoints whose proxy rejected cache_control with a 400 — disabled for the
+# rest of the process so a strict shim degrades to one failed call, not a loop.
+_cache_control_disabled: set[str] = set()
+
+
+def is_prompt_cache_active(config: dict) -> bool:
+    """True when the next Anthropic request will actually carry cache_control.
+
+    Single source of truth shared by stream_anthropic (whether to annotate)
+    and the agent's quota projection (whether to reserve the 1.25x
+    cache-write premium): once a proxy rejection disables an endpoint,
+    requests go out raw, and reserving the premium would wrongly pause a
+    budget that the real request fits within.
+    """
+    if not config.get("prompt_cache", True):
+        return False
+    base_url = config.get("anthropic_endpoint") or "https://api.anthropic.com"
+    return base_url not in _cache_control_disabled
+
+
+def _is_cache_control_rejection(e: Exception) -> bool:
+    """True only for a schema-level rejection of the cache_control field.
+
+    Requires BOTH the field name and a 400/invalid-request signal, so a
+    transient error whose message merely mentions cache_control (e.g. a
+    connection reset mid-request) doesn't permanently disable caching for
+    the endpoint — those errors belong to the agent-level retry loop.
+    """
+    msg = str(e).lower()
+    if "cache_control" not in msg:
+        return False
+    if getattr(e, "status_code", None) == 400:
+        return True
+    return ("400" in msg
+            or "invalid_request" in msg
+            or "bad request" in msg
+            or "unexpected field" in msg)
+
+
+def _apply_anthropic_cache_control(kwargs: dict) -> dict:
+    """Return a copy of the request kwargs with ≤3 cache_control breakpoints:
+    last tool schema, system block, last content block of the final message.
+    Never mutates the input structures. Unexpected shapes skip their
+    breakpoint rather than raise."""
+    out = dict(kwargs)
+
+    tools = out.get("tools")
+    if tools:
+        out["tools"] = [*tools[:-1],
+                        {**tools[-1], "cache_control": dict(_CACHE_EPHEMERAL)}]
+
+    system = out.get("system")
+    if isinstance(system, str) and system:
+        out["system"] = [{"type": "text", "text": system,
+                          "cache_control": dict(_CACHE_EPHEMERAL)}]
+
+    msgs = out.get("messages")
+    if msgs:
+        last = msgs[-1]
+        content = last.get("content")
+        if isinstance(content, str) and content:
+            new_last = {**last, "content": [
+                {"type": "text", "text": content,
+                 "cache_control": dict(_CACHE_EPHEMERAL)}]}
+            out["messages"] = [*msgs[:-1], new_last]
+        elif isinstance(content, list) and content and isinstance(content[-1], dict):
+            new_block = {**content[-1], "cache_control": dict(_CACHE_EPHEMERAL)}
+            new_last = {**last, "content": [*content[:-1], new_block]}
+            out["messages"] = [*msgs[:-1], new_last]
+
+    return out
+
+
 def stream_anthropic(
     api_key: str,
     model: str,
@@ -987,9 +1182,7 @@ def stream_anthropic(
     config: dict,
 ) -> Generator:
     """Stream from Anthropic API. Yields TextChunk/ThinkingChunk, then AssistantTurn."""
-    import anthropic as _ant
     base_url = config.get("anthropic_endpoint") or "https://api.anthropic.com"
-    client = _ant.Anthropic(api_key=api_key, base_url=base_url)
 
     _mt = resolve_max_tokens(config, "anthropic", model) or 8192
     # Per-call dynamic cap: shrink max_tokens when the current prompt is already
@@ -1012,38 +1205,75 @@ def stream_anthropic(
             "budget_tokens": config.get("thinking_budget", 10000),
         }
 
-    tool_calls = []
-    text       = ""
+    use_cache = is_prompt_cache_active(config)
+    attempts = ([_apply_anthropic_cache_control(kwargs), kwargs]
+                if use_cache else [kwargs])
 
-    with client.messages.stream(**kwargs) as stream:
-        for event in stream:
-            etype = getattr(event, "type", None)
-            if etype == "content_block_delta":
-                delta = event.delta
-                dtype = getattr(delta, "type", None)
-                if dtype == "text_delta":
-                    text += delta.text
-                    yield TextChunk(delta.text)
-                elif dtype == "thinking_delta":
-                    yield ThinkingChunk(delta.thinking)
+    # Leased only once the request is fully built: everything above can raise
+    # (malformed history in messages_to_anthropic, token estimation), and a
+    # raise between lease and try would skip the finally, wedging the lease
+    # count so eviction treats this client as in-flight forever.
+    client = _lease_anthropic_client(api_key, base_url)
+    try:
+        for attempt_idx, call_kwargs in enumerate(attempts):
+            tool_calls = []
+            text       = ""
+            yielded    = False
 
-        final = stream.get_final_message()
-        for block in final.content:
-            if block.type == "tool_use":
-                tool_calls.append({
-                    "id":    block.id,
-                    "name":  block.name,
-                    "input": block.input,
-                })
+            try:
+                with client.messages.stream(**call_kwargs) as stream:
+                    for event in stream:
+                        etype = getattr(event, "type", None)
+                        if etype == "content_block_delta":
+                            delta = event.delta
+                            dtype = getattr(delta, "type", None)
+                            if dtype == "text_delta":
+                                text += delta.text
+                                yielded = True
+                                yield TextChunk(delta.text)
+                            elif dtype == "thinking_delta":
+                                yielded = True
+                                yield ThinkingChunk(delta.thinking)
 
-        cache_r, cache_w = _anthropic_cache_tokens(final.usage)
-        yield AssistantTurn(
-            text, tool_calls,
-            final.usage.input_tokens,
-            final.usage.output_tokens,
-            cache_read_tokens=cache_r,
-            cache_write_tokens=cache_w,
-        )
+                    final = stream.get_final_message()
+                    for block in final.content:
+                        if block.type == "tool_use":
+                            tool_calls.append({
+                                "id":    block.id,
+                                "name":  block.name,
+                                "input": block.input,
+                            })
+
+                    cache_r, cache_w = _anthropic_cache_tokens(final.usage)
+                    yield AssistantTurn(
+                        text, tool_calls,
+                        final.usage.input_tokens,
+                        final.usage.output_tokens,
+                        cache_read_tokens=cache_r,
+                        cache_write_tokens=cache_w,
+                    )
+                return
+
+            except Exception as e:
+                # A proxy that doesn't understand cache_control rejects the
+                # request up front (400 naming the field, before any event is
+                # streamed). Retry once without breakpoints and disable caching
+                # for this endpoint so subsequent calls skip the failed attempt.
+                # Never retry after events were yielded — that would duplicate
+                # streamed text.
+                if (attempt_idx == 0 and len(attempts) > 1 and not yielded
+                        and _is_cache_control_rejection(e)):
+                    _cache_control_disabled.add(base_url)
+                    from cheetahclaws import logging_utils as _log
+                    _log.warn("prompt_cache_rejected",
+                              endpoint=base_url,
+                              error=str(e)[:200])
+                    continue
+                raise
+    finally:
+        # Paired with _lease_anthropic_client above; runs when the generator
+        # finishes, raises, or is abandoned, so eviction can trust the count.
+        _release_anthropic_client(api_key, base_url)
 
 
 def _anthropic_cache_tokens(usage) -> tuple[int, int]:
