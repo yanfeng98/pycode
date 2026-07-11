@@ -23,6 +23,7 @@ Model string formats:
 from __future__ import annotations
 import json
 import os
+import threading
 import time
 import urllib.request
 from typing import Generator
@@ -978,6 +979,110 @@ class AssistantTurn:
         self.reasoning_content    = reasoning_content
 
 
+# ── SDK client reuse ───────────────────────────────────────────────────────
+# One client per (endpoint, key, pid) instead of one per request: keeps the
+# underlying httpx connection pool alive across the 5-50 stream() calls of a
+# single tool loop (each fresh client pays a new TCP+TLS handshake). The pid
+# is part of the key because pooled connections do not survive fork (the
+# daemon runs subprocess workers). Clients are thread-safe; the lock only
+# guards get-or-create.
+
+_CLIENT_CACHE: dict[tuple, object] = {}
+_CLIENT_LEASES: dict[tuple, int] = {}   # key → number of in-flight streams
+_CLIENT_CACHE_LOCK = threading.Lock()
+# Rotating keys/endpoints in a long-lived daemon would otherwise accumulate
+# clients (each holding an open httpx connection pool). Past this cap the
+# least-recently-used IDLE entry is closed and evicted; entries with live
+# leases are never evicted, so an in-flight stream can't have its pool
+# closed underneath it — the cap is soft while every client is busy.
+_CLIENT_CACHE_MAX = 8
+
+
+def _close_quietly(client) -> None:
+    """Best-effort close of an SDK client's underlying connection pool."""
+    close = getattr(client, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            pass
+
+
+def _evict_idle_clients_locked(exclude_key: tuple | None = None) -> list[object]:
+    """Evict least-recently-used idle clients until the soft cap is met.
+
+    Caller must hold ``_CLIENT_CACHE_LOCK``.  A client with a positive lease
+    is actively streaming and must remain in the cache; if every entry is
+    leased, the cap stays soft until a later release.  The just-created key
+    is excluded while it is being leased so a concurrent cache miss cannot
+    evict the client about to be returned.
+    """
+    evicted: list[object] = []
+    while len(_CLIENT_CACHE) > _CLIENT_CACHE_MAX:
+        for key in list(_CLIENT_CACHE):
+            if key != exclude_key and _CLIENT_LEASES.get(key, 0) == 0:
+                evicted.append(_CLIENT_CACHE.pop(key))
+                break
+        else:
+            break  # every cached client is in flight; keep the cap soft
+    return evicted
+
+
+def _client_cache_clear() -> None:
+    """Close and drop all cached SDK clients. Test hook + fork/shutdown
+    hygiene ONLY — it closes clients regardless of live leases, so never
+    call it while streams are in flight.
+
+    close() runs outside the lock — it can do network I/O and must not
+    serialize concurrent lease calls.
+    """
+    with _CLIENT_CACHE_LOCK:
+        clients = list(_CLIENT_CACHE.values())
+        _CLIENT_CACHE.clear()
+        _CLIENT_LEASES.clear()
+    for c in clients:
+        _close_quietly(c)
+
+
+def _lease_anthropic_client(api_key: str, base_url: str):
+    """Get-or-create a client and take a lease on it. Every lease must be
+    paired with _release_anthropic_client (stream_anthropic does this in a
+    finally), so eviction can tell idle clients from in-flight ones."""
+    import anthropic as _ant
+    key = ("anthropic", base_url, api_key, os.getpid())
+    evicted: list[object] = []
+    with _CLIENT_CACHE_LOCK:
+        client = _CLIENT_CACHE.get(key)
+        if client is not None:
+            # True LRU: a hit moves the key to the end of insertion order.
+            _CLIENT_CACHE[key] = _CLIENT_CACHE.pop(key)
+        else:
+            client = _ant.Anthropic(api_key=api_key, base_url=base_url)
+            _CLIENT_CACHE[key] = client
+            evicted = _evict_idle_clients_locked(exclude_key=key)
+        _CLIENT_LEASES[key] = _CLIENT_LEASES.get(key, 0) + 1
+    for stale in evicted:
+        _close_quietly(stale)
+    return client
+
+
+def _release_anthropic_client(api_key: str, base_url: str) -> None:
+    """Drop one lease and shrink an earlier soft-cap overflow if possible."""
+    key = ("anthropic", base_url, api_key, os.getpid())
+    with _CLIENT_CACHE_LOCK:
+        n = _CLIENT_LEASES.get(key, 0)
+        if n <= 1:
+            _CLIENT_LEASES.pop(key, None)
+        else:
+            _CLIENT_LEASES[key] = n - 1
+        # If every client was busy, a prior lease may have legitimately made
+        # the cap soft.  Releasing an idle client is the first safe chance to
+        # converge back to the configured cap without interrupting a stream.
+        evicted = _evict_idle_clients_locked()
+    for stale in evicted:
+        _close_quietly(stale)
+
+
 def stream_anthropic(
     api_key: str,
     model: str,
@@ -987,9 +1092,8 @@ def stream_anthropic(
     config: dict,
 ) -> Generator:
     """Stream from Anthropic API. Yields TextChunk/ThinkingChunk, then AssistantTurn."""
-    import anthropic as _ant
     base_url = config.get("anthropic_endpoint") or "https://api.anthropic.com"
-    client = _ant.Anthropic(api_key=api_key, base_url=base_url)
+    client = _lease_anthropic_client(api_key, base_url)
 
     _mt = resolve_max_tokens(config, "anthropic", model) or 8192
     # Per-call dynamic cap: shrink max_tokens when the current prompt is already
@@ -1015,35 +1119,40 @@ def stream_anthropic(
     tool_calls = []
     text       = ""
 
-    with client.messages.stream(**kwargs) as stream:
-        for event in stream:
-            etype = getattr(event, "type", None)
-            if etype == "content_block_delta":
-                delta = event.delta
-                dtype = getattr(delta, "type", None)
-                if dtype == "text_delta":
-                    text += delta.text
-                    yield TextChunk(delta.text)
-                elif dtype == "thinking_delta":
-                    yield ThinkingChunk(delta.thinking)
+    try:
+        with client.messages.stream(**kwargs) as stream:
+            for event in stream:
+                etype = getattr(event, "type", None)
+                if etype == "content_block_delta":
+                    delta = event.delta
+                    dtype = getattr(delta, "type", None)
+                    if dtype == "text_delta":
+                        text += delta.text
+                        yield TextChunk(delta.text)
+                    elif dtype == "thinking_delta":
+                        yield ThinkingChunk(delta.thinking)
 
-        final = stream.get_final_message()
-        for block in final.content:
-            if block.type == "tool_use":
-                tool_calls.append({
-                    "id":    block.id,
-                    "name":  block.name,
-                    "input": block.input,
-                })
+            final = stream.get_final_message()
+            for block in final.content:
+                if block.type == "tool_use":
+                    tool_calls.append({
+                        "id":    block.id,
+                        "name":  block.name,
+                        "input": block.input,
+                    })
 
-        cache_r, cache_w = _anthropic_cache_tokens(final.usage)
-        yield AssistantTurn(
-            text, tool_calls,
-            final.usage.input_tokens,
-            final.usage.output_tokens,
-            cache_read_tokens=cache_r,
-            cache_write_tokens=cache_w,
-        )
+            cache_r, cache_w = _anthropic_cache_tokens(final.usage)
+            yield AssistantTurn(
+                text, tool_calls,
+                final.usage.input_tokens,
+                final.usage.output_tokens,
+                cache_read_tokens=cache_r,
+                cache_write_tokens=cache_w,
+            )
+    finally:
+        # Paired with _lease_anthropic_client above; runs when the generator
+        # finishes, raises, or is abandoned, so eviction can trust the count.
+        _release_anthropic_client(api_key, base_url)
 
 
 def _anthropic_cache_tokens(usage) -> tuple[int, int]:
