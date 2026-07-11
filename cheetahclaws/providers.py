@@ -1183,7 +1183,6 @@ def stream_anthropic(
 ) -> Generator:
     """Stream from Anthropic API. Yields TextChunk/ThinkingChunk, then AssistantTurn."""
     base_url = config.get("anthropic_endpoint") or "https://api.anthropic.com"
-    client = _lease_anthropic_client(api_key, base_url)
 
     _mt = resolve_max_tokens(config, "anthropic", model) or 8192
     # Per-call dynamic cap: shrink max_tokens when the current prompt is already
@@ -1210,6 +1209,11 @@ def stream_anthropic(
     attempts = ([_apply_anthropic_cache_control(kwargs), kwargs]
                 if use_cache else [kwargs])
 
+    # Leased only once the request is fully built: everything above can raise
+    # (malformed history in messages_to_anthropic, token estimation), and a
+    # raise between lease and try would skip the finally, wedging the lease
+    # count so eviction treats this client as in-flight forever.
+    client = _lease_anthropic_client(api_key, base_url)
     try:
         for attempt_idx, call_kwargs in enumerate(attempts):
             tool_calls = []

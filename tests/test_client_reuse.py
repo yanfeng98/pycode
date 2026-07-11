@@ -223,3 +223,40 @@ def test_lru_hit_protects_recently_used_from_eviction(fake_anthropic):
     _lease_release(providers, "k_new")       # overflow → evicts k1, not k0
     assert not clients[0].closed
     assert clients[1].closed
+
+
+# ── lease hygiene on failure paths ──────────────────────────────────────────
+
+def test_request_build_failure_does_not_wedge_lease(fake_anthropic):
+    """A request that fails while being BUILT (messages_to_anthropic raising
+    on a tool message with no tool_call_id) must leave no lease behind: a
+    wedged lease makes eviction treat the client as in-flight forever."""
+    from cheetahclaws import providers
+    bad = [
+        {"role": "user", "content": "hi"},
+        {"role": "assistant", "content": "",
+         "tool_calls": [{"id": "t1", "name": "Read", "input": {}}]},
+        {"role": "tool", "name": "Read", "content": "x"},  # no tool_call_id
+    ]
+    for _ in range(4):   # one agent turn's full retry budget
+        with pytest.raises(KeyError):
+            _call_stream({"model": "claude-sonnet-4-5"}, bad)
+    with providers._CLIENT_CACHE_LOCK:
+        assert not providers._CLIENT_LEASES
+
+
+def test_stream_failure_after_lease_releases_lease(fake_anthropic):
+    """A failure inside the streaming block itself still releases the lease
+    through the finally, keeping the lease/release pairing intact."""
+    from cheetahclaws import providers
+
+    def _boom(**kwargs):
+        raise RuntimeError("connection reset")
+
+    client = _lease_release(providers, "k1")   # seed the cached client
+    client.messages.stream = _boom
+    with pytest.raises(RuntimeError):
+        _call_stream({"model": "claude-sonnet-4-5"},
+                     [{"role": "user", "content": "a"}])
+    with providers._CLIENT_CACHE_LOCK:
+        assert not providers._CLIENT_LEASES
