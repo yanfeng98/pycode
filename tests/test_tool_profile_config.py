@@ -11,9 +11,19 @@ from cheetahclaws import config as config_module
 from cheetahclaws.tool_registry import normalize_tool_profile
 
 
-def test_legacy_saved_config_keeps_full_tool_surface(monkeypatch, tmp_path):
+def test_legacy_saved_config_uses_compact_default_tool_surface(monkeypatch, tmp_path):
     config_file = tmp_path / "config.json"
     config_file.write_text(json.dumps({"model": "test"}), encoding="utf-8")
+    monkeypatch.setattr(config_module, "CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(config_module, "CONFIG_FILE", config_file)
+    monkeypatch.setattr(config_module, "SESSIONS_DIR", tmp_path / "sessions")
+
+    assert config_module.load_config()["tool_profile"] == "standard"
+
+
+def test_saved_full_profile_remains_an_explicit_opt_in(monkeypatch, tmp_path):
+    config_file = tmp_path / "config.json"
+    config_file.write_text('{"tool_profile": "full"}', encoding="utf-8")
     monkeypatch.setattr(config_module, "CONFIG_DIR", tmp_path)
     monkeypatch.setattr(config_module, "CONFIG_FILE", config_file)
     monkeypatch.setattr(config_module, "SESSIONS_DIR", tmp_path / "sessions")

@@ -177,7 +177,6 @@ def load_config() -> dict:
     SESSIONS_DIR.mkdir(exist_ok=True)
     cfg = dict(DEFAULTS)
     saved_config: dict = {}
-    had_saved_config = CONFIG_FILE.exists()
     if CONFIG_FILE.exists():
         try:
             saved_config = json.loads(CONFIG_FILE.read_text())
@@ -187,11 +186,9 @@ def load_config() -> dict:
                 saved_config = {}
         except Exception:
             pass
-    # Existing installations predate profiles and historically exposed every
-    # registered tool. Preserve that behavior until the user explicitly picks
-    # a compact profile; only a fresh config starts at ``standard``.
-    if had_saved_config and "tool_profile" not in saved_config:
-        cfg["tool_profile"] = "full"
+    # A missing profile consistently receives the compact default, including
+    # old config files. Users who need every optional integration can opt in
+    # explicitly with ``tool_profile=full``.
     # Backward-compat: legacy single api_key → anthropic_api_key
     if cfg.get("api_key") and not cfg.get("anthropic_api_key"):
         cfg["anthropic_api_key"] = cfg.pop("api_key")
