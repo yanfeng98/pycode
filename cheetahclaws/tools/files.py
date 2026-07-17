@@ -14,37 +14,61 @@ from pathlib import Path
 from cheetahclaws.tool_registry import ToolDef, register_tool
 
 
+_DEFAULT_PDF_MAX_FILE_BYTES = 32 * 1024 * 1024
+_DEFAULT_SUMMARIZE_MAX_INPUT_BYTES = 16 * 1024 * 1024
+_DEFAULT_SUMMARIZE_CHUNK_OUTPUT_CHARS = 8_000
+_DEFAULT_SUMMARIZE_REDUCE_INPUT_CHARS = 200_000
+
+
 def _extract_page_prefix(page, fitz_module, char_cap: int) -> tuple[str, bool]:
     """Extract a page in clipped bands instead of materializing all page text.
 
     PyMuPDF's plain ``page.get_text()`` builds the complete page string first.
-    Reading shallow horizontal bands keeps peak extraction work bounded even for
-    a pathological one-page PDF.  A compatibility fallback supports lightweight
-    fake page objects used by downstream plugins/tests.
+    Reading shallow horizontal bands (and narrower columns for very wide
+    pages) keeps peak extraction work bounded even for a pathological one-page
+    PDF. Pages without geometry are rejected safely: the compatibility fallback
+    of calling ``get_text()`` would materialize the entire page.
     """
     rect = getattr(page, "rect", None)
     if rect is None or not getattr(rect, "height", 0):
-        text = page.get_text()
-        return text[:char_cap], len(text) > char_cap
+        return "", True
 
     chunks: list[str] = []
     captured = 0
     band_height = min(144.0, max(36.0, float(rect.height) / 16.0))
     max_bands = 256
+    page_width = float(getattr(rect, "width", float(rect.x1) - float(rect.x0)))
+    tile_width = min(612.0, max(72.0, page_width))
+    columns = max(1, min(8, int((page_width + tile_width - 1) // tile_width)))
+    max_tiles = 512
     y = float(rect.y0)
     bands_read = 0
-    while y < float(rect.y1) and captured < char_cap and bands_read < max_bands:
-        clip = fitz_module.Rect(rect.x0, y, rect.x1, min(y + band_height, rect.y1))
-        text = page.get_text("text", clip=clip)
-        remaining = char_cap - captured
-        if len(text) > remaining:
-            chunks.append(text[:remaining])
-            return "".join(chunks), True
-        chunks.append(text)
-        captured += len(text)
+    tiles_read = 0
+    tile_limit_hit = False
+    while (
+        y < float(rect.y1)
+        and captured < char_cap
+        and bands_read < max_bands
+        and tiles_read < max_tiles
+    ):
+        for column in range(columns):
+            if captured >= char_cap or tiles_read >= max_tiles:
+                tile_limit_hit = tiles_read >= max_tiles
+                break
+            x0 = float(rect.x0) + column * tile_width
+            x1 = min(x0 + tile_width, float(rect.x1))
+            clip = fitz_module.Rect(x0, y, x1, min(y + band_height, rect.y1))
+            text = page.get_text("text", clip=clip)
+            remaining = char_cap - captured
+            if len(text) > remaining:
+                chunks.append(text[:remaining])
+                return "".join(chunks), True
+            chunks.append(text)
+            captured += len(text)
+            tiles_read += 1
         y += band_height
         bands_read += 1
-    return "".join(chunks), y < float(rect.y1)
+    return "".join(chunks), y < float(rect.y1) or tile_limit_hit
 
 
 def _read_pdf(params: dict, config: dict) -> str:
@@ -76,8 +100,20 @@ def _read_pdf(params: dict, config: dict) -> str:
             page_cap = int(config.get("pdf_extract_max_pages", 50))
         except (TypeError, ValueError):
             page_cap = 50
+        try:
+            file_byte_cap = int(config.get(
+                "pdf_extract_max_file_bytes", _DEFAULT_PDF_MAX_FILE_BYTES,
+            ))
+        except (TypeError, ValueError):
+            file_byte_cap = _DEFAULT_PDF_MAX_FILE_BYTES
         char_cap = max(1_000, char_cap)
         page_cap = max(1, page_cap)
+        file_byte_cap = max(1_024, file_byte_cap)
+        if p.stat().st_size > file_byte_cap:
+            return (
+                f"Error: PDF is larger than the {file_byte_cap:,}-byte extraction "
+                "limit; use a narrower source file or raise pdf_extract_max_file_bytes."
+            )
 
         doc = fitz.open(str(p))
         try:
@@ -142,7 +178,9 @@ def _read_pdf(params: dict, config: dict) -> str:
         # ReadPDF response itself routes the model to the right tool
         # before the raw 70KB+ of PDF text overflows the next API call.
         # See _maybe_redirect_to_summarize for the threshold logic.
-        redirect = _maybe_redirect_to_summarize(full_text, str(p), config)
+        redirect = None if config.get("_skip_summary_redirect") else _maybe_redirect_to_summarize(
+            full_text, str(p), config,
+        )
         if redirect:
             return redirect
 
@@ -476,7 +514,7 @@ _SUMMARIZE_MIN_CHUNK_TOKENS = 2000
 def _estimate_text_tokens(text: str) -> int:
     """Rough conservative token estimator for plain text. Matches the
     chars/2.8 ratio compaction.estimate_tokens uses."""
-    return int(len(text) * _TOKENS_PER_CHAR)
+    return len(text) if _is_cjk_heavy(text) else int(len(text) * _TOKENS_PER_CHAR)
 
 
 def _is_cjk_heavy(text: str, sample_chars: int = 2000) -> bool:
@@ -543,10 +581,31 @@ def _maybe_redirect_to_summarize(text: str, file_path: str,
     if estimated_tokens <= safe_tool_result_tokens:
         return None
 
+    active_names = config.get("_active_tool_names")
+    if active_names is not None:
+        summary_enabled = "SummarizeLargeFile" in active_names
+    else:
+        profile = config.get("tool_profile")
+        # Preserve direct-call compatibility while respecting callers that
+        # explicitly request the compact standard profile.
+        summary_enabled = profile is None or profile in {"research", "full"}
+
     # Generate a redirect with a small preview so the model has *some*
     # context to decide on a focus.
     preview_chars = min(1500, len(text) // 8)
     preview = text[:preview_chars].rstrip()
+    if not summary_enabled:
+        return (
+            f"[ReadTooLarge: file `{file_path}` is too large to return "
+            f"directly — estimated {estimated_tokens:,} tokens vs model "
+            f"context {declared_ctx:,} (safe tool-result ceiling "
+            f"{safe_tool_result_tokens:,}).\n\n"
+            "USE INSTEAD: Call `Read` again with a narrower `offset` and "
+            "`limit`. A document-summary tool is not enabled for this tool "
+            "profile.\n\n"
+            f"PREVIEW (first {preview_chars} chars, for context only):\n\n"
+            f"```\n{preview}\n```]"
+        )
     return (
         f"[ReadTooLarge: file `{file_path}` is too large to return "
         f"directly — estimated {estimated_tokens:,} tokens vs model "
@@ -573,11 +632,34 @@ def _read_file_for_summary(file_path: str, config: dict) -> str:
         return f"Error: {file_path} is a directory, not a file"
     suffix = p.suffix.lower()
     if suffix == ".pdf":
-        # Reuse the existing PDF reader; "all pages" by default
-        return _read_pdf({"file_path": str(p)}, config)
+        # Reuse the bounded PDF extractor but bypass its user-facing redirect:
+        # otherwise this summarizer would summarize its own "call
+        # SummarizeLargeFile" instruction rather than the PDF text.
+        internal = {**config, "_skip_summary_redirect": True}
+        content = _read_pdf({"file_path": str(p)}, internal)
+        if "[... ReadPDF stopped" in content:
+            return (
+                "Error: PDF exceeds the configured extraction cap for summarization; "
+                "use a narrower `pages` range or raise the PDF extraction limits."
+            )
+        return content
     # Plain text / code / markdown / etc.
     try:
-        return p.read_text("utf-8", errors="replace")
+        try:
+            byte_cap = int(config.get(
+                "summarize_max_input_bytes", _DEFAULT_SUMMARIZE_MAX_INPUT_BYTES,
+            ))
+        except (TypeError, ValueError):
+            byte_cap = _DEFAULT_SUMMARIZE_MAX_INPUT_BYTES
+        byte_cap = max(1_024, byte_cap)
+        if p.stat().st_size > byte_cap:
+            return (
+                f"Error: file exceeds the {byte_cap:,}-byte summary input limit; "
+                "use a smaller file or raise summarize_max_input_bytes."
+            )
+        with p.open("rb") as handle:
+            raw = handle.read(byte_cap)
+        return raw.decode("utf-8", errors="replace")
     except Exception as e:
         return f"Error reading {file_path}: {type(e).__name__}: {e}"
 
@@ -639,13 +721,27 @@ def _summarize_chunk_via_llm(text: str, focus: str, config: dict,
         )
 
     out: list[str] = []
+    try:
+        output_cap = int(config.get(
+            "summarize_chunk_max_output_chars", _DEFAULT_SUMMARIZE_CHUNK_OUTPUT_CHARS,
+        ))
+    except (TypeError, ValueError):
+        output_cap = _DEFAULT_SUMMARIZE_CHUNK_OUTPUT_CHARS
+    output_cap = max(500, output_cap)
+    output_chars = 0
     internal = {**config, "no_tools": True}
     try:
         for ev in stream(config["model"], sys_msg,
                           [{"role": "user", "content": user_msg}], [],
                           internal):
             if isinstance(ev, TextChunk):
-                out.append(ev.text)
+                remaining = output_cap - output_chars
+                if remaining <= 0:
+                    break
+                out.append(ev.text[:remaining])
+                output_chars += min(len(ev.text), remaining)
+                if len(ev.text) > remaining:
+                    break
     except Exception as e:
         return f"[chunk-summarize error: {type(e).__name__}: {str(e)[:200]}]"
     return "".join(out).strip() or "[chunk-summarize: empty response]"
@@ -660,13 +756,15 @@ def _plan_chunks(content: str, model_ctx: int) -> list[str]:
         ~10 chunk-budgets     → 10 chunks
         etc. (no hard cap — grows with file)
     """
+    cjk_heavy = _is_cjk_heavy(content)
     n_tokens = _estimate_text_tokens(content)
     chunk_token_budget = max(_SUMMARIZE_MIN_CHUNK_TOKENS,
                               model_ctx - _SUMMARIZE_RESERVED_TOKENS)
     if n_tokens <= chunk_token_budget:
         return [content]
     # Compute target char-size per chunk so all chunks roughly equal.
-    chunk_char_budget = int(chunk_token_budget / _TOKENS_PER_CHAR)
+    chars_per_token = 1.0 if cjk_heavy else _TOKENS_PER_CHAR
+    chunk_char_budget = int(chunk_token_budget / chars_per_token)
     n_chunks = (n_tokens // chunk_token_budget) + 1
     overlap_chars = 200
     base_size = (len(content) + (n_chunks - 1) * overlap_chars) // n_chunks
@@ -740,11 +838,26 @@ def _summarize_large_file(params: dict, config: dict) -> str:
         for i, summary_text in ex.map(_do_chunk, enumerate(chunks)):
             chunk_summaries[i] = summary_text
 
-    # Reduce
-    merged_input = "\n\n".join(
-        f"=== Chunk {i + 1}/{n_chunks} ===\n{s}"
-        for i, s in enumerate(chunk_summaries) if s is not None
-    )
+    # Reduce only a bounded aggregate of map outputs. The source and every map
+    # response are capped independently, so a pathological document cannot
+    # build an unbounded in-memory reduce prompt.
+    try:
+        reduce_cap = int(config.get(
+            "summarize_reduce_max_input_chars", _DEFAULT_SUMMARIZE_REDUCE_INPUT_CHARS,
+        ))
+    except (TypeError, ValueError):
+        reduce_cap = _DEFAULT_SUMMARIZE_REDUCE_INPUT_CHARS
+    reduce_cap = max(2_000, reduce_cap)
+    merged_parts: list[str] = []
+    merged_chars = 0
+    for i, summary_text in enumerate(chunk_summaries):
+        if summary_text is None or merged_chars >= reduce_cap:
+            break
+        part = f"=== Chunk {i + 1}/{n_chunks} ===\n{summary_text}\n\n"
+        remaining = reduce_cap - merged_chars
+        merged_parts.append(part[:remaining])
+        merged_chars += min(len(part), remaining)
+    merged_input = "".join(merged_parts)
     final = _summarize_chunk_via_llm(merged_input, focus, config, mode="reduce")
 
     return (
@@ -762,7 +875,7 @@ register_tool(ToolDef(
             "Summarize a file that may be too large to fit in your context "
             "window. Reads the file (PDF / txt / md / code), splits it "
             "into N chunks adaptive to file size (1 chunk if it fits, "
-            "more for larger files — no hard cap), summarizes each chunk "
+            "more for larger files within the configured input cap), summarizes each chunk "
             "in parallel via sub-LLM calls (up to 8 workers), then merges "
             "into one unified summary. Use this for papers, books, long "
             "logs, large code files, or any document where Read would "

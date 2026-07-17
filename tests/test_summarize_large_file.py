@@ -38,6 +38,10 @@ def test_estimate_text_tokens(text, expected_min, expected_max):
     assert expected_min <= n <= expected_max
 
 
+def test_estimate_text_tokens_is_conservative_for_cjk():
+    assert _estimate_text_tokens("中" * 10_000) == 10_000
+
+
 # ── Chunk planner: adaptive to file size + model context ─────────────────
 
 
@@ -95,6 +99,13 @@ def test_plan_chunks_covers_entire_content():
     assert text[-1000:] in concat
 
 
+def test_plan_chunks_keep_cjk_within_a_32k_context_budget():
+    chunks = _plan_chunks("中" * 100_000, 32768)
+
+    assert len(chunks) >= 4
+    assert max(map(len, chunks)) <= 24_500
+
+
 # ── File reader dispatch ─────────────────────────────────────────────────
 
 
@@ -104,6 +115,52 @@ def test_read_file_for_summary_text_file(tmp_path):
     content = _read_file_for_summary(str(p), {})
     assert "hello world" in content
     assert "line 2" in content
+
+
+def test_read_file_for_summary_rejects_input_above_byte_cap(tmp_path):
+    p = tmp_path / "oversized.txt"
+    p.write_bytes(b"x" * 2_048)
+
+    out = _read_file_for_summary(str(p), {"summarize_max_input_bytes": 1_024})
+
+    assert out.startswith("Error")
+    assert "1,024-byte summary input limit" in out
+
+
+def test_pdf_summary_reader_bypasses_the_recursive_summary_redirect(monkeypatch, tmp_path):
+    class Rect:
+        def __init__(self, x0, y0, x1, y1):
+            self.x0, self.y0, self.x1, self.y1 = x0, y0, x1, y1
+            self.height = y1 - y0
+
+    class Page:
+        rect = Rect(0, 0, 100, 100)
+
+        def get_text(self, _mode, *, clip):
+            return "PDF SOURCE " * 2_000 if clip.y0 == 0 else ""
+
+    class Doc:
+        def __len__(self):
+            return 1
+
+        def __getitem__(self, _index):
+            return Page()
+
+        def close(self):
+            return None
+
+    monkeypatch.setitem(
+        sys.modules, "fitz", type("Fitz", (), {"open": lambda _p: Doc(), "Rect": Rect}),
+    )
+    p = tmp_path / "paper.pdf"
+    p.write_bytes(b"%PDF-fake")
+
+    content = _read_file_for_summary(
+        str(p), {"model": "custom/qwen2.5-72b", "pdf_extract_max_chars": 30_000},
+    )
+
+    assert "PDF SOURCE" in content
+    assert "ReadTooLarge" not in content
 
 
 def test_read_file_for_summary_missing_file(tmp_path):

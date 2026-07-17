@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+
 import pytest
 
 from cheetahclaws.tool_registry import (
@@ -169,14 +171,27 @@ def test_output_truncation():
     register_tool(tool)
 
     result = execute_tool("big", {}, config={}, max_output=40)
-    # first half = 20 chars, last quarter = 10 chars, marker in between.
-    # The truncation marker now includes a model-context-safety message
-    # which is ~80-150 chars depending on file_path hint.
-    assert len(result) < 200
+    # Tiny caps may only fit a marker; the hard cap always wins over keeping
+    # a prefix/suffix.
+    assert len(result) <= 40
     assert "truncated" in result
-    # The kept portion: first 20 + last 10 should be present
-    assert result.startswith("x" * 20)
-    assert result.endswith("x" * 10)
+
+
+def test_output_truncation_never_exceeds_cap_with_a_long_file_path():
+    register_tool(ToolDef(
+        name="path_big",
+        schema={"name": "path_big", "input_schema": {}},
+        func=lambda _p, _c: "x" * 5_000,
+        read_only=True,
+    ))
+
+    result = execute_tool(
+        "path_big", {"file_path": "/" + "x" * 2_000},
+        {"tool_profile": "research"}, max_output=1_000,
+    )
+
+    assert len(result) <= 1_000
+    assert "truncated" in result
 
 
 def test_no_truncation_when_within_limit():
@@ -230,6 +245,107 @@ def test_cache_key_includes_input_bound_settings():
 
     assert execute_tool("config_sensitive", {}, {"tool_read_max_bytes": 10}) == "10"
     assert execute_tool("config_sensitive", {}, {"tool_read_max_bytes": 20}) == "20"
+    assert calls == 2
+
+
+def test_write_invalidation_cannot_recache_an_inflight_stale_read():
+    started = threading.Event()
+    release = threading.Event()
+    calls = 0
+
+    def slow_read(_params: dict, _config: dict) -> str:
+        nonlocal calls
+        calls += 1
+        value = "old" if calls == 1 else "new"
+        if calls == 1:
+            started.set()
+            assert release.wait(timeout=2)
+        return value
+
+    register_tool(ToolDef(
+        name="slow_read",
+        schema={"name": "slow_read", "input_schema": {}},
+        func=slow_read,
+        read_only=True,
+    ))
+    thread = threading.Thread(
+        target=lambda: execute_tool("slow_read", {}, {"_session_id": "race"}),
+    )
+    thread.start()
+    assert started.wait(timeout=2)
+    clear_tool_cache()  # Equivalent to a Write/Edit/Bash invalidation.
+    release.set()
+    thread.join(timeout=2)
+    assert not thread.is_alive()
+
+    assert execute_tool("slow_read", {}, {"_session_id": "race"}) == "new"
+    assert calls == 2
+
+
+def test_post_write_invalidation_clears_a_read_cached_during_mutation():
+    write_started = threading.Event()
+    release_write = threading.Event()
+    state = {"value": "old"}
+    reads = 0
+
+    def read_value(_params: dict, _config: dict) -> str:
+        nonlocal reads
+        reads += 1
+        return state["value"]
+
+    def slow_write(_params: dict, _config: dict) -> str:
+        write_started.set()
+        assert release_write.wait(timeout=2)
+        state["value"] = "new"
+        return "written"
+
+    register_tool(ToolDef(
+        name="cached_read", schema={"name": "cached_read", "input_schema": {}},
+        func=read_value, read_only=True,
+    ))
+    register_tool(ToolDef(
+        name="Write", schema={"name": "Write", "input_schema": {}},
+        func=slow_write,
+    ))
+    thread = threading.Thread(target=lambda: execute_tool("Write", {}, {}))
+    thread.start()
+    assert write_started.wait(timeout=2)
+    assert execute_tool("cached_read", {}, {"_session_id": "mid-write"}) == "old"
+    release_write.set()
+    thread.join(timeout=2)
+    assert not thread.is_alive()
+
+    assert execute_tool("cached_read", {}, {"_session_id": "mid-write"}) == "new"
+    assert reads == 2
+
+
+def test_cache_varies_by_active_tool_surface_for_profile_aware_hints():
+    calls = 0
+
+    def large_result(_params: dict, _config: dict) -> str:
+        nonlocal calls
+        calls += 1
+        return "x" * 20_000
+
+    register_tool(ToolDef(
+        name="profile_read", schema={"name": "profile_read", "input_schema": {}},
+        func=large_result, read_only=True,
+    ))
+    params = {"file_path": "/tmp/large.txt"}
+    research = {
+        "_session_id": "surface", "tool_profile": "research",
+        "_active_tool_names": frozenset({"profile_read", "SummarizeLargeFile"}),
+    }
+    standard = {
+        "_session_id": "surface", "tool_profile": "standard",
+        "_active_tool_names": frozenset({"profile_read"}),
+    }
+    first = execute_tool("profile_read", params, research, max_output=10_000)
+    second = execute_tool("profile_read", params, standard, max_output=10_000)
+
+    assert "SummarizeLargeFile" in first
+    assert "SummarizeLargeFile" not in second
+    assert "narrower offset and limit" in second
     assert calls == 2
 
 

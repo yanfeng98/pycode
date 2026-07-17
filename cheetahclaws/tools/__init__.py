@@ -596,6 +596,7 @@ def _register_builtins() -> None:
                 _webfetch(
                     p["url"], p.get("prompt"),
                     max_bytes=c.get("web_fetch_max_bytes", 512 * 1024),
+                    max_seconds=c.get("web_fetch_max_seconds", 30),
                 )
                 if isinstance(p.get("url"), str) and p["url"].strip()
                 else "Error: WebFetch requires a non-empty 'url' "
@@ -607,7 +608,11 @@ def _register_builtins() -> None:
             name="WebSearch",
             schema=_schemas["WebSearch"],
             func=lambda p, c: (
-                _websearch(p["query"])
+                _websearch(
+                    p["query"],
+                    max_bytes=c.get("web_search_max_bytes", 512 * 1024),
+                    max_seconds=c.get("web_search_max_seconds", 30),
+                )
                 if isinstance(p.get("query"), str) and p["query"].strip()
                 else "Error: WebSearch requires a non-empty 'query' "
                      "argument (the search string). Pass it like "

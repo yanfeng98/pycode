@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import types
+from pathlib import Path
 
 import pytest
 
@@ -31,3 +33,50 @@ def test_fresh_config_uses_compact_standard_profile(monkeypatch, tmp_path):
 def test_invalid_tool_profile_value_is_a_clean_validation_error(value):
     with pytest.raises(ValueError):
         normalize_tool_profile(value)
+
+
+def test_web_session_exposes_and_updates_tool_profile(monkeypatch):
+    from cheetahclaws.web import api
+
+    persisted = {}
+    fake_db = types.SimpleNamespace(
+        repo=types.SimpleNamespace(
+            upsert_session=lambda *args, **kwargs: persisted.update(kwargs),
+        ),
+    )
+    import cheetahclaws.web as web_package
+    monkeypatch.setattr(web_package, "db", fake_db, raising=False)
+
+    session = api.ChatSession.__new__(api.ChatSession)
+    session.config = {"tool_profile": "standard"}
+    session.session_id = "profile-test"
+    session.user_id = 1
+    session.title = "Test"
+
+    assert session.update_config({"tool_profile": "research"})["tool_profile"] == "research"
+    assert session.config["tool_profile"] == "research"
+    assert persisted["config"]["tool_profile"] == "research"
+
+    with pytest.raises(ValueError):
+        session.update_config({"tool_profile": "not-a-profile"})
+
+
+def test_web_settings_expose_and_render_the_tool_profile_selector():
+    root = Path(__file__).resolve().parent.parent
+    markup = (root / "cheetahclaws/web/chat.html").read_text(encoding="utf-8")
+    script = (root / "cheetahclaws/web/static/js/settings.js").read_text(encoding="utf-8")
+
+    assert 'id="sp-tool-profile"' in markup
+    assert "updateConfig('tool_profile', this.value)" in markup
+    assert "sp-tool-profile').value = cfg.tool_profile || 'standard'" in script
+
+
+def test_terminal_config_rejects_invalid_tool_profile(monkeypatch):
+    from cheetahclaws import config as config_module
+    from cheetahclaws.commands.config_cmd import cmd_config
+
+    monkeypatch.setattr(config_module, "save_config", lambda _config: None)
+    config = {"tool_profile": "standard"}
+
+    assert cmd_config("tool_profile=not-a-profile", None, config) is False
+    assert config["tool_profile"] == "standard"

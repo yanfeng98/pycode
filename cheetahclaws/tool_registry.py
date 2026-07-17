@@ -102,6 +102,7 @@ _CACHE_MAX = 64  # max cached entries
 _cache: Dict[str, str] = {}   # hash → result
 _cache_order: list[str] = []  # LRU eviction order
 _cache_lock = threading.RLock()
+_cache_generation = 0
 _DEFAULT_CACHE_VALUE_MAX = 12_000
 _CACHE_CONFIG_KEYS = (
     # Path authorization is checked inside the tool function.  Include it in
@@ -110,8 +111,12 @@ _CACHE_CONFIG_KEYS = (
     "allowed_root", "_worktree_cwd",
     # These settings change source work or visible content for read-only tools.
     "tool_read_max_bytes", "tool_read_scan_max_bytes", "tool_read_max_output_chars",
-    "web_fetch_max_bytes", "pdf_extract_max_chars", "pdf_extract_max_pages",
-    "max_tool_cache_output",
+    "web_fetch_max_bytes", "web_search_max_bytes", "web_fetch_max_seconds", "web_search_max_seconds",
+    "pdf_extract_max_chars", "pdf_extract_max_pages",
+    "pdf_extract_max_file_bytes", "summarize_max_input_bytes",
+    "summarize_chunk_max_output_chars", "summarize_reduce_max_input_chars",
+    "max_tool_cache_output", "model", "tool_profile", "disabled_tools",
+    "_active_tool_names",
 )
 
 
@@ -126,10 +131,16 @@ def _cache_key(
     Including the session_id keeps cached results scoped to the originator —
     in a shared daemon, A's Read of ~/.env never gets handed to B's session.
     """
-    cache_config = {
-        key: (config or {}).get(key) for key in _CACHE_CONFIG_KEYS
-        if key in (config or {})
-    }
+    cache_config = {}
+    for key in _CACHE_CONFIG_KEYS:
+        if key not in (config or {}):
+            continue
+        value = (config or {}).get(key)
+        # Active/disabled tool sets alter profile-aware redirects and hints.
+        # Serialize them deterministically rather than relying on set repr.
+        if isinstance(value, (set, frozenset)):
+            value = sorted(map(str, value))
+        cache_config[key] = value
     raw = json.dumps(
         {"n": name, "p": params, "s": session_id, "c": cache_config},
         sort_keys=True, default=str,
@@ -139,9 +150,11 @@ def _cache_key(
 
 def clear_tool_cache() -> None:
     """Clear the tool result cache. Called on file writes to invalidate."""
+    global _cache_generation
     with _cache_lock:
         _cache.clear()
         _cache_order.clear()
+        _cache_generation += 1
 
 
 # --------------- public API ---------------
@@ -186,6 +199,29 @@ def get_active_tool_names(
     )
 
 
+def get_profile_tool_names(
+    profile: str | None = "full",
+    disabled_tools: Iterable[str] | None = None,
+) -> FrozenSet[str]:
+    """Return the built-in profile surface without importing tool modules.
+
+    Prompt construction can run before the agent imports its tool package.
+    This lightweight view keeps that prompt profile-aware without triggering
+    plugin registration or other unrelated import side effects.  During an
+    agent turn, ``_active_tool_names`` remains the authoritative exact set.
+    """
+    active_profile = normalize_tool_profile(profile)
+    names = set(_STANDARD_TOOLS)
+    if active_profile in {"research", "full"}:
+        names.update(_RESEARCH_TOOLS)
+    if active_profile in {"orchestration", "full"}:
+        names.update(_ORCHESTRATION_TOOLS)
+    if active_profile == "full":
+        names.update(_registry)
+    names.difference_update(disabled_tools or ())
+    return frozenset(names)
+
+
 def _effective_output_cap(config: Dict[str, Any], max_output: int) -> int:
     """Keep an individual tool result below model-context safety limits."""
     try:
@@ -203,33 +239,57 @@ def _effective_output_cap(config: Dict[str, Any], max_output: int) -> int:
         return max_output
 
 
-def _truncate_result(result: str, params: Dict[str, Any], max_output: int) -> str:
+def _truncate_result(
+    result: str,
+    params: Dict[str, Any],
+    max_output: int,
+    config: Dict[str, Any] | None = None,
+) -> str:
     """Trim a result while retaining a useful beginning and ending."""
-    if len(result) <= max_output:
+    output_limit = max(1, int(max_output))
+    if len(result) <= output_limit:
         return result
-    first_half = max_output // 2
-    last_quarter = max_output // 4
-    truncated = len(result) - first_half - last_quarter
+    truncated = len(result)
     file_hint = ""
     fpath = (params or {}).get("file_path") if isinstance(params, dict) else None
     if fpath and isinstance(fpath, str):
-        file_hint = (
-            f"  Tip: this came from `{fpath}` — call "
-            f"`SummarizeLargeFile(file_path='{fpath}')` to get a "
-            f"complete chunked + map-reduce summary that fits."
+        active_names = (config or {}).get("_active_tool_names")
+        profile = (config or {}).get("tool_profile")
+        summary_available = (
+            "SummarizeLargeFile" in active_names
+            if active_names is not None
+            else profile in {"research", "full"}
         )
-    return (
-        result[:first_half]
-        + f"\n[... {truncated} chars truncated to keep total tool "
-          f"output ≤ {max_output:,} chars (model context safety).\n"
-          f"{file_hint}]\n"
-        + result[-last_quarter:]
+        if summary_available:
+            short_path = fpath[:160] + ("…" if len(fpath) > 160 else "")
+            file_hint = (
+                f" Tip: this came from `{short_path}` — call "
+                f"`SummarizeLargeFile(file_path='{short_path}')` to get a "
+                f"complete chunked + map-reduce summary that fits."
+            )
+        else:
+            short_path = fpath[:160] + ("…" if len(fpath) > 160 else "")
+            file_hint = (
+                f" Tip: this came from `{short_path}` — use Read again with "
+                "a narrower offset and limit."
+            )
+    marker = (
+        f"\n[... {truncated:,} chars truncated to keep total tool "
+        f"output ≤ {output_limit:,} chars (model context safety).{file_hint}]\n"
     )
+    if len(marker) >= output_limit:
+        return marker[:output_limit]
+    visible_budget = output_limit - len(marker)
+    first = (visible_budget * 2) // 3
+    last = visible_budget - first
+    return result[:first] + marker + (result[-last:] if last else "")
 
 
-def _cache_put(key: str, value: str) -> None:
-    """Insert a bounded value and keep the LRU index free of duplicates."""
+def _cache_put(key: str, value: str, generation: int) -> None:
+    """Insert a bounded value unless a write invalidated it mid-flight."""
     with _cache_lock:
+        if generation != _cache_generation:
+            return
         if key in _cache:
             if key in _cache_order:
                 _cache_order.remove(key)
@@ -273,6 +333,7 @@ def execute_tool(
 
     # Cache hit for read-only tools (same name + same params + same session).
     use_cache = tool.read_only
+    mutates_files = name in ("Write", "Edit", "Bash", "NotebookEdit")
     if use_cache:
         sid = (config or {}).get("_session_id", "") or ""
         key = _cache_key(name, params, sid, config)
@@ -282,21 +343,28 @@ def execute_tool(
                 if key in _cache_order:
                     _cache_order.remove(key)
                 _cache_order.append(key)
+            generation = _cache_generation
         if cached is not None:
             # Cache values are already bounded, but cap again because a later
             # call can have a smaller context window than the original one.
-            return _truncate_result(cached, params, output_cap)
+            return _truncate_result(cached, params, output_cap, config)
     else:
         # Write tools invalidate cache (file content may have changed)
-        if name in ("Write", "Edit", "Bash", "NotebookEdit"):
+        if mutates_files:
             clear_tool_cache()
 
     try:
         result = tool.func(params, config)
     except Exception as e:
         return f"Error executing {name}: {e}"
+    finally:
+        # A Read can start after the pre-mutation invalidation but before a
+        # slow Write/Bash actually changes a file. Clear again so it cannot
+        # retain that old snapshot once the mutation finishes (or fails).
+        if mutates_files:
+            clear_tool_cache()
 
-    result = _truncate_result(result, params, output_cap)
+    result = _truncate_result(result, params, output_cap, config)
 
     # Cache only a bounded post-truncation result.  This prevents a single
     # pathological read-only response from occupying unbounded process RAM.
@@ -308,7 +376,9 @@ def execute_tool(
         except (TypeError, ValueError):
             cache_cap = _DEFAULT_CACHE_VALUE_MAX
         cache_cap = max(1_000, min(output_cap, cache_cap))
-        _cache_put(key, _truncate_result(result, params, cache_cap))
+        _cache_put(
+            key, _truncate_result(result, params, cache_cap, config), generation,
+        )
 
     return result
 

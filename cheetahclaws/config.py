@@ -45,8 +45,15 @@ DEFAULTS = {
     "tool_read_scan_max_bytes": 2 * 1024 * 1024,
     "tool_read_max_output_chars": 50_000,
     "web_fetch_max_bytes":      512 * 1024,
+    "web_search_max_bytes":     512 * 1024,
+    "web_fetch_max_seconds":    30,
+    "web_search_max_seconds":   30,
     "pdf_extract_max_chars":    50_000,
     "pdf_extract_max_pages":    50,
+    "pdf_extract_max_file_bytes": 32 * 1024 * 1024,
+    "summarize_max_input_bytes": 16 * 1024 * 1024,
+    "summarize_chunk_max_output_chars": 8_000,
+    "summarize_reduce_max_input_chars": 200_000,
     # Read-only cache values are post-truncation and capped independently so a
     # single large fetch cannot consume unbounded resident memory.
     "max_tool_cache_output":    12_000,

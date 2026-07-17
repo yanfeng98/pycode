@@ -7,7 +7,7 @@ from pathlib import Path
 
 # A Read call should never materialize an arbitrarily large file (or even an
 # arbitrarily long single line) before the agent can apply its output cap.
-_LINE_SCAN_CHARS = 64 * 1024
+_LINE_SCAN_BYTES = 8 * 1024
 _DEFAULT_READ_MAX_BYTES = 256 * 1024
 _DEFAULT_READ_SCAN_MAX_BYTES = 2 * 1024 * 1024
 _DEFAULT_READ_MAX_OUTPUT_CHARS = 50_000
@@ -49,59 +49,96 @@ def maybe_truncate_diff(diff_text: str, max_lines: int = 80) -> str:
 
 # ── Read ─────────────────────────────────────────────────────────────────
 
-def _encoded_size(text: str) -> int:
-    """Approximate original UTF-8 bytes while preserving malformed input."""
-    return len(text.encode("utf-8", errors="replace"))
-
-
 def _read_logical_line(handle, capture_bytes: int | None, scan_remaining: int):
-    """Read one universal-newline line with bounded retained text and I/O.
+    """Read one newline-preserving binary line with strict byte budgets.
 
-    ``TextIOWrapper(newline="")`` recognizes LF, CRLF, and legacy CR line
-    endings while preserving them in the returned string.  It is read in small
-    chunks so a minified file cannot force a whole-line allocation.
+    Reading bytes rather than ``TextIOWrapper.readline(size)`` prevents a
+    UTF-8-heavy line from turning a character limit into a several-times-larger
+    byte read.  Any bytes after a line ending are rewound, so a CRLF split at a
+    chunk boundary is never exposed as a spurious blank line.
     """
-    chunks: list[str] = []
+    chunks: list[bytes] = []
     captured = 0
     scanned = 0
-    saw_data = False
 
     while True:
         remaining = scan_remaining - scanned
         if remaining <= 0:
-            return "".join(chunks), False, False, scanned, False, True
+            return b"".join(chunks), False, False, scanned, False, True
 
-        # UTF-8 needs at most four bytes per codepoint.  The small allowance
-        # prevents one read from materially exceeding the scan budget.
-        request_chars = min(_LINE_SCAN_CHARS, max(1, remaining // 4))
+        request_bytes = min(_LINE_SCAN_BYTES, remaining)
         if capture_bytes is not None:
-            # Do not create a 64 KiB decoded fragment merely to keep a tiny
-            # output prefix. A multi-byte codepoint can over-read by at most a
-            # few bytes; the captured/returned content below is byte-exact.
-            request_chars = min(request_chars, max(1, capture_bytes - captured))
-        piece = handle.readline(request_chars)
+            capture_remaining = capture_bytes - captured
+            if capture_remaining <= 0:
+                return b"".join(chunks), False, False, scanned, True, False
+            request_bytes = min(request_bytes, capture_remaining)
+        piece = handle.read(request_bytes)
         if not piece:
-            return "".join(chunks), saw_data, True, scanned, False, False
+            return b"".join(chunks), bool(chunks), True, scanned, False, False
 
-        saw_data = True
-        scanned += _encoded_size(piece)
+        cr_index = piece.find(b"\r")
+        lf_index = piece.find(b"\n")
+        newline_index = min(
+            (idx for idx in (cr_index, lf_index) if idx >= 0),
+            default=-1,
+        )
+        take = len(piece) if newline_index < 0 else newline_index + 1
+        is_cr = newline_index >= 0 and piece[newline_index:newline_index + 1] == b"\r"
+        if is_cr and take < len(piece) and piece[take:take + 1] == b"\n":
+            take += 1
+
+        tail = piece[take:]
+        if tail:
+            # ``handle`` is a regular binary file, so this only moves its
+            # cursor back over bytes already read in the small bounded chunk.
+            handle.seek(-len(tail), 1)
+        selected = piece[:take]
         if capture_bytes is not None:
-            room = capture_bytes - captured
-            if room <= 0:
-                return "".join(chunks), False, False, scanned, True, False
-            encoded_piece = piece.encode("utf-8", errors="replace")
-            if len(encoded_piece) > room:
-                # Decode only whole codepoints so the rendered result remains
-                # valid text while never exceeding the source-byte ceiling.
-                chunks.append(encoded_piece[:room].decode("utf-8", errors="ignore"))
-                return "".join(chunks), False, False, scanned, True, False
-            chunks.append(piece)
-            captured += len(encoded_piece)
+            chunks.append(selected)
+            captured += len(selected)
+        scanned += len(selected)
 
-        if piece.endswith(("\n", "\r")):
-            return "".join(chunks), True, False, scanned, False, False
+        if newline_index >= 0:
+            if is_cr and take == len(piece):
+                # A CR at the end of a chunk may start CRLF. Probe only when
+                # the caller still has budget to retain that final LF.
+                can_probe = (
+                    scanned < scan_remaining
+                    and (capture_bytes is None or captured < capture_bytes)
+                )
+                if can_probe:
+                    next_byte = handle.read(1)
+                    if next_byte == b"\n":
+                        if capture_bytes is not None:
+                            chunks.append(next_byte)
+                        scanned += 1
+                        captured += 1
+                    elif next_byte:
+                        handle.seek(-1, 1)
+                else:
+                    # The caller stopped exactly at CR. Treat this as an
+                    # incomplete line rather than later splitting CRLF into
+                    # a blank logical line.
+                    return (
+                        b"".join(chunks), False, False, scanned,
+                        capture_bytes is not None and captured >= capture_bytes,
+                        scanned >= scan_remaining,
+                    )
+            return b"".join(chunks), True, False, scanned, False, False
+
+        if capture_bytes is not None and captured >= capture_bytes:
+            return b"".join(chunks), False, False, scanned, True, False
         if scanned >= scan_remaining:
-            return "".join(chunks), False, False, scanned, False, True
+            return b"".join(chunks), False, False, scanned, False, True
+
+
+def _with_stop_marker(rendered: list[str], marker: str, output_limit: int) -> str:
+    """Add a stop marker without letting it exceed the configured output cap."""
+    marker = marker[:output_limit]
+    if not rendered:
+        return marker
+    visible = "".join(rendered)
+    return visible[:max(0, output_limit - len(marker))] + marker
 
 
 def _read(
@@ -134,15 +171,15 @@ def _read(
         scan_budget_hit = False
         output_budget_hit = False
 
-        with p.open(encoding="utf-8", errors="replace", newline="") as handle:
+        file_size = p.stat().st_size
+        with p.open("rb") as handle:
             while True:
                 if line_limit is not None and rendered_lines >= line_limit:
                     break
                 if source_bytes >= byte_limit:
-                    # A file ending exactly at the source ceiling is complete,
-                    # not truncated. Probe one character only to distinguish
-                    # it from a longer file without materializing more input.
-                    source_budget_hit = bool(handle.read(1))
+                    # A size check avoids an extra unbounded text-buffer read
+                    # solely to distinguish exact EOF from a longer file.
+                    source_budget_hit = handle.tell() < file_size
                     break
                 if scanned_bytes >= scan_limit:
                     scan_budget_hit = True
@@ -173,21 +210,26 @@ def _read(
                 output_content_room = output_room - len(prefix)
                 capture_bytes = min(source_remaining, output_content_room)
                 source_constrained = source_remaining <= output_content_room
-                text, ended, eof, consumed, capture_hit, scan_hit = _read_logical_line(
+                raw, ended, eof, consumed, capture_hit, scan_hit = _read_logical_line(
                     handle, max(1, capture_bytes), scan_limit - scanned_bytes,
                 )
                 scanned_bytes += consumed
-                if not text and eof:
+                if not raw and eof:
                     break
+                # A cap can split a multi-byte codepoint. Dropping only the
+                # incomplete tail preserves valid UTF-8 and the byte ceiling.
+                text = raw.decode(
+                    "utf-8", errors="ignore" if capture_hit or scan_hit else "replace",
+                )
                 line_no += 1
-                source_bytes += _encoded_size(text)
+                source_bytes += len(raw)
                 formatted = prefix + text
                 rendered.append(formatted)
                 rendered_chars += len(formatted)
                 rendered_lines += 1
                 if capture_hit:
                     if source_constrained:
-                        source_budget_hit = True
+                        source_budget_hit = handle.tell() < file_size
                     else:
                         output_budget_hit = True
                     break
@@ -206,25 +248,19 @@ def _read(
                 f"[... Read stopped after scanning {scan_limit:,} bytes; "
                 "use a smaller offset or a narrower file ...]\n"
             )
-            if not rendered:
-                return marker
-            rendered.append("\n" + marker)
+            return _with_stop_marker(rendered, "\n" + marker if rendered else marker, output_limit)
         elif source_budget_hit:
             marker = (
                 f"[... Read stopped after {byte_limit:,} source bytes; use "
                 "offset and limit to request another line range ...]\n"
             )
-            if not rendered:
-                return marker
-            rendered.append("\n" + marker)
+            return _with_stop_marker(rendered, "\n" + marker if rendered else marker, output_limit)
         elif output_budget_hit:
             marker = (
                 f"[... Read output capped at {output_limit:,} characters to "
                 "keep memory and model context bounded ...]\n"
             )
-            if not rendered:
-                return marker
-            rendered.append("\n" + marker)
+            return _with_stop_marker(rendered, "\n" + marker if rendered else marker, output_limit)
         if not rendered:
             return "(empty file)"
         return "".join(rendered)
