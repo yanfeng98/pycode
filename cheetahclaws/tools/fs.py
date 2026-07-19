@@ -99,9 +99,13 @@ def _read_logical_line(handle, capture_bytes: int | None, scan_remaining: int):
         scanned += len(selected)
 
         if newline_index >= 0:
-            if is_cr and take == len(piece):
-                # A CR at the end of a chunk may start CRLF. Probe only when
-                # the caller still has budget to retain that final LF.
+            if is_cr and take == len(piece) and piece[take - 1:take] == b"\r":
+                # A *bare* CR at the end of a chunk may start a CRLF whose LF
+                # was split into the next read. Probe only in that case — a
+                # complete CRLF already consumed its LF (last byte is b"\n"),
+                # so probing there would swallow a following blank line and
+                # shift every later line number.  Probe only when the caller
+                # still has budget to retain that final LF.
                 can_probe = (
                     scanned < scan_remaining
                     and (capture_bytes is None or captured < capture_bytes)

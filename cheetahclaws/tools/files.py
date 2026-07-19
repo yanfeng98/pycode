@@ -637,11 +637,16 @@ def _read_file_for_summary(file_path: str, config: dict) -> str:
         # SummarizeLargeFile" instruction rather than the PDF text.
         internal = {**config, "_skip_summary_redirect": True}
         content = _read_pdf({"file_path": str(p)}, internal)
-        if "[... ReadPDF stopped" in content:
-            return (
-                "Error: PDF exceeds the configured extraction cap for summarization; "
-                "use a narrower `pages` range or raise the PDF extraction limits."
-            )
+        # The bounded extractor appends a truncation marker when the PDF is
+        # larger than the extraction caps (the common case for papers/books —
+        # exactly what SummarizeLargeFile is for).  Drop only that trailing
+        # marker and summarize the extracted text, which is already capped to a
+        # size that fits a chunk.  Refusing here would make SummarizeLargeFile
+        # fail on its primary use case and dead-end ReadPDF's own redirect to
+        # it.  Genuine "Error:" returns still propagate to the caller.
+        marker_index = content.find("\n\n[... ReadPDF stopped")
+        if marker_index != -1:
+            content = content[:marker_index]
         return content
     # Plain text / code / markdown / etc.
     try:
@@ -850,20 +855,56 @@ def _summarize_large_file(params: dict, config: dict) -> str:
     reduce_cap = max(2_000, reduce_cap)
     merged_parts: list[str] = []
     merged_chars = 0
+    included_chunks = 0
+    last_chunk_clipped = False
     for i, summary_text in enumerate(chunk_summaries):
-        if summary_text is None or merged_chars >= reduce_cap:
+        # Skip a failed chunk (do not abort the whole merge on the first one),
+        # and stop only once the reduce-input budget is exhausted.
+        if summary_text is None:
+            continue
+        if merged_chars >= reduce_cap:
             break
         part = f"=== Chunk {i + 1}/{n_chunks} ===\n{summary_text}\n\n"
         remaining = reduce_cap - merged_chars
         merged_parts.append(part[:remaining])
         merged_chars += min(len(part), remaining)
+        included_chunks += 1
+        if len(part) > remaining:
+            # This chunk's summary was itself clipped by the reduce cap, so
+            # coverage is incomplete even if it is the last chunk (in which
+            # case included_chunks == n_chunks and the count check alone would
+            # miss it).
+            last_chunk_clipped = True
+            break
     merged_input = "".join(merged_parts)
     final = _summarize_chunk_via_llm(merged_input, focus, config, mode="reduce")
 
+    # Report the chunks actually merged rather than the total, and warn when
+    # the reduce budget dropped later chunk summaries — or clipped the last
+    # included one — so the caller is not told the whole file was covered when
+    # it was not.
+    if included_chunks < n_chunks or last_chunk_clipped:
+        if included_chunks < n_chunks:
+            coverage = f"{included_chunks}/{n_chunks} chunks merged"
+            detail = f"merged only {included_chunks} of {n_chunks} chunk summaries"
+        else:
+            coverage = f"{n_chunks} chunks, last clipped"
+            detail = f"clipped the last of {n_chunks} chunk summaries"
+        coverage_notice = (
+            f"\n\n[... reduce stage {detail} at its {reduce_cap:,}-char input "
+            "cap; this summary may omit the file's later sections — raise "
+            "summarize_reduce_max_input_chars or summarize a narrower range "
+            "for full coverage ...]"
+        )
+    else:
+        coverage = f"{n_chunks} chunks"
+        coverage_notice = ""
+
     return (
-        f"Summary of `{p.name}` (multi-agent map-reduce: {n_chunks} chunks, "
+        f"Summary of `{p.name}` (multi-agent map-reduce: {coverage}, "
         f"~{n_tokens_est:,} tokens in {n_chars:,} chars; model context "
         f"{model_ctx:,}; {max_workers} parallel workers):\n\n{final}"
+        f"{coverage_notice}"
     )
 
 

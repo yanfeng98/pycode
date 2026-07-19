@@ -10,6 +10,14 @@ from urllib.parse import urljoin
 _DEFAULT_WEB_FETCH_MAX_BYTES = 512 * 1024
 _DEFAULT_WEB_MAX_SECONDS = 30
 
+# HTML void elements emit no matching end tag (when written bare, e.g.
+# ``<img>``/``<br>`` as DuckDuckGo serves them), so depth counters that
+# increment on every start tag and decrement on every end tag would drift.
+_VOID_ELEMENTS = frozenset({
+    "area", "base", "br", "col", "embed", "hr", "img", "input",
+    "link", "meta", "param", "source", "track", "wbr",
+})
+
 
 def _coerce_max_seconds(value: int | float) -> float:
     try:
@@ -76,6 +84,11 @@ class _DuckDuckGoResultParser(HTMLParser):
         self._snippet_depth = 0
 
     def handle_starttag(self, tag, attrs):
+        if tag.lower() in _VOID_ELEMENTS:
+            # No end tag will follow, so touching the depth counters here would
+            # leave title/snippet depth permanently offset and misattribute the
+            # rest of the result's text.
+            return
         classes = self._classes(attrs)
         if tag.lower() == "div" and "result" in classes:
             self._finish_current()
@@ -100,6 +113,11 @@ class _DuckDuckGoResultParser(HTMLParser):
                 self._current["link"] = href[:self._field_cap]
 
     def handle_endtag(self, tag):
+        if tag.lower() in _VOID_ELEMENTS:
+            # Mirror handle_starttag: a self-closed void tag (``<br/>``) drives
+            # the parser's default start+end pair, so skip it on both sides to
+            # keep the depth counters balanced.
+            return
         if tag.lower() == "div" and self._current is not None:
             self._result_div_depth -= 1
             if self._result_div_depth <= 0:
