@@ -44,6 +44,10 @@ def _mask(prompt: str) -> str:
 
 def _generate_masked_prompt(tmp_path, monkeypatch) -> str:
     """Build a prompt with all optional blocks forced off, then mask dynamics."""
+    # The default profile is ``full``, whose surface enumerates the registry.
+    # Import the built-in tools so that enumeration is the complete, stable set
+    # regardless of what else a suite happened to import first.
+    import cheetahclaws.tools  # noqa: F401
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(_context, "get_memory_context", lambda: "")
     monkeypatch.setattr(_context, "get_git_info",       lambda: "")
@@ -82,6 +86,8 @@ def _regenerate() -> None:
     """Write the current output to the fixture.  Invoked by --regenerate."""
     import tempfile
     from unittest import mock
+
+    import cheetahclaws.tools  # noqa: F401  — populate the full-profile registry
 
     # Manually replicate the monkeypatches the pytest fixture applies.
     with tempfile.TemporaryDirectory() as tmp:

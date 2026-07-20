@@ -235,6 +235,101 @@ def test_summarize_large_file_does_map_then_reduce(tmp_path, monkeypatch):
     assert f"{len(map_calls)} chunks" in out
 
 
+def test_summarize_all_chunks_failing_returns_clean_error(tmp_path, monkeypatch):
+    """Every map chunk failing must yield an Error, not a confident summary of
+    the failure markers. Failures are error-marker strings, not None."""
+    import cheetahclaws.tools.files as _f
+    monkeypatch.setattr(
+        "cheetahclaws.compaction.get_context_limit", lambda m: 32768,
+    )
+    p = tmp_path / "huge.txt"
+    p.write_text("X" * (200 * 1024), encoding="utf-8")
+
+    reduce_calls = []
+
+    def failing_chunk(text, focus, config, mode="single", **kw):
+        if mode == "reduce":
+            reduce_calls.append(text)
+            return "reduced!"
+        # Simulate the real failure marker emitted by _summarize_chunk_via_llm.
+        return "[chunk-summarize error: RuntimeError: provider down]"
+
+    monkeypatch.setattr(_f, "_summarize_chunk_via_llm", failing_chunk)
+    out = _summarize_large_file({"file_path": str(p)}, {"model": "test-32k-model"})
+
+    assert out.startswith("Error")
+    assert "all" in out and "errored" in out
+    # The reduce stage must never run on all-error input.
+    assert reduce_calls == []
+
+
+def test_summarize_partial_chunk_failures_warn_and_skip_markers(tmp_path, monkeypatch):
+    """A minority of failing chunks: their error text is kept out of the reduce
+    input, and the summary carries an incomplete-coverage warning."""
+    import cheetahclaws.tools.files as _f
+    monkeypatch.setattr(
+        "cheetahclaws.compaction.get_context_limit", lambda m: 32768,
+    )
+    p = tmp_path / "huge.txt"
+    p.write_text("X" * (200 * 1024), encoding="utf-8")
+
+    reduce_input = {}
+
+    def mixed_chunk(text, focus, config, mode="single", **kw):
+        if mode == "reduce":
+            reduce_input["text"] = text
+            return "merged summary"
+        # First chunk fails; the rest succeed.
+        if kw.get("chunk_idx") == 1:
+            return "[chunk-summarize: empty response]"
+        return f"chunk-{kw.get('chunk_idx')}-ok"
+
+    monkeypatch.setattr(_f, "_summarize_chunk_via_llm", mixed_chunk)
+    out = _summarize_large_file({"file_path": str(p)}, {"model": "test-32k-model"})
+
+    assert not out.startswith("Error")
+    assert "chunk-summarize" not in reduce_input["text"]  # marker never merged
+    assert "incomplete coverage" in out
+    assert "failed to summarize" in out
+
+
+def test_summarize_reduce_stage_failure_returns_clean_error(tmp_path, monkeypatch):
+    """If the reduce call itself fails, surface an Error instead of returning a
+    'summary' that is just the reduce error marker."""
+    import cheetahclaws.tools.files as _f
+    monkeypatch.setattr(
+        "cheetahclaws.compaction.get_context_limit", lambda m: 32768,
+    )
+    p = tmp_path / "huge.txt"
+    p.write_text("X" * (200 * 1024), encoding="utf-8")
+
+    def reduce_fails(text, focus, config, mode="single", **kw):
+        if mode == "reduce":
+            return "[chunk-summarize error: TimeoutError: reduce timed out]"
+        return f"chunk-{kw.get('chunk_idx')}-ok"
+
+    monkeypatch.setattr(_f, "_summarize_chunk_via_llm", reduce_fails)
+    out = _summarize_large_file({"file_path": str(p)}, {"model": "test-32k-model"})
+
+    assert out.startswith("Error")
+    assert "reduce stage" in out
+
+
+def test_summarize_single_shot_failure_returns_clean_error(tmp_path, monkeypatch):
+    """A single-shot failure marker must be reported as an Error, not a summary."""
+    import cheetahclaws.tools.files as _f
+
+    def fail_single(text, focus, config, mode="single", **kw):
+        return "[chunk-summarize error: ValueError: boom]"
+
+    monkeypatch.setattr(_f, "_summarize_chunk_via_llm", fail_single)
+    p = tmp_path / "small.txt"
+    p.write_text("tiny content", encoding="utf-8")
+    out = _summarize_large_file({"file_path": str(p)}, {"model": "claude-opus-4-7"})
+
+    assert out.startswith("Error")
+
+
 def test_summarize_missing_file_error(monkeypatch):
     """Missing file → Error: ... returned, NOT a crash."""
     out = _summarize_large_file(

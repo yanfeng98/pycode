@@ -36,10 +36,12 @@ DEFAULTS = {
     "thinking_budget":  10000,
     "custom_base_url":  "",       # for "custom" provider
     "max_tool_output":  32000,
-    # Tool schemas are part of every provider request.  Keep the normal coding
-    # loop small; opt into research/orchestration, or use ``full`` for every
-    # legacy/plugin/MCP tool.
-    "tool_profile":     "standard",  # standard | research | orchestration | full
+    # Tool schemas are part of every provider request.  Default to the full
+    # surface so no capability (web, sub-agents, MCP, plugins) silently
+    # disappears for users who rely on it; opt into ``standard`` (compact
+    # coding-only), ``research``, or ``orchestration`` to shrink the surface
+    # and save prompt tokens when a session doesn't need everything.
+    "tool_profile":     "full",  # full | standard | research | orchestration
     # Bound input work before a tool result reaches the generic output cap.
     "tool_read_max_bytes":      256 * 1024,
     "tool_read_scan_max_bytes": 2 * 1024 * 1024,
@@ -186,9 +188,10 @@ def load_config() -> dict:
                 saved_config = {}
         except Exception:
             pass
-    # A missing profile consistently receives the compact default, including
-    # old config files. Users who need every optional integration can opt in
-    # explicitly with ``tool_profile=full``.
+    # A missing profile (including old config files) inherits the ``full``
+    # DEFAULTS value above, so upgrading never removes a capability a user
+    # already relied on. Shrinking the surface is an explicit opt-in via
+    # ``tool_profile=standard`` (or research/orchestration).
     # Backward-compat: legacy single api_key → anthropic_api_key
     if cfg.get("api_key") and not cfg.get("anthropic_api_key"):
         cfg["anthropic_api_key"] = cfg.pop("api_key")

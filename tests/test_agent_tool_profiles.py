@@ -35,7 +35,7 @@ def test_standard_profile_sends_only_the_compact_surface(monkeypatch):
 
     monkeypatch.setattr(agent, "stream", fake_stream)
 
-    list(run("hello", AgentState(), _config(), "system"))
+    list(run("hello", AgentState(), _config(tool_profile="standard"), "system"))
 
     names = {schema["name"] for schema in seen_schemas[0]}
     assert "Read" in names
@@ -75,7 +75,7 @@ def test_tool_outside_profile_is_rejected_without_permission_prompt(monkeypatch)
 
     monkeypatch.setattr(agent, "stream", fake_stream)
     state = AgentState()
-    list(run("hello", state, _config(), "system"))
+    list(run("hello", state, _config(tool_profile="standard"), "system"))
 
     tool_results = [m for m in state.messages if m.get("role") == "tool"]
     assert len(tool_results) == 1

@@ -752,6 +752,20 @@ def _summarize_chunk_via_llm(text: str, focus: str, config: dict,
     return "".join(out).strip() or "[chunk-summarize: empty response]"
 
 
+def _is_failed_chunk(summary_text: str | None) -> bool:
+    """Whether a map/reduce result is a failure marker rather than real output.
+
+    ``_summarize_chunk_via_llm`` records failures as marker strings (never
+    ``None``): the error path returns ``"[chunk-summarize error: ...]"`` and an
+    empty model response returns ``"[chunk-summarize: empty response]"`` — both
+    begin with ``"[chunk-summarize"``. Detecting them keeps failure text out of
+    the reduce prompt (otherwise the reduce model 'summarizes' the errors) and
+    lets the caller report degraded coverage instead of a confident-looking
+    summary of nothing.
+    """
+    return summary_text is None or summary_text.startswith("[chunk-summarize")
+
+
 def _plan_chunks(content: str, model_ctx: int) -> list[str]:
     """Split `content` into N chunks each fitting within
     `(model_ctx - reserved) / chars_per_token` chars, with a small overlap
@@ -822,6 +836,11 @@ def _summarize_large_file(params: dict, config: dict) -> str:
 
     if n_chunks == 1:
         summary = _summarize_chunk_via_llm(chunks[0], focus, config, mode="single")
+        if _is_failed_chunk(summary):
+            return (
+                f"Error: summarizing `{p.name}` failed — {summary} "
+                "(model/provider issue). Retry, or summarize a narrower range."
+            )
         return (
             f"Summary of `{p.name}` (single-shot, ~{n_tokens_est:,} tokens "
             f"in {n_chars:,} chars; model context {model_ctx:,}):\n\n"
@@ -856,11 +875,15 @@ def _summarize_large_file(params: dict, config: dict) -> str:
     merged_parts: list[str] = []
     merged_chars = 0
     included_chunks = 0
+    failed_chunks = 0
     last_chunk_clipped = False
     for i, summary_text in enumerate(chunk_summaries):
         # Skip a failed chunk (do not abort the whole merge on the first one),
-        # and stop only once the reduce-input budget is exhausted.
-        if summary_text is None:
+        # and stop only once the reduce-input budget is exhausted. A map
+        # failure is an error-marker string, not None, so test the marker —
+        # otherwise the reduce model would 'summarize' the error text.
+        if _is_failed_chunk(summary_text):
+            failed_chunks += 1
             continue
         if merged_chars >= reduce_cap:
             break
@@ -876,25 +899,53 @@ def _summarize_large_file(params: dict, config: dict) -> str:
             # miss it).
             last_chunk_clipped = True
             break
+
+    # Every chunk failed → nothing real to reduce. Reducing an all-error (or
+    # empty) aggregate would return a confident summary of failures, so surface
+    # a clean error instead.
+    if included_chunks == 0:
+        return (
+            f"Error: summarizing `{p.name}` failed — all {n_chunks} chunk "
+            "summaries errored (model/provider issue). Retry, or summarize a "
+            "narrower range."
+        )
+
     merged_input = "".join(merged_parts)
     final = _summarize_chunk_via_llm(merged_input, focus, config, mode="reduce")
+    if _is_failed_chunk(final):
+        return (
+            f"Error: summarizing `{p.name}` failed at the reduce stage — "
+            f"{final}. Summarize a narrower range, or raise "
+            "summarize_reduce_max_input_chars."
+        )
 
     # Report the chunks actually merged rather than the total, and warn when
-    # the reduce budget dropped later chunk summaries — or clipped the last
-    # included one — so the caller is not told the whole file was covered when
-    # it was not.
+    # coverage is incomplete — because some chunk summaries failed, because the
+    # reduce budget dropped later ones, or because the last included one was
+    # clipped — so the caller is never told the whole file was covered when it
+    # was not. Chunks neither merged nor failed were dropped at the reduce cap.
+    cap_dropped = n_chunks - included_chunks - failed_chunks
     if included_chunks < n_chunks or last_chunk_clipped:
-        if included_chunks < n_chunks:
-            coverage = f"{included_chunks}/{n_chunks} chunks merged"
-            detail = f"merged only {included_chunks} of {n_chunks} chunk summaries"
-        else:
-            coverage = f"{n_chunks} chunks, last clipped"
-            detail = f"clipped the last of {n_chunks} chunk summaries"
+        reasons = []
+        if failed_chunks:
+            reasons.append(f"{failed_chunks} failed to summarize")
+        if cap_dropped:
+            reasons.append(
+                f"{cap_dropped} dropped at the {reduce_cap:,}-char reduce cap"
+            )
+        if last_chunk_clipped:
+            reasons.append("the last included summary was clipped")
+        coverage = f"{included_chunks}/{n_chunks} chunks merged"
+        detail = "; ".join(reasons) if reasons else "coverage incomplete"
+        hint = (
+            "raise summarize_reduce_max_input_chars or summarize a narrower "
+            "range for full coverage"
+            if (cap_dropped or last_chunk_clipped)
+            else "retry, or summarize a narrower range"
+        )
         coverage_notice = (
-            f"\n\n[... reduce stage {detail} at its {reduce_cap:,}-char input "
-            "cap; this summary may omit the file's later sections — raise "
-            "summarize_reduce_max_input_chars or summarize a narrower range "
-            "for full coverage ...]"
+            f"\n\n[... incomplete coverage: {detail}; this summary may omit "
+            f"parts of the file — {hint} ...]"
         )
     else:
         coverage = f"{n_chunks} chunks"

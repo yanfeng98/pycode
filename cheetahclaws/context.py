@@ -225,7 +225,7 @@ def _render_active_tool_surface(config: dict) -> str:
     try:
         profile = normalize_tool_profile(config.get("tool_profile"))
     except ValueError:
-        profile = "standard"
+        profile = "full"
     disabled = config.get("disabled_tools") or ()
     if not isinstance(disabled, (list, tuple, set, frozenset)):
         disabled = ()
@@ -272,7 +272,7 @@ def _tmux_fragment_enabled(config: dict) -> bool:
     try:
         profile = normalize_tool_profile(config.get("tool_profile"))
     except ValueError:
-        profile = "standard"
+        profile = "full"
     if profile != "full" or not _tmux_available():
         return False
     disabled = config.get("disabled_tools") or ()

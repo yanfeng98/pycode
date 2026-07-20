@@ -172,7 +172,9 @@ def run(
         try:
             active_profile = normalize_tool_profile(config.get("tool_profile"))
         except ValueError as profile_error:
-            active_profile = "standard"
+            # Fall back to the full surface rather than silently hiding tools
+            # because of a typo'd profile name.
+            active_profile = "full"
             _log.warn("invalid_tool_profile",
                       session_id=session_id,
                       requested=config.get("tool_profile"),
