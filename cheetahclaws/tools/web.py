@@ -73,7 +73,10 @@ class _DuckDuckGoResultParser(HTMLParser):
 
     @staticmethod
     def _classes(attrs) -> set[str]:
-        return set(dict(attrs).get("class", "").split())
+        # A valueless attribute (e.g. ``<div class>``) yields ('class', None),
+        # so ``.get("class", "")`` returns None, not the default — guard with
+        # ``or ""`` so a single bare attribute can't crash the whole parse.
+        return set((dict(attrs).get("class") or "").split())
 
     def _finish_current(self) -> None:
         if self._current and (self._current["title"] or self._current["link"]):

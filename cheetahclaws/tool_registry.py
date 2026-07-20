@@ -49,8 +49,8 @@ _STANDARD_TOOLS = frozenset({
     "MemorySave", "MemoryDelete", "MemorySearch", "MemoryList", "MemoryVerify",
 })
 _RESEARCH_TOOLS = frozenset({
-    "WebFetch", "WebSearch", "Research", "ReadPDF", "ReadImage",
-    "ReadSpreadsheet", "SummarizeLargeFile",
+    "WebFetch", "WebSearch", "WebBrowse", "Research", "ReadPDF", "ReadImage",
+    "ReadSpreadsheet", "ReadEmail", "SummarizeLargeFile",
 })
 _ORCHESTRATION_TOOLS = frozenset({
     "Agent", "SendMessage", "CheckAgentResult", "ListAgentTasks",
@@ -73,15 +73,15 @@ def _default_profiles(name: str) -> FrozenSet[str]:
 def normalize_tool_profile(profile: str | None) -> str:
     """Return a validated profile name.
 
-    Missing values intentionally select ``standard``: this is the safe and
-    token-efficient default.  A caller needing every legacy integration can
-    set ``tool_profile=full`` explicitly.
+    Missing/empty values select ``full``: upgrading must never silently drop a
+    capability a user relied on. Callers that want a smaller, token-cheaper
+    surface opt in explicitly with ``standard``/``research``/``orchestration``.
     """
     if profile is None:
-        return "standard"
+        return "full"
     if not isinstance(profile, str):
         raise ValueError("Tool profile must be a string.")
-    normalized = (profile or "standard").strip().lower()
+    normalized = (profile or "full").strip().lower()
     if normalized not in _PROFILE_NAMES:
         choices = ", ".join(sorted(_PROFILE_NAMES))
         raise ValueError(f"Unknown tool profile '{profile}'. Choose one of: {choices}.")

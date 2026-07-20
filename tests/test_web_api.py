@@ -238,7 +238,7 @@ def test_web_config_gets_and_updates_tool_profile(server_url):
 
         before = c.get(f"/api/config?sid={sid}")
         assert before.status_code == 200
-        assert before.json()["tool_profile"] == "standard"
+        assert before.json()["tool_profile"] == "full"
 
         updated = c.patch(
             "/api/config", json={"session_id": sid, "config": {"tool_profile": "research"}},

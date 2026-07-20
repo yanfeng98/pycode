@@ -11,14 +11,16 @@ from cheetahclaws import config as config_module
 from cheetahclaws.tool_registry import normalize_tool_profile
 
 
-def test_legacy_saved_config_uses_compact_default_tool_surface(monkeypatch, tmp_path):
+def test_legacy_saved_config_keeps_the_full_tool_surface(monkeypatch, tmp_path):
+    # A config predating tool profiles must keep every capability it had before
+    # (web, sub-agents, MCP, ...): upgrading never silently removes tools.
     config_file = tmp_path / "config.json"
     config_file.write_text(json.dumps({"model": "test"}), encoding="utf-8")
     monkeypatch.setattr(config_module, "CONFIG_DIR", tmp_path)
     monkeypatch.setattr(config_module, "CONFIG_FILE", config_file)
     monkeypatch.setattr(config_module, "SESSIONS_DIR", tmp_path / "sessions")
 
-    assert config_module.load_config()["tool_profile"] == "standard"
+    assert config_module.load_config()["tool_profile"] == "full"
 
 
 def test_saved_full_profile_remains_an_explicit_opt_in(monkeypatch, tmp_path):
@@ -31,9 +33,20 @@ def test_saved_full_profile_remains_an_explicit_opt_in(monkeypatch, tmp_path):
     assert config_module.load_config()["tool_profile"] == "full"
 
 
-def test_fresh_config_uses_compact_standard_profile(monkeypatch, tmp_path):
+def test_fresh_config_uses_full_profile_by_default(monkeypatch, tmp_path):
     monkeypatch.setattr(config_module, "CONFIG_DIR", tmp_path)
     monkeypatch.setattr(config_module, "CONFIG_FILE", tmp_path / "missing.json")
+    monkeypatch.setattr(config_module, "SESSIONS_DIR", tmp_path / "sessions")
+
+    assert config_module.load_config()["tool_profile"] == "full"
+
+
+def test_standard_profile_is_an_explicit_opt_in(monkeypatch, tmp_path):
+    # Shrinking the surface to the compact coding set is opt-in, never implicit.
+    config_file = tmp_path / "config.json"
+    config_file.write_text('{"tool_profile": "standard"}', encoding="utf-8")
+    monkeypatch.setattr(config_module, "CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(config_module, "CONFIG_FILE", config_file)
     monkeypatch.setattr(config_module, "SESSIONS_DIR", tmp_path / "sessions")
 
     assert config_module.load_config()["tool_profile"] == "standard"
@@ -78,7 +91,7 @@ def test_web_settings_expose_and_render_the_tool_profile_selector():
 
     assert 'id="sp-tool-profile"' in markup
     assert "updateConfig('tool_profile', this.value)" in markup
-    assert "sp-tool-profile').value = cfg.tool_profile || 'standard'" in script
+    assert "sp-tool-profile').value = cfg.tool_profile || 'full'" in script
 
 
 def test_terminal_config_rejects_invalid_tool_profile(monkeypatch):

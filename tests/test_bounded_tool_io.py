@@ -193,6 +193,22 @@ def test_websearch_streams_and_parses_bounded_html(monkeypatch):
     assert "WebSearch stopped after 128 response bytes" in result
 
 
+def test_ddg_parser_survives_valueless_class_attribute():
+    """A bare ``class`` attribute (value None) must not crash the parser and
+    kill the whole search — regression for `dict(attrs).get('class','').split()`
+    returning None on a valueless attribute."""
+    from cheetahclaws.tools.web import _DuckDuckGoResultParser
+
+    parser = _DuckDuckGoResultParser()
+    parser.feed(
+        '<div class="result"><h2 class="result__title">'
+        '<a href="https://ok.test">Title <span class>styled</span></a></h2>'
+        '<div class="result__snippet">Snippet</div></div>'
+    )
+    assert parser.results, "valueless class attribute killed result parsing"
+    assert parser.results[0]["link"] == "https://ok.test"
+
+
 def test_webfetch_follows_redirects_with_one_shared_elapsed_budget(monkeypatch):
     calls = []
 
