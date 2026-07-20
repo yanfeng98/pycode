@@ -36,6 +36,27 @@ DEFAULTS = {
     "thinking_budget":  10000,
     "custom_base_url":  "",       # for "custom" provider
     "max_tool_output":  32000,
+    # Tool schemas are part of every provider request.  Keep the normal coding
+    # loop small; opt into research/orchestration, or use ``full`` for every
+    # legacy/plugin/MCP tool.
+    "tool_profile":     "standard",  # standard | research | orchestration | full
+    # Bound input work before a tool result reaches the generic output cap.
+    "tool_read_max_bytes":      256 * 1024,
+    "tool_read_scan_max_bytes": 2 * 1024 * 1024,
+    "tool_read_max_output_chars": 50_000,
+    "web_fetch_max_bytes":      512 * 1024,
+    "web_search_max_bytes":     512 * 1024,
+    "web_fetch_max_seconds":    30,
+    "web_search_max_seconds":   30,
+    "pdf_extract_max_chars":    50_000,
+    "pdf_extract_max_pages":    50,
+    "pdf_extract_max_file_bytes": 32 * 1024 * 1024,
+    "summarize_max_input_bytes": 16 * 1024 * 1024,
+    "summarize_chunk_max_output_chars": 8_000,
+    "summarize_reduce_max_input_chars": 200_000,
+    # Read-only cache values are post-truncation and capped independently so a
+    # single large fetch cannot consume unbounded resident memory.
+    "max_tool_cache_output":    12_000,
     "max_agent_depth":  3,
     "max_concurrent_agents": 3,
     "session_daily_limit":   10000,    # max sessions kept per day in daily/
@@ -155,11 +176,19 @@ def load_config() -> dict:
     CONFIG_DIR.mkdir(exist_ok=True)
     SESSIONS_DIR.mkdir(exist_ok=True)
     cfg = dict(DEFAULTS)
+    saved_config: dict = {}
     if CONFIG_FILE.exists():
         try:
-            cfg.update(json.loads(CONFIG_FILE.read_text()))
+            saved_config = json.loads(CONFIG_FILE.read_text())
+            if isinstance(saved_config, dict):
+                cfg.update(saved_config)
+            else:
+                saved_config = {}
         except Exception:
             pass
+    # A missing profile consistently receives the compact default, including
+    # old config files. Users who need every optional integration can opt in
+    # explicitly with ``tool_profile=full``.
     # Backward-compat: legacy single api_key → anthropic_api_key
     if cfg.get("api_key") and not cfg.get("anthropic_api_key"):
         cfg["anthropic_api_key"] = cfg.pop("api_key")

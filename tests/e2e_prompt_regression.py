@@ -30,6 +30,9 @@ _MASKS = [
     (re.compile(r"^- Current date: .+$", re.M),         "- Current date: <MASKED>"),
     (re.compile(r"^- Working directory: .+$", re.M),    "- Working directory: <MASKED>"),
     (re.compile(r"^- Platform: .+$", re.M),             "- Platform: <MASKED>"),
+    # Voice commands are optional and cannot import on Python versions below
+    # the package's supported baseline, so they are not prompt-shape signals.
+    (re.compile(r"^- `/(?:tts|voice)`.*\n", re.M),       ""),
 ]
 
 
@@ -65,7 +68,7 @@ def test_default_prompt_matches_golden(tmp_path, monkeypatch):
             f"Regenerate with: python {__file__} --regenerate"
         )
     actual = _generate_masked_prompt(tmp_path, monkeypatch)
-    expected = _FIXTURE.read_text(encoding="utf-8")
+    expected = _mask(_FIXTURE.read_text(encoding="utf-8"))
     assert actual == expected, (
         "Default prompt drifted from golden fixture.\n"
         f"If this change is intentional, regenerate the fixture:\n"
